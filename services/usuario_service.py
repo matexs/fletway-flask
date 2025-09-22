@@ -1,35 +1,23 @@
-from models import db, Usuario
+from config import db
+from models import Usuario
 
-
-# servicios manejan la logica de negocio, validaciones,regla,calculos
-
-def listar_usuarios():
+def obtener_todos():
     return Usuario.query.all()
 
-def crear_usuario(nombre, email):
-    nuevo = Usuario(nombre=nombre, email=email)
+def obtener_por_id(id):
+    return Usuario.query.get(id)
+
+def crear(data):
+    # Ajustar los campos según tu modelo Usuario
+    nuevo = Usuario(
+        nombre=data["nombre"],
+        apellido=data.get("apellido"),
+        email=data["email"],
+        contraseña=data.get("contraseña"),
+        telefono=data.get("telefono"),
+        fecha_registro=data.get("fecha_registro"),
+        fecha_nacimiento=data.get("fecha_nacimiento")
+    )
     db.session.add(nuevo)
     db.session.commit()
     return nuevo
-
-
-def obtener_usuario_por_id(user_id):
-    return Usuario.query.get(user_id)
-
-def actualizar_usuario(user_id, nombre=None, email=None):
-    usuario = Usuario.query.get(user_id)
-    if usuario:
-        if nombre:
-            usuario.nombre = nombre
-        if email:
-            usuario.email = email
-        db.session.commit()
-    return usuario
-
-def eliminar_usuario(user_id):
-    usuario = Usuario.query.get(user_id)
-    if usuario:
-        db.session.delete(usuario)
-        db.session.commit()
-        return True
-    return False

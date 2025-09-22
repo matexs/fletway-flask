@@ -1,0 +1,17 @@
+[MASTER]
+ignore=venv
+
+[BASIC]
+variable-rgx=[a-z_][a-z0-9_]{1,30}$
+
+[FORMAT]
+max-line-length=100
+
+[MESSAGES CONTROL]
+enable=unused-import
+
+[DESIGN]
+
+docstring-min-length=10
+
+max-args=5
