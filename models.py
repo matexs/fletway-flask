@@ -1,6 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
-from config import db
+"""Módulo para los modelos. aca se definen las tablas de la base de datos."""
 
+from config import db
 
 #tabla intermedia sin modelo propio
 transportista_localidad = db.Table('transportista_localidad',
@@ -11,6 +11,7 @@ transportista_localidad = db.Table('transportista_localidad',
 class Usuario(db.Model):
     __tablename__ = 'usuario'
     usuario_id = db.Column(db.Integer, primary_key=True)
+    u_id = db.Column(db.Integer, unique=True, nullable=False)  # ID de autenticación externa
     nombre = db.Column(db.String(80), nullable=False)
     apellido = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -22,7 +23,7 @@ class Usuario(db.Model):
         return {"usuario_id": self.usuario_id, "nombre": self.nombre,"apellido":self.apellido,
                  "email": self.email, "telefono": self.telefono,
                  "fecha_registro": self.fecha_registro, "fecha_nacimiento": self.fecha_nacimiento}
-    
+
 class Transportista(db.Model):
     __tablename__ = 'transportista'
     transportista_id = db.Column(db.Integer, primary_key=True)
@@ -34,16 +35,17 @@ class Transportista(db.Model):
     patente_vehiculo = db.Column(db.String(20), unique=True, nullable=False)
     modelo_vehiculo = db.Column(db.String(50), nullable=True)
 
+    usuario = db.relationship("Usuario", backref="transportista")
     #many to many
-    localidades = db.relationship('Localidad', secondary='transportista_localidad', 
+    localidades = db.relationship('Localidad', secondary='transportista_localidad',
                                   back_populates='transportistas')
 
     def to_dict(self):
-        return {"fletero_id": self.transportista_id, "usuario_id": self.usuario_id,"descripcion": self.descripcion,
-                 "capacidad_kg": self.capacidad_kg, "calificacion_promedio": self.calificacion_promedio,
-                "patente_vehiculo": self.patente_vehiculo, "modelo_vehiculo": self.modelo_vehiculo,
-                "localidades": [loc.to_dict() for loc in self.localidades]}
-    
+        return {"transportista_id": self.transportista_id, "usuario_id": self.usuario_id,
+                "descripcion": self.descripcion,"capacidad_kg": self.capacidad_kg,
+                "calificacion_promedio": self.calificacion_promedio,"patente_vehiculo": self.patente_vehiculo,
+                "modelo_vehiculo": self.modelo_vehiculo,"localidades": [loc.to_dict() for loc in self.localidades]
+                ,"usuario": self.usuario.to_dict() if self.usuario else None,"tipo_vehiculo": self.tipo_vehiculo}
 
 
 class Solicitud(db.Model):
@@ -60,11 +62,12 @@ class Solicitud(db.Model):
     hora_recogida = db.Column(db.DateTime, nullable=True)
 
     def to_dict(self):
-        return {"solicitud_id": self.solicitud_id, "cliente_id": self.cliente_id, "presupuesto_aceptado":self.presupuesto_aceptado,
-                "localidad_origen_id": self.localidad_origen_id, "direccion_origen": self.direccion_origen,
-                "direccion_destino": self.direccion_destino, "fecha_creacion": self.fecha_creacion,
-                "detalles_carga": self.detalles_carga, "estado": self.estado, "hora_recogida": self.hora_recogida   }
-    
+        return {"solicitud_id": self.solicitud_id, "cliente_id": self.cliente_id,
+                "presupuesto_aceptado":self.presupuesto_aceptado,  "localidad_origen_id": self.localidad_origen_id,
+                "direccion_origen": self.direccion_origen, "direccion_destino": self.direccion_destino,
+                "fecha_creacion": self.fecha_creacion, "detalles_carga": self.detalles_carga,
+                "estado": self.estado, "hora_recogida": self.hora_recogida   }
+
 class Presupuesto(db.Model):
     __tablename__ = 'presupuesto'
     presupuesto_id = db.Column(db.Integer, primary_key=True)
@@ -75,11 +78,14 @@ class Presupuesto(db.Model):
     fecha_creacion = db.Column(db.DateTime, nullable=False)
     estado = db.Column(db.String(50), nullable=False, default='sin transportista')
 
+    transportista = db.relationship("Transportista", backref="presupuestos")
+
     def to_dict(self):
-        return {"presupuesto_id": self.presupuesto_id, "solicitud_id": self.solicitud_id, "transportista_id": self.transportista_id, 
-                "precio_estimado": self.precio_estimado,"comentario":self.comentario,"fecha_creacion":self.fecha_creacion,
-                "estado": self.estado}
-    
+        return {"presupuesto_id": self.presupuesto_id, "solicitud_id": self.solicitud_id,
+                 "transportista_id": self.transportista_id, "precio_estimado": self.precio_estimado,
+                 "comentario":self.comentario,"fecha_creacion":self.fecha_creacion,"estado": self.estado,
+                "transportista": self.transportista.to_dict() if self.transportista else None}
+
 class Calificacion(db.Model):
     __tablename__ = 'calificacion'
     calificacion_id = db.Column(db.Integer, primary_key=True)
@@ -91,10 +97,11 @@ class Calificacion(db.Model):
     fecha_creacion = db.Column(db.DateTime, nullable=False)
 
     def to_dict(self):
-        return {"calificacion_id": self.calificacion_id, "solicitud_id": self.solicitud_id, "cliente_id": self.cliente_id, 
-                "transporitsta_id": self.transportista_id,"puntuacion": self.puntuacion, "comentario": self.comentario,
-                "fecha_creacion": self.fecha_creacion}
-    
+        return {"calificacion_id": self.calificacion_id, "solicitud_id": self.solicitud_id,
+                 "cliente_id": self.cliente_id,   "transporitsta_id": self.transportista_id,
+                 "puntuacion": self.puntuacion, "comentario": self.comentario,
+               "fecha_creacion": self.fecha_creacion}
+
 class Localidad(db.Model):
     __tablename__ = 'localidad'
     localidad_id = db.Column(db.Integer, primary_key=True)
@@ -102,10 +109,9 @@ class Localidad(db.Model):
     provincia = db.Column(db.String(100), nullable=False)
     codigo_postal = db.Column(db.String(20), nullable=True)
 
-    transportistas = db.relationship('Transportista', secondary= 'transportista_localidad', 
+    transportistas = db.relationship('Transportista', secondary= 'transportista_localidad',
                                      back_populates='localidades')
 
     def to_dict(self):
-        return {"localidad_id": self.localidad_id, "nombre": self.nombre, "provincia": self.provincia,"codigo_postal": self.codigo_postal}
-
-
+        return {"localidad_id": self.localidad_id, "nombre": self.nombre,
+                 "provincia": self.provincia,"codigo_postal": self.codigo_postal}

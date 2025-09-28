@@ -1,13 +1,18 @@
+"""Servicio para manejar operaciones relacionadas con calificaciones."""
+
 from config import db
 from models import Calificacion
 
 def obtener_todas():
+    """Obtiene todas las calificaciones."""
     return Calificacion.query.all()
 
-def obtener_por_id(id):
-    return Calificacion.query.get(id)
+def obtener_por_id(id_):
+    """Obtiene una calificación por su ID."""
+    return Calificacion.query.get(id_)
 
 def crear(data):
+    """Crea una nueva calificación."""
     nueva = Calificacion(
         solicitud_id=data["solicitud_id"],
         cliente_id=data["cliente_id"],

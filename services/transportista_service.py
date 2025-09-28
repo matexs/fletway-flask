@@ -1,14 +1,18 @@
+"""Servicio para manejar operaciones relacionadas con Transportista."""
+
 from config import db
 from models import Transportista,Usuario
 
 def obtener_todos():
+    """Obtiene todos los transportistas."""
     return Transportista.query.all()
 
-def obtener_por_id(id):
-    return Transportista.query.get(id)
+def obtener_por_id(id_):
+    """Obtiene un transportista por su ID."""
+    return Transportista.query.get(id_)
 
 def crear(data):
-    # Ajustar los campos según tu modelo Transportista
+    """Crea un nuevo transportista."""
     nuevo = Transportista(
         descripcion=data.get("descripcion"),
         tipo_vehiculo=data["tipo_vehiculo"],
@@ -23,6 +27,7 @@ def crear(data):
     return nuevo
 
 def obtener_transportista_by_id(transportista_id: int):
+    """Obtiene un transportista junto con los datos del usuario asociado."""
     try:
         # 1️⃣ Buscar transportista
         transportista = Transportista.query.get(transportista_id)

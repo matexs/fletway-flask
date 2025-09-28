@@ -1,3 +1,5 @@
+"""Rutas para los endpoints de los transportistas."""
+
 from flask import Blueprint, jsonify, request
 from services import transportista_service
 
@@ -7,6 +9,7 @@ transportista_bp = Blueprint("transportista_bp", __name__)
 
 @transportista_bp.route("/transportistas", methods=["GET"])
 def obtener_transportistas():
+    """Obtiene todos los transportistas."""
     transportistas = transportista_service.obtener_todos()
     return jsonify([t.to_dict() for t in transportistas])
 
@@ -19,6 +22,7 @@ def obtener_transportistas():
 
 @transportista_bp.route("/transportistas", methods=["POST"])
 def crear_transportista():
+    """Crea un nuevo transportista."""
     data = request.get_json()
     try:
         nuevo_transportista = transportista_service.crear(data)
@@ -31,8 +35,8 @@ def crear_transportista():
 
 @transportista_bp.route("/transportistas/<int:transportista_id>", methods=["GET"])
 def obtener_transportista(transportista_id):
+    """Obtiene un transportista por su ID."""
     transportista = transportista_service.obtener_transportista_by_id(transportista_id)
     if transportista:
         return jsonify(transportista), 200
-    else:
-        return jsonify({"error": "Transportista no encontrado"}), 404
+    return jsonify({"error": "Transportista no encontrado"}), 404

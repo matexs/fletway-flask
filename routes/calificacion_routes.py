@@ -1,3 +1,5 @@
+"""Rutas para los endpoints de las calificaciones."""
+
 from flask import Blueprint, jsonify, request
 from services import calificacion_service
 
@@ -7,18 +9,21 @@ calificacion_bp = Blueprint("calificacion_bp", __name__)
 
 @calificacion_bp.route("/calificaciones", methods=["GET"])
 def obtener_calificaciones():
+    """Obtiene todas las calificaciones."""
     calificaciones = calificacion_service.obtener_todas()
     return jsonify([c.to_dict() for c in calificaciones])
 
-@calificacion_bp.route("/calificaciones/<int:id>", methods=["GET"])
-def obtener_calificacion(id):
-    calificacion = calificacion_service.obtener_por_id(id)
+@calificacion_bp.route("/calificaciones/<int:id_>", methods=["GET"])
+def obtener_calificacion(id_):
+    """Obtiene una calificación por su ID."""
+    calificacion = calificacion_service.obtener_por_id(id_)
     if not calificacion:
         return jsonify({"error": "Calificación no encontrada"}), 404
     return jsonify(calificacion.to_dict())
 
 @calificacion_bp.route("/calificaciones", methods=["POST"])
 def crear_calificacion():
+    """Crea una nueva calificación."""
     data = request.get_json()
     try:
         nueva = calificacion_service.crear(data)

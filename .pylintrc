@@ -1,17 +1,22 @@
 [MASTER]
-ignore=venv
+ignore=venv,requeriments.txt,.pylintrc,README.md,__pycache__
 
 [BASIC]
-variable-rgx=[a-z_][a-z0-9_]{1,30}$
+variable-rgx=[a-z_][a-z0-9_]{0,30}$
 
 [FORMAT]
-max-line-length=100
+max-line-length=120
 
 [MESSAGES CONTROL]
-enable=unused-import
+
+disable=missing-class-docstring,broad-exception-caught
+enable=missing-function-docstring,unused-import
+
 
 [DESIGN]
 
 docstring-min-length=10
 
 max-args=5
+
+min-public-methods=0
