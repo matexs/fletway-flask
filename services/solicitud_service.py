@@ -17,3 +17,10 @@ def crear(data):
     db.session.add(nueva)
     db.session.commit()
     return nueva
+
+def obtener_solicitudes_sin_transportista(id_localidad):
+    """Obtiene todas las solicitudes que no tienen un transportista asignado y son de una localidad específica."""
+    return Solicitud.query.filter(
+        (Solicitud.presupuesto_aceptado == None) & 
+        (Solicitud.localidad_origen_id == id_localidad)
+    ).all()

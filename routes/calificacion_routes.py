@@ -1,7 +1,7 @@
 """Rutas para los endpoints de las calificaciones."""
 
 from flask import Blueprint, jsonify, request
-from services import calificacion_service
+from services import calificacion_service, solicitud_service
 
 calificacion_bp = Blueprint("calificacion_bp", __name__)
 
@@ -32,3 +32,9 @@ def crear_calificacion():
         return jsonify({"error": f"Falta el campo {str(e)}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@calificacion_bp.route("/solicitudes/sin-transportista/<int:id_localidad>", methods=["GET"])
+def obtener_solicitudes_sin_transportista(id_localidad):
+    """Obtiene todas las solicitudes sin transportista asignado para una localidad específica."""
+    solicitudes = solicitud_service.obtener_solicitudes_sin_transportista(id_localidad)
+    return jsonify([s.to_dict() for s in solicitudes])
