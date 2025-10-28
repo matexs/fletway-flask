@@ -56,7 +56,7 @@ class Solicitud(db.Model):
     localidad_origen_id = db.Column(db.Integer, nullable=False)
     direccion_origen = db.Column(db.String(200), nullable=False)
     direccion_destino = db.Column(db.String(200), nullable=False)
-    fecha_creacion = db.Column(db.DateTime, nullable=False)
+    fecha_creacion = db.Column(db.DateTime, nullable=False, default=db.func.now())
     detalles_carga = db.Column(db.String(200), nullable=False)
     estado = db.Column(db.String(50), nullable=False, default='pendiente')
     hora_recogida = db.Column(db.DateTime, nullable=True)
@@ -75,7 +75,7 @@ class Presupuesto(db.Model):
     transportista_id = db.Column(db.Integer, db.ForeignKey('transportista.transportista_id'), nullable=False)
     precio_estimado = db.Column(db.Float, nullable=False)
     comentario = db.Column(db.String(200), nullable=True)
-    fecha_creacion = db.Column(db.DateTime, nullable=False)
+    fecha_creacion = db.Column(db.DateTime, nullable=False, default=db.func.now())
     estado = db.Column(db.String(50), nullable=False, default='sin transportista')
 
     transportista = db.relationship("Transportista", backref="presupuestos")
