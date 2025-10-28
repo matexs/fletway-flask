@@ -24,3 +24,33 @@ def obtener_solicitudes_sin_transportista(id_localidad):
         (Solicitud.presupuesto_aceptado == None) & 
         (Solicitud.localidad_origen_id == id_localidad)
     ).all()
+
+def actualizar(id_, data):
+    """Actualiza una solicitud existente."""
+    solicitud = Solicitud.query.get(id_)
+    if not solicitud:
+        return None  # No se encontró la solicitud
+
+    # Actualiza los campos que vienen en 'data'
+    # .get(clave, valor_por_defecto) se usa para no fallar si un dato no viene
+    solicitud.cliente_id = data.get("cliente_id", solicitud.cliente_id)
+    solicitud.presupuesto_aceptado = data.get("presupuesto_aceptado", solicitud.presupuesto_aceptado)
+    solicitud.localidad_origen_id = data.get("localidad_origen_id", solicitud.localidad_origen_id)
+    solicitud.direccion_origen = data.get("direccion_origen", solicitud.direccion_origen)
+    solicitud.direccion_destino = data.get("direccion_destino", solicitud.direccion_destino)
+    solicitud.detalles_carga = data.get("detalles_carga", solicitud.detalles_carga)
+    solicitud.estado = data.get("estado", solicitud.estado)
+    solicitud.hora_recogida = data.get("hora_recogida", solicitud.hora_recogida)
+
+    db.session.commit()  # Guarda los cambios en la base de datos
+    return solicitud
+
+def eliminar(id_):
+    """Elimina una solicitud por su ID."""
+    solicitud = Solicitud.query.get(id_)
+    if not solicitud:
+        return False  # No se encontró la solicitud
+
+    db.session.delete(solicitud)
+    db.session.commit()
+    return True

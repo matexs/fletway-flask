@@ -32,3 +32,28 @@ def crear_solicitud():
         return jsonify({"error": f"Falta el campo {str(e)}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@solicitud_bp.route("/solicitudes/<int:id_>", methods=["PUT"])
+def actualizar_solicitud(id_):
+    """Actualiza una solicitud existente."""
+    data = request.get_json()
+    try:
+        solicitud_actualizada = solicitud_service.actualizar(id_, data)
+        if not solicitud_actualizada:
+            return jsonify({"error": "Solicitud no encontrada"}), 404
+        return jsonify(solicitud_actualizada.to_dict()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@solicitud_bp.route("/solicitudes/<int:id_>", methods=["DELETE"])
+def eliminar_solicitud(id_):
+    """Elimina una solicitud."""
+    try:
+        exito = solicitud_service.eliminar(id_)
+        if not exito:
+            return jsonify({"error": "Solicitud no encontrada"}), 404
+        return jsonify({"mensaje": "Solicitud eliminada correctamente"}), 200
+    except Exception as e:
+        # Esto podría pasar si, por ejemplo, un presupuesto depende de esta solicitud
+        return jsonify({"error": f"Error al eliminar la solicitud: {str(e)}"}), 500
