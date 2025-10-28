@@ -98,7 +98,7 @@ class Calificacion(db.Model):
 
     def to_dict(self):
         return {"calificacion_id": self.calificacion_id, "solicitud_id": self.solicitud_id,
-                 "cliente_id": self.cliente_id,   "transporitsta_id": self.transportista_id,
+                 "cliente_id": self.cliente_id,   "transportista_id": self.transportista_id,
                  "puntuacion": self.puntuacion, "comentario": self.comentario,
                "fecha_creacion": self.fecha_creacion}
 
