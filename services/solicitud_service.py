@@ -54,3 +54,46 @@ def eliminar(id_):
     db.session.delete(solicitud)
     db.session.commit()
     return True
+def actualizar(solicitud_id, data):
+    """
+    Actualiza una solicitud existente.
+    data puede contener cualquier campo a actualizar: foto, estado, etc.
+    """
+    solicitud = obtener_por_id(solicitud_id)
+    if not solicitud:
+        return None
+    
+    # Actualizar solo los campos que vienen en data
+    if 'direccion_origen' in data:
+        solicitud.direccion_origen = data['direccion_origen']
+    if 'direccion_destino' in data:
+        solicitud.direccion_destino = data['direccion_destino']
+    if 'detalles_carga' in data:
+        solicitud.detalles_carga = data['detalles_carga']
+    if 'estado' in data:
+        solicitud.estado = data['estado']
+    if 'hora_recogida' in data:
+        solicitud.hora_recogida = data['hora_recogida']
+    if 'medidas' in data:
+        solicitud.medidas = data['medidas']
+    if 'peso' in data:
+        solicitud.peso = data['peso']
+    if 'localidad_origen_id' in data:
+        solicitud.localidad_origen_id = data['localidad_origen_id']
+    if 'localidad_destino_id' in data:
+        solicitud.localidad_destino_id = data['localidad_destino_id']
+    if 'presupuesto_aceptado' in data:
+        solicitud.presupuesto_aceptado = data['presupuesto_aceptado']
+    
+    # IMPORTANTE: Actualizar el campo foto
+    if 'foto' in data:
+        solicitud.foto = data['foto']
+    
+    try:
+        db.session.commit()
+        print(f"✓ Solicitud {solicitud_id} actualizada correctamente en la BD")
+        return solicitud
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error actualizando solicitud {solicitud_id}: {str(e)}")
+        raise e

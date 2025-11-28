@@ -18,8 +18,7 @@ def crear(data):
         transportista_id=data["transportista_id"],
         precio_estimado=data["precio_estimado"],
         comentario=data.get("comentario"),
-        fecha_creacion=data["fecha_creacion"],
-        estado=data.get("estado", "sin transportista")
+        estado=data.get("estado", "pendiente")
     )
     db.session.add(nuevo)
     db.session.commit()

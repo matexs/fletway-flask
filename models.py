@@ -1,7 +1,7 @@
 """Módulo para los modelos. aca se definen las tablas de la base de datos."""
 
 from config import db
-
+from sqlalchemy.sql import func
 #tabla intermedia sin modelo propio
 transportista_localidad = db.Table('transportista_localidad',
     db.Column('transportista_id', db.Integer, db.ForeignKey('transportista.transportista_id'), primary_key=True),
@@ -48,26 +48,58 @@ class Transportista(db.Model):
                 ,"usuario": self.usuario.to_dict() if self.usuario else None,"tipo_vehiculo": self.tipo_vehiculo}
 
 
+from config import db
+from sqlalchemy.sql import func
+
 class Solicitud(db.Model):
     __tablename__ = 'solicitud'
+    
+    # Campos que SÍ existen en tu Supabase según el schema que compartiste
     solicitud_id = db.Column(db.Integer, primary_key=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('usuario.usuario_id'), nullable=False)
-    presupuesto_aceptado = db.Column(db.Integer, db.ForeignKey('presupuesto.presupuesto_id'),nullable=True)
-    localidad_origen_id = db.Column(db.Integer, nullable=False)
-    direccion_origen = db.Column(db.String(200), nullable=False)
-    direccion_destino = db.Column(db.String(200), nullable=False)
-    fecha_creacion = db.Column(db.DateTime, nullable=False, default=db.func.now())
-    detalles_carga = db.Column(db.String(200), nullable=False)
-    estado = db.Column(db.String(50), nullable=False, default='pendiente')
-    hora_recogida = db.Column(db.DateTime, nullable=True)
-
+    presupuesto_aceptado = db.Column(db.Integer, db.ForeignKey('presupuesto.presupuesto_id'), nullable=True)
+    
+    localidad_origen_id = db.Column(db.Integer, db.ForeignKey('localidad.localidad_id'), nullable=False)
+    localidad_destino_id = db.Column(db.Integer, db.ForeignKey('localidad.localidad_id'), nullable=True)
+    
+    direccion_origen = db.Column(db.Text, nullable=False)
+    direccion_destino = db.Column(db.Text, nullable=False)
+    fecha_creacion = db.Column(db.DateTime, nullable=False, default=func.now())
+    detalles_carga = db.Column(db.Text, nullable=False)
+    estado = db.Column(db.String(50), nullable=False, default='sin transportista')
+    
+    # IMPORTANTE: En Supabase se llama hora_recogida pero es TIMESTAMP WITH TIME ZONE
+    hora_recogida = db.Column(db.DateTime(timezone=True), nullable=True)
+    
+    # Campos adicionales que SÍ existen en Supabase
+    medidas = db.Column(db.Text, nullable=True)
+    peso = db.Column(db.Integer, nullable=True)
+    foto = db.Column(db.Text, nullable=True)
+    
+    borrado_logico = db.Column(db.Boolean, nullable=False, default=False)
+    creado_en = db.Column(db.DateTime, nullable=False, default=func.now())
+    actualizado_en = db.Column(db.DateTime, nullable=False, default=func.now(), onupdate=func.now())
+    
     def to_dict(self):
-        return {"solicitud_id": self.solicitud_id, "cliente_id": self.cliente_id,
-                "presupuesto_aceptado":self.presupuesto_aceptado,  "localidad_origen_id": self.localidad_origen_id,
-                "direccion_origen": self.direccion_origen, "direccion_destino": self.direccion_destino,
-                "fecha_creacion": self.fecha_creacion, "detalles_carga": self.detalles_carga,
-                "estado": self.estado, "hora_recogida": self.hora_recogida   }
-
+        return {
+            "solicitud_id": self.solicitud_id,
+            "cliente_id": self.cliente_id,
+            "presupuesto_aceptado": self.presupuesto_aceptado,
+            "localidad_origen_id": self.localidad_origen_id,
+            "localidad_destino_id": self.localidad_destino_id,
+            "direccion_origen": self.direccion_origen,
+            "direccion_destino": self.direccion_destino,
+            "fecha_creacion": self.fecha_creacion.isoformat() if self.fecha_creacion else None,
+            "detalles_carga": self.detalles_carga,
+            "estado": self.estado,
+            "hora_recogida": self.hora_recogida.isoformat() if self.hora_recogida else None,
+            "medidas": self.medidas,
+            "peso": self.peso,
+            "foto": self.foto,
+            "borrado_logico": self.borrado_logico,
+            "creado_en": self.creado_en.isoformat() if self.creado_en else None,
+            "actualizado_en": self.actualizado_en.isoformat() if self.actualizado_en else None
+        }
 class Presupuesto(db.Model):
     __tablename__ = 'presupuesto'
     presupuesto_id = db.Column(db.Integer, primary_key=True)
@@ -75,16 +107,23 @@ class Presupuesto(db.Model):
     transportista_id = db.Column(db.Integer, db.ForeignKey('transportista.transportista_id'), nullable=False)
     precio_estimado = db.Column(db.Float, nullable=False)
     comentario = db.Column(db.String(200), nullable=True)
-    fecha_creacion = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    fecha_creacion = db.Column(db.DateTime, nullable=False, default=func.now())
     estado = db.Column(db.String(50), nullable=False, default='sin transportista')
 
     transportista = db.relationship("Transportista", backref="presupuestos")
 
     def to_dict(self):
-        return {"presupuesto_id": self.presupuesto_id, "solicitud_id": self.solicitud_id,
-                 "transportista_id": self.transportista_id, "precio_estimado": self.precio_estimado,
-                 "comentario":self.comentario,"fecha_creacion":self.fecha_creacion,"estado": self.estado,
-                "transportista": self.transportista.to_dict() if self.transportista else None}
+        return {
+            "presupuesto_id": self.presupuesto_id,
+            "solicitud_id": self.solicitud_id,
+            "transportista_id": self.transportista_id,
+            "precio_estimado": self.precio_estimado,
+            "comentario": self.comentario,
+            "fecha_creacion": self.fecha_creacion.isoformat() if self.fecha_creacion else None,
+            "estado": self.estado,
+            "transportista": self.transportista.to_dict() if self.transportista else None
+        }
+
 
 class Calificacion(db.Model):
     __tablename__ = 'calificacion'
@@ -94,7 +133,7 @@ class Calificacion(db.Model):
     transportista_id = db.Column(db.Integer, db.ForeignKey('transportista.transportista_id'), nullable=False)
     puntuacion = db.Column(db.Integer, nullable=False)
     comentario = db.Column(db.String(200), nullable=True)
-    fecha_creacion = db.Column(db.DateTime, nullable=False)
+    fecha_creacion = db.Column(db.DateTime, nullable=False, default=func.now())
 
     def to_dict(self):
         return {"calificacion_id": self.calificacion_id, "solicitud_id": self.solicitud_id,
