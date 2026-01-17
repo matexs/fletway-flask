@@ -11,7 +11,7 @@ transportista_localidad = db.Table('transportista_localidad',
 class Usuario(db.Model):
     __tablename__ = 'usuario'
     usuario_id = db.Column(db.Integer, primary_key=True)
-    u_id = db.Column(db.Integer, unique=True, nullable=False)  # ID de autenticación externa
+    u_id = db.Column(db.String(36), unique=True, nullable=False)  # ID de autenticación externa
     nombre = db.Column(db.String(80), nullable=False)
     apellido = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -53,33 +53,33 @@ from sqlalchemy.sql import func
 
 class Solicitud(db.Model):
     __tablename__ = 'solicitud'
-    
+
     # Campos que SÍ existen en tu Supabase según el schema que compartiste
     solicitud_id = db.Column(db.Integer, primary_key=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('usuario.usuario_id'), nullable=False)
     presupuesto_aceptado = db.Column(db.Integer, db.ForeignKey('presupuesto.presupuesto_id'), nullable=True)
-    
+
     localidad_origen_id = db.Column(db.Integer, db.ForeignKey('localidad.localidad_id'), nullable=False)
     localidad_destino_id = db.Column(db.Integer, db.ForeignKey('localidad.localidad_id'), nullable=True)
-    
+
     direccion_origen = db.Column(db.Text, nullable=False)
     direccion_destino = db.Column(db.Text, nullable=False)
     fecha_creacion = db.Column(db.DateTime, nullable=False, default=func.now())
     detalles_carga = db.Column(db.Text, nullable=False)
     estado = db.Column(db.String(50), nullable=False, default='sin transportista')
-    
+
     # IMPORTANTE: En Supabase se llama hora_recogida pero es TIMESTAMP WITH TIME ZONE
     hora_recogida = db.Column(db.DateTime(timezone=True), nullable=True)
-    
+
     # Campos adicionales que SÍ existen en Supabase
     medidas = db.Column(db.Text, nullable=True)
     peso = db.Column(db.Integer, nullable=True)
     foto = db.Column(db.Text, nullable=True)
-    
+
     borrado_logico = db.Column(db.Boolean, nullable=False, default=False)
     creado_en = db.Column(db.DateTime, nullable=False, default=func.now())
     actualizado_en = db.Column(db.DateTime, nullable=False, default=func.now(), onupdate=func.now())
-    
+
     def to_dict(self):
         return {
             "solicitud_id": self.solicitud_id,

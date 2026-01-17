@@ -2,18 +2,21 @@
 
 from flask import Blueprint, jsonify, request
 from services import presupuesto_service
+from services.auth import require_auth
 
 presupuesto_bp = Blueprint("presupuesto_bp", __name__)
 
 # Endpoints solo manejan request/response
 
 @presupuesto_bp.route("/presupuestos", methods=["GET"])
+@require_auth
 def obtener_presupuestos():
     """Obtiene todos los presupuestos."""
     presupuestos = presupuesto_service.obtener_todos()
     return jsonify([p.to_dict() for p in presupuestos])
 
-@presupuesto_bp.route("/presupuestos/<int:id>", methods=["GET"])
+@presupuesto_bp.route("/presupuestos/<int:id_>", methods=["GET"])
+@require_auth
 def obtener_presupuesto(id_):
     """Obtiene un presupuesto por su ID."""
     presupuesto = presupuesto_service.obtener_por_id(id_)
@@ -22,23 +25,25 @@ def obtener_presupuesto(id_):
     return jsonify(presupuesto.to_dict())
 
 @presupuesto_bp.route("/presupuestos", methods=["POST"])
+@require_auth
 def crear_presupuesto():
-    """Crea un nuevo presupuesto."""
-    data = request.get_json()
+    data = request.get_json() or {}
     try:
-        nuevo_presupuesto = presupuesto_service.crear(data)
+        nuevo_presupuesto = presupuesto_service.crear(data, request.uid)
         return jsonify(nuevo_presupuesto.to_dict()), 201
     except KeyError as e:
         return jsonify({"error": f"Falta el campo {str(e)}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 # para obtener presupuestos por solicitud y estado pendiente
 @presupuesto_bp.route("/presupuestos/solicitud", methods=["GET"])
+@require_auth
 def obtener_presupuestos_por_solicitud():
     """Obtiene presupuestos por ID de solicitud y estado."""
     solicitud_id = request.args.get("solicitud_id", type=int)
-    estado = request.args.get("estado",default="pendiente", type=str)
+    estado = request.args.get("estado",default=None, type=str)
 
     try:
         presupuestos = presupuesto_service.obtener_por_solicitud(solicitud_id, estado)
@@ -49,6 +54,7 @@ def obtener_presupuestos_por_solicitud():
 
 #aceptar un presupuesto
 @presupuesto_bp.route("/presupuestos/aceptar", methods=["PUT"])
+@require_auth
 def aceptar_presupuesto():
     """Acepta un presupuesto y rechaza los demás de la misma solicitud."""
     data = request.get_json()
@@ -61,6 +67,7 @@ def aceptar_presupuesto():
     return jsonify({"error": "Error al aceptar el presupuesto"}), 500
 
 @presupuesto_bp.route("/presupuestos/rechazar", methods=["PUT"])
+@require_auth
 def rechazar_presupuesto():
     """Rechaza un presupuesto."""
     data = request.get_json()
