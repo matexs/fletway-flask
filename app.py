@@ -1,14 +1,16 @@
 """
 Módulo principal de la aplicación Flask.
-Aquí se inicializa la app y se definen las rutas.
 """
 
 import os
+
+# Cargar .env SOLO en desarrollo
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
+    load_dotenv()
+
 from flask import Flask
 from flask_cors import CORS
-from dotenv import load_dotenv
-
-load_dotenv()
 
 from config import Config, db
 from routes.usuario_routes import usuario_bp
@@ -19,11 +21,8 @@ from routes.calificacion_routes import calificacion_bp
 from routes.localidad_routes import localidad_bp
 
 
-# Configuración de uploads
 UPLOAD_FOLDER = "uploads"
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-    print(f"✓ Carpeta '{UPLOAD_FOLDER}' creada exitosamente")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -35,7 +34,10 @@ CORS(
     app,
     resources={
         r"/*": {
-            "origins": ["http://localhost:4200"],
+            "origins": [
+                "http://localhost:4200",
+                "https://fletway-api-533654897399.us-central1.run.app/",  # opcional
+            ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
         }
@@ -53,15 +55,6 @@ app.register_blueprint(calificacion_bp)
 app.register_blueprint(localidad_bp)
 
 
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-
-    print("=" * 50)
-    print("🚀 Servidor Flask iniciado")
-    print(f"📁 Carpeta uploads: {os.path.abspath(UPLOAD_FOLDER)}")
-    print("🌐 CORS habilitado para: http://localhost:4200")
-    print("=" * 50)
-
-    app.run(debug=True)
-
+@app.route("/")
+def health():
+    return {"status": "ok"}
