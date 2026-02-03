@@ -19,6 +19,7 @@ from routes.transportista_routes import transportista_bp
 from routes.presupuesto_routes import presupuesto_bp
 from routes.calificacion_routes import calificacion_bp
 from routes.localidad_routes import localidad_bp
+from routes.reporte_routes import reporte_bp
 
 
 UPLOAD_FOLDER = "uploads"
@@ -53,8 +54,10 @@ app.register_blueprint(transportista_bp)
 app.register_blueprint(presupuesto_bp)
 app.register_blueprint(calificacion_bp)
 app.register_blueprint(localidad_bp)
+app.register_blueprint(reporte_bp)
 
 
 @app.route("/")
 def health():
     return {"status": "ok"}
+

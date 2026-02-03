@@ -1,7 +1,9 @@
 """Módulo para los modelos. aca se definen las tablas de la base de datos."""
 
+import uuid
 from config import db
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
 #tabla intermedia sin modelo propio
 transportista_localidad = db.Table('transportista_localidad',
     db.Column('transportista_id', db.Integer, db.ForeignKey('transportista.transportista_id'), primary_key=True),
@@ -11,7 +13,7 @@ transportista_localidad = db.Table('transportista_localidad',
 class Usuario(db.Model):
     __tablename__ = 'usuario'
     usuario_id = db.Column(db.Integer, primary_key=True)
-    u_id = db.Column(db.String(36), unique=True, nullable=False)  # ID de autenticación externa
+    u_id = db.Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)  # ID de autenticación externa
     nombre = db.Column(db.String(80), nullable=False)
     apellido = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -154,3 +156,14 @@ class Localidad(db.Model):
     def to_dict(self):
         return {"localidad_id": self.localidad_id, "nombre": self.nombre,
                  "provincia": self.provincia,"codigo_postal": self.codigo_postal}
+
+
+class Reporte(db.Model):
+    __tablename__ = 'reporte'
+    reporte_id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.usuario_id'), nullable=False)
+    solicitud_id = db.Column(db.Integer, db.ForeignKey('solicitud.solicitud_id'), nullable=False)
+    motivo = db.Column(db.String(80), nullable=False)
+    descripcion = db.Column(db.String(80), nullable=False)
+    estado = db.Column(db.String(120), unique=True, nullable=False)
+    creado_en = db.Column(db.DateTime, nullable=False)
