@@ -2,33 +2,63 @@
 
 from flask import Blueprint, jsonify, request
 from services import localidad_service
+from models import Localidad
+from services.auth import require_auth
 
 localidad_bp = Blueprint("localidad_bp", __name__)
 
-# Endpoints solo manejan request/response
+@localidad_bp.route('/api/localidades', methods=['GET'])
+@require_auth
+def get_all_localidades():
+    # 1. Consultar todas las localidades
+    # Si son muchísimas (ej: +5000), considera usar paginación en el futuro.
+    localidades = Localidad.query.order_by(Localidad.nombre.asc()).all()
 
-@localidad_bp.route("/localidades", methods=["GET"])
-def obtener_localidades():
-    """Obtiene todas las localidades."""
-    localidades = localidad_service.obtener_todas()
-    return jsonify([l.to_dict() for l in localidades])
+    # 2. Serialización
+    response_data = []
+    for loc in localidades:
+        # Usamos to_dict() si lo tienes definido en el modelo,
+        # o lo construimos manualmente si quieres ser explícito.
+        response_data.append({
+            "localidad_id": loc.localidad_id,
+            "nombre": loc.nombre,
+            "provincia": loc.provincia,
+            "codigo_postal": loc.codigo_postal
+        })
 
-@localidad_bp.route("/localidades/<int:id_>", methods=["GET"])
-def obtener_localidad(id_):
-    """Obtiene una localidad por su ID."""
-    localidad = localidad_service.obtener_por_id(id_)
-    if not localidad:
-        return jsonify({"error": "Localidad no encontrada"}), 404
-    return jsonify(localidad.to_dict())
+    return jsonify(response_data), 200
 
-@localidad_bp.route("/localidades", methods=["POST"])
-def crear_localidad():
-    """Crea una nueva localidad."""
-    data = request.get_json()
+
+@localidad_bp.route('/api/localidades/buscar', methods=['GET'])
+@require_auth
+def search_localidades():
+    # 1. Obtener el parámetro de búsqueda 'q' de la URL
+    # Ejemplo: /api/localidades/buscar?q=Cordoba
+    query = request.args.get('q', '').strip()
+
+    # Si la búsqueda está vacía, devolvemos array vacío para no sobrecargar la DB
+    if not query:
+        return jsonify([]), 200
+
     try:
-        nueva_localidad = localidad_service.crear(data)
-        return jsonify(nueva_localidad.to_dict()), 201
-    except KeyError as e:
-        return jsonify({"error": f"Falta el campo {str(e)}"}), 400
+        # 2. Consulta con filtro ILIKE (Case insensitive)
+        # Busca coincidencias en el nombre que contengan el texto (wildcards %)
+        resultados = Localidad.query.filter(
+            Localidad.nombre.ilike(f'%{query}%')
+        ).limit(10).all() # Limitamos a 10 para autocompletado rápido
+
+        # 3. Serialización
+        response_data = []
+        for loc in resultados:
+            response_data.append({
+                "localidad_id": loc.localidad_id,
+                "nombre": loc.nombre,
+                "provincia": loc.provincia,
+                "codigo_postal": loc.codigo_postal
+            })
+
+        return jsonify(response_data), 200
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error en búsqueda de localidades: {e}")
+        return jsonify([]), 200 # En búsqueda, mejor devolver vacío que error 500
