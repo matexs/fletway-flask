@@ -10,27 +10,6 @@ from sqlalchemy.dialects.postgresql import UUID
 
 calificaciones_bp = Blueprint('calificaciones', __name__)
 
-# ============================================
-# 🔥 HELPER: EMITIR EVENTO DE ACTUALIZACIÓN
-# ============================================
-def emitir_evento_calificacion(evento='calificacion_creada', data=None):
-    """
-    Emite un evento de Socket.IO para notificar cambios relacionados con calificaciones
-    """
-    try:
-        if data is None:
-            data = {}
-
-        print(f"📤 [Socket.IO-Calificaciones] Emitiendo evento: {evento}")
-        print(f"   📦 Data: {data}")
-
-        # Emitir a TODOS los clientes conectados
-        socketio.emit(evento, data, broadcast=True)
-
-        print(f"✅ [Socket.IO-Calificaciones] Evento {evento} emitido correctamente")
-    except Exception as e:
-        print(f"❌ [Socket.IO-Calificaciones] Error al emitir evento {evento}: {e}")
-
 
 # ============================================
 # ENDPOINT: CREAR CALIFICACIÓN
@@ -134,18 +113,18 @@ def crear_calificacion():
         print(f"📊 [crear_calificacion] Estadísticas actualizadas: {estadisticas}")
 
         # 9. Emitir eventos Socket.IO
-        emitir_evento_calificacion('calificacion_creada', {
-            'calificacion_id': nueva_calificacion.calificacion_id,
-            'solicitud_id': solicitud_id,
-            'transportista_id': transportista_id,
-            'puntuacion': puntuacion,
-            'cliente_id': usuario.usuario_id
-        })
+#        emitir_evento_calificacion('calificacion_creada', {
+#            'calificacion_id': nueva_calificacion.calificacion_id,
+#            'solicitud_id': solicitud_id,
+#            'transportista_id': transportista_id,
+#            'puntuacion': puntuacion,
+#            'cliente_id': usuario.usuario_id
+#        })
 
-        emitir_evento_calificacion('transportista_actualizado', {
-            'transportista_id': transportista_id,
-            'estadisticas': estadisticas
-        })
+#        emitir_evento_calificacion('transportista_actualizado', {
+#            'transportista_id': transportista_id,
+#            'estadisticas': estadisticas
+#        })
 
         # 10. Respuesta
         response = nueva_calificacion.to_dict()
@@ -421,3 +400,5 @@ def puede_calificar(solicitud_id):
     except Exception as e:
         print(f"❌ [puede_calificar] Error crítico: {e}")
         return jsonify({"error": str(e)}), 500
+
+

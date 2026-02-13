@@ -81,12 +81,13 @@ def subir_foto(id):
 # ---------------------------------------------------------
 # Esto reemplaza a Supabase Storage para visualizar
 @fotos_bp.route('/uploads/<path:filename>', methods=['GET'])
+@require_auth
 def get_uploaded_file(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 
 @fotos_bp.route('/api/solicitudes/<int:id>/fotos', methods=['GET'])
-# @require_auth  <-- Opcional: Descomenta si solo usuarios logueados pueden ver fotos
+@require_auth
 def get_fotos_solicitud(id):
     try:
         # 1. Consultar fotos filtrando por la solicitud y ordenando

@@ -3,9 +3,10 @@
 import uuid
 from config import db
 from sqlalchemy.sql import func
-from sqlalchemy import Column, Enum, text, or_
+from sqlalchemy import Column, Enum, text, or_, UniqueConstraint,CheckConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from enum import Enum as PyEnum
+
 #tabla intermedia sin modelo propio
 transportista_localidad = db.Table('transportista_localidad',
     db.Column('transportista_id', db.Integer, db.ForeignKey('transportista.transportista_id'), primary_key=True),
@@ -78,9 +79,6 @@ class Solicitud(db.Model):
     localidad_origen_id = db.Column(db.Integer, db.ForeignKey('localidad.localidad_id'), nullable=False)
     localidad_destino_id = db.Column(db.Integer, db.ForeignKey('localidad.localidad_id'), nullable=True)
 
-    localidad_origen = db.relationship("Localidad", foreign_keys=[localidad_origen_id])
-    localidad_destino = db.relationship("Localidad", foreign_keys=[localidad_destino_id])
-
     direccion_origen = db.Column(db.Text, nullable=False)
     direccion_destino = db.Column(db.Text, nullable=False)
 
@@ -119,7 +117,7 @@ class Solicitud(db.Model):
     localidad_destino = db.relationship("Localidad", foreign_keys=[localidad_destino_id])
 
     def to_dict(self):
-        return {
+        data = {
             "solicitud_id": self.solicitud_id,
             "cliente_id": self.cliente_id,
             "presupuesto_aceptado": self.presupuesto_aceptado,
@@ -137,7 +135,31 @@ class Solicitud(db.Model):
             "borrado_logico": self.borrado_logico,
             "creado_en": self.creado_en.isoformat() if self.creado_en else None,
             "actualizado_en": self.actualizado_en.isoformat() if self.actualizado_en else None
-    }
+
+     }
+        data["localidad_origen"] = (
+            {
+                "localidad_id": self.localidad_origen.localidad_id,
+                "nombre": self.localidad_origen.nombre,
+                "provincia": self.localidad_origen.provincia,
+                "codigo_postal": self.localidad_origen.codigo_postal,
+            }
+            if self.localidad_origen
+            else None
+        )
+
+        data["localidad_destino"] = (
+            {
+                "localidad_id": self.localidad_destino.localidad_id,
+                "nombre": self.localidad_destino.nombre,
+                "provincia": self.localidad_destino.provincia,
+                "codigo_postal": self.localidad_origen.codigo_postal,
+            }
+            if self.localidad_destino
+            else None
+        )
+
+        return data
 
 class Presupuesto(db.Model):
     __tablename__ = 'presupuesto'
@@ -191,6 +213,8 @@ class Calificacion(db.Model):
     cliente = db.relationship('Usuario', foreign_keys=[cliente_id])
     transportista = db.relationship('Transportista', foreign_keys=[transportista_id], backref='calificaciones')
 
+    __table_args__ = (UniqueConstraint( 'solicitud_id','transportista_id', name='uq_calificacion_solicitud_transportista'),
+                      CheckConstraint('puntuacion BETWEEN 1 AND 5', name='ck_calificacion_puntuacion'),)
     def to_dict(self):
         return {
             'calificacion_id': self.calificacion_id,

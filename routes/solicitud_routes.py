@@ -2,7 +2,7 @@ import os
 from flask import Blueprint, jsonify, request, send_from_directory, current_app
 from sqlalchemy import or_, text
 from werkzeug.utils import secure_filename
-from models import db, Usuario, Transportista, Solicitud, Foto, Presupuesto, EstadoSolicitud, transportista_localidad
+from models import db, Usuario,EstadoPresupuesto, Calificacion,Transportista, Solicitud, Foto, Presupuesto, EstadoSolicitud, transportista_localidad
 from services.auth import require_auth
 from datetime import datetime
 from sqlalchemy.orm import joinedload
@@ -10,26 +10,7 @@ from extensions import socketio
 
 solicitudes_bp = Blueprint('solicitudes', __name__)
 
-# ============================================
-# 🔥 HELPER: EMITIR EVENTO DE ACTUALIZACIÓN
-# ============================================
-def emitir_actualizacion(evento='lista_actualizada', data=None):
-    """
-    Emite un evento de Socket.IO para notificar cambios a todos los clientes conectados
-    """
-    try:
-        if data is None:
-            data = {}
 
-        print(f"📤 [Socket.IO] Emitiendo evento: {evento}")
-        print(f"   📦 Data: {data}")
-
-        # Emitir a TODOS los clientes conectados
-        socketio.emit(evento, data)
-
-        print(f"✅ [Socket.IO] Evento {evento} emitido correctamente")
-    except Exception as e:
-        print(f"❌ [Socket.IO] Error al emitir evento {evento}: {e}")
 
 
 # ============================================
@@ -240,11 +221,23 @@ def crear_solicitud():
 
         print(f"✅ [crear_solicitud] Solicitud creada: ID {nueva_solicitud.solicitud_id}")
 
-        # 🔥 EMITIR EVENTO
-        emitir_actualizacion('solicitud_creada', {
-            'solicitud_id': nueva_solicitud.solicitud_id,
-            'cliente_id': usuario.usuario_id
-        })
+        #Incompleto
+        solicitud_completa = nueva_solicitud.to_dict()
+        solicitud_completa['localidad_origen'] = nueva_solicitud.localidad_origen.to_dict() if nueva_solicitud.localidad_origen else None
+        solicitud_completa['localidad_destino'] = nueva_solicitud.localidad_destino.to_dict() if nueva_solicitud.localidad_destino else None
+
+
+    # Agregar después de las localidades
+        if nueva_solicitud.cliente:
+            solicitud_completa['cliente'] = {
+                'usuario_id': nueva_solicitud.cliente.usuario_id,
+                'nombre': nueva_solicitud.cliente.nombre,
+                'apellido': nueva_solicitud.cliente.apellido,
+                'telefono': nueva_solicitud.cliente.telefono,
+                'email': nueva_solicitud.cliente.email
+            }
+
+        socketio.emit('nueva_solicitud', solicitud_completa)
 
         return jsonify(nueva_solicitud.to_dict()), 201
 
@@ -292,15 +285,45 @@ def actualizar_solicitud(id):
         if 'localidad_destino_id' in data:
             solicitud.localidad_destino_id = data['localidad_destino_id']
 
+
+
         db.session.commit()
 
         print(f"✅ [actualizar_solicitud] Solicitud {id} actualizada")
 
-        # 🔥 EMITIR EVENTO
-        emitir_actualizacion('solicitud_actualizada', {
-            'solicitud_id': id,
-            'cliente_id': usuario.usuario_id
-        })
+        # Construir objeto completo actualizado
+        solicitud_actualizada = solicitud.to_dict()
+        solicitud_actualizada['localidad_origen'] = solicitud.localidad_origen.to_dict() if solicitud.localidad_origen else None
+        solicitud_actualizada['localidad_destino'] = solicitud.localidad_destino.to_dict() if solicitud.localidad_destino else None
+
+        if solicitud.cliente:
+            solicitud_actualizada['cliente'] = {
+                'usuario_id': solicitud.cliente.usuario_id,
+                'nombre': solicitud.cliente.nombre,
+                'apellido': solicitud.cliente.apellido,
+                'telefono': solicitud.cliente.telefono,
+                'email': solicitud.cliente.email
+            }
+        # Si tiene presupuesto aceptado, incluir datos del transportista
+        if solicitud.presupuesto_aceptado and solicitud.presupuesto:
+            presupuesto_dict = solicitud.presupuesto.to_dict()
+            if solicitud.presupuesto.transportista:
+                presupuesto_dict['transportista'] = {
+                    'transportista_id': solicitud.presupuesto.transportista.transportista_id,
+                    'calificacion_promedio': float(solicitud.presupuesto.transportista.calificacion_promedio or 0),
+                    'total_calificaciones': solicitud.presupuesto.transportista.total_calificaciones or 0,
+                    'usuario': {
+                        'usuario_id': solicitud.presupuesto.transportista.usuario.usuario_id,
+                        'nombre': solicitud.presupuesto.transportista.usuario.nombre,
+                        'apellido': solicitud.presupuesto.transportista.usuario.apellido,
+                        'telefono': solicitud.presupuesto.transportista.usuario.telefono,
+                        'email': solicitud.presupuesto.transportista.usuario.email
+                    } if solicitud.presupuesto.transportista.usuario else None
+                }
+            solicitud_actualizada['presupuesto'] = presupuesto_dict
+
+        socketio.emit('solicitud_actualizada', solicitud_actualizada)
+
 
         return jsonify(solicitud.to_dict()), 200
 
@@ -311,11 +334,11 @@ def actualizar_solicitud(id):
 
 
 # ============================================
-# ENDPOINT: ELIMINAR SOLICITUD
+# ENDPOINT: CANCELAR SOLICITUD
 # ============================================
-@solicitudes_bp.route('/api/solicitudes/<int:id>', methods=['DELETE'])
+@solicitudes_bp.route('/api/solicitudes/<int:id>/cancelar', methods=['PATCH'])
 @require_auth
-def eliminar_solicitud(id):
+def cancelar_solicitud(id):
     current_uid = request.uid
 
     try:
@@ -325,27 +348,33 @@ def eliminar_solicitud(id):
         if not solicitud:
             return jsonify({"error": "Solicitud no encontrada"}), 404
 
+        # Validación de permisos
         if solicitud.cliente_id != usuario.usuario_id:
-            return jsonify({"error": "No tienes permiso"}), 403
+            return jsonify({"error": "No tienes permiso para cancelar esta solicitud"}), 403
 
-        db.session.delete(solicitud)
+        # ✅ CAMBIO 2: Validación de lógica de negocio
+        # No deberíamos cancelar si ya está en viaje o finalizada
+        if solicitud.estado not in ["pendiente", "cancelado", "completado","en viaje"]:
+            return jsonify({"error": "No se puede cancelar la solicitud se ecuentra: " + solicitud.estado}), 400
+
+        # ✅ CAMBIO 3: Actualizar estado en vez de borrar
+        # Antes: db.session.delete(solicitud)
+        solicitud.estado = "cancelado"  # O el string que uses para cancelados
+
         db.session.commit()
 
-        print(f"✅ [eliminar_solicitud] Solicitud {id} eliminada")
+        print(f"✅ [cancelar_solicitud] Solicitud {id} marcada como Cancelada")
 
-        # 🔥 EMITIR EVENTO
-        emitir_actualizacion('solicitud_eliminada', {
-            'solicitud_id': id,
-            'cliente_id': usuario.usuario_id
-        })
+        # ✅ CAMBIO 4: Evento de Socket más descriptivo
+        # Emitimos que la solicitud se actualizó, no que se eliminó.
+        socketio.emit('solicitud_cancelada', {'solicitud_id': id})
 
-        return jsonify({"message": "Solicitud eliminada"}), 200
+        return jsonify({"message": "Solicitud cancelada correctamente"}), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"❌ [eliminar_solicitud] Error: {e}")
+        print(f"❌ [cancelar_solicitud] Error: {e}")
         return jsonify({"error": str(e)}), 500
-
 
 # ============================================
 # ENDPOINT: ACEPTAR PRESUPUESTO
@@ -385,10 +414,37 @@ def aceptar_presupuesto_solicitud(id):
         print(f"✅ [aceptar_presupuesto] Presupuesto {presupuesto_id} aceptado para solicitud {id}")
 
         # 🔥 EMITIR EVENTO
-        emitir_actualizacion('presupuesto_aceptado', {
+
+                # Cargar relaciones
+        presupuesto = Presupuesto.query.options(
+            joinedload(Presupuesto.transportista).joinedload(Transportista.usuario)
+        ).get(presupuesto_id)
+
+        # Construir datos completos del presupuesto
+        presupuesto_completo = presupuesto.to_dict()
+
+        # Agregar datos del transportista
+        if presupuesto.transportista:
+            presupuesto_completo['transportista'] = {
+                'transportista_id': presupuesto.transportista.transportista_id,
+                'calificacion_promedio': float(presupuesto.transportista.calificacion_promedio or 0),
+                'total_calificaciones': presupuesto.transportista.total_calificaciones or 0,
+                'cantidad_calificaciones': presupuesto.transportista.cantidad_calificaciones or 0,
+                'usuario': {
+                    'usuario_id': presupuesto.transportista.usuario.usuario_id,
+                    'nombre': presupuesto.transportista.usuario.nombre,
+                    'apellido': presupuesto.transportista.usuario.apellido,
+                    'telefono': presupuesto.transportista.usuario.telefono,
+                    'email': presupuesto.transportista.usuario.email
+                } if presupuesto.transportista.usuario else None
+            }
+
+        # Emitir evento completo
+        socketio.emit('presupuesto_aceptado', {
             'solicitud_id': id,
             'presupuesto_id': presupuesto_id,
-            'transportista_id': presupuesto.transportista_id
+            'transportista_id': presupuesto.transportista_id,
+            'presupuesto': presupuesto_completo  # ✅ Datos completos del presupuesto
         })
 
         return jsonify(solicitud.to_dict()), 200
@@ -434,11 +490,53 @@ def comenzar_viaje(id):
 
         print(f"✅ [comenzar_viaje] Viaje iniciado: solicitud {id}")
 
-        # 🔥 EMITIR EVENTO
-        emitir_actualizacion('viaje_iniciado', {
-            'solicitud_id': id,
-            'transportista_id': transportista.transportista_id
-        })
+        # 🔥 podria enviar el viaje ya iniciado
+
+            # Cargar con eager loading
+        solicitud = Solicitud.query.options(
+            joinedload(Solicitud.localidad_origen),
+            joinedload(Solicitud.localidad_destino),
+            joinedload(Solicitud.cliente),
+            joinedload(Solicitud.presupuesto).joinedload(Presupuesto.transportista).joinedload(Transportista.usuario)
+        ).get(id)
+
+        # Construir objeto completo
+        solicitud_completa = solicitud.to_dict()
+
+        # Agregar localidades
+        solicitud_completa['localidad_origen'] = solicitud.localidad_origen.to_dict() if solicitud.localidad_origen else None
+        solicitud_completa['localidad_destino'] = solicitud.localidad_destino.to_dict() if solicitud.localidad_destino else None
+
+        # Agregar cliente
+        if solicitud.cliente:
+            solicitud_completa['cliente'] = {
+                'usuario_id': solicitud.cliente.usuario_id,
+                'nombre': solicitud.cliente.nombre,
+                'apellido': solicitud.cliente.apellido,
+                'telefono': solicitud.cliente.telefono,
+                'email': solicitud.cliente.email
+            }
+
+        # Agregar presupuesto con transportista
+        if solicitud.presupuesto:
+            presupuesto_dict = solicitud.presupuesto.to_dict()
+            if solicitud.presupuesto.transportista:
+                presupuesto_dict['transportista'] = {
+                    'transportista_id': solicitud.presupuesto.transportista.transportista_id,
+                    'calificacion_promedio': float(solicitud.presupuesto.transportista.calificacion_promedio or 0),
+                    'total_calificaciones': solicitud.presupuesto.transportista.total_calificaciones or 0,
+                    'cantidad_calificaciones': solicitud.presupuesto.transportista.cantidad_calificaciones or 0,
+                    'usuario': {
+                        'usuario_id': solicitud.presupuesto.transportista.usuario.usuario_id,
+                        'nombre': solicitud.presupuesto.transportista.usuario.nombre,
+                        'apellido': solicitud.presupuesto.transportista.usuario.apellido,
+                        'telefono': solicitud.presupuesto.transportista.usuario.telefono,
+                        'email': solicitud.presupuesto.transportista.usuario.email
+                    } if solicitud.presupuesto.transportista.usuario else None
+                }
+            solicitud_completa['presupuesto'] = presupuesto_dict
+
+        socketio.emit('viaje_iniciado', solicitud_completa)
 
         return jsonify({
             "message": "Viaje iniciado correctamente",
@@ -483,11 +581,55 @@ def completar_viaje(id):
 
         print(f"✅ [completar_viaje] Viaje completado: solicitud {id}")
 
-        # 🔥 EMITIR EVENTO
-        emitir_actualizacion('viaje_completado', {
-            'solicitud_id': id,
-            'transportista_id': transportista.transportista_id
-        })
+        # ... cargar todas las relaciones igual que viaje_iniciado ...
+        # Cargar con eager loading
+        solicitud = Solicitud.query.options(
+            joinedload(Solicitud.localidad_origen),
+            joinedload(Solicitud.localidad_destino),
+            joinedload(Solicitud.cliente),
+            joinedload(Solicitud.presupuesto).joinedload(Presupuesto.transportista).joinedload(Transportista.usuario)
+        ).get(id)
+
+        # Construir objeto completo
+        solicitud_completa = solicitud.to_dict()
+
+        # Agregar localidades
+        solicitud_completa['localidad_origen'] = solicitud.localidad_origen.to_dict() if solicitud.localidad_origen else None
+        solicitud_completa['localidad_destino'] = solicitud.localidad_destino.to_dict() if solicitud.localidad_destino else None
+
+        # Agregar cliente
+        if solicitud.cliente:
+            solicitud_completa['cliente'] = {
+                'usuario_id': solicitud.cliente.usuario_id,
+                'nombre': solicitud.cliente.nombre,
+                'apellido': solicitud.cliente.apellido,
+                'telefono': solicitud.cliente.telefono,
+                'email': solicitud.cliente.email
+            }
+
+        # Agregar presupuesto con transportista
+        if solicitud.presupuesto:
+            presupuesto_dict = solicitud.presupuesto.to_dict()
+            if solicitud.presupuesto.transportista:
+                presupuesto_dict['transportista'] = {
+                    'transportista_id': solicitud.presupuesto.transportista.transportista_id,
+                    'calificacion_promedio': float(solicitud.presupuesto.transportista.calificacion_promedio or 0),
+                    'total_calificaciones': solicitud.presupuesto.transportista.total_calificaciones or 0,
+                    'cantidad_calificaciones': solicitud.presupuesto.transportista.cantidad_calificaciones or 0,
+                    'usuario': {
+                        'usuario_id': solicitud.presupuesto.transportista.usuario.usuario_id,
+                        'nombre': solicitud.presupuesto.transportista.usuario.nombre,
+                        'apellido': solicitud.presupuesto.transportista.usuario.apellido,
+                        'telefono': solicitud.presupuesto.transportista.usuario.telefono,
+                        'email': solicitud.presupuesto.transportista.usuario.email
+                    } if solicitud.presupuesto.transportista.usuario else None
+                }
+            solicitud_completa['presupuesto'] = presupuesto_dict
+
+        # ✅ IMPORTANTE: Agregar flag de que puede calificar
+        solicitud_completa['puede_calificar'] = True
+
+        socketio.emit('viaje_completado', solicitud_completa)
 
         return jsonify({
             "message": "Viaje completado exitosamente",
@@ -589,3 +731,195 @@ def get_historial_fletero():
         response_data.append(data)
 
     return jsonify(response_data), 200
+
+
+
+@solicitudes_bp.route('/solicitudes/mis-pedidos-optimizadov', methods=['GET'])
+@require_auth
+def get_mis_pedidos_optimizadov():
+    """
+    🚀 ENDPOINT ULTRA-OPTIMIZADO
+    - Sin conteos innecesarios.
+    - 1 sola consulta a la DB para traer todo.
+    """
+    try:
+        # 1. Obtener usuario
+        user_uid = request.uid
+        usuario = db.session.query(Usuario).filter_by(u_id=user_uid).first()
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        # 2. Obtener todas las solicitudes con eager loading (TRAE TODO DE UNA VEZ)
+        solicitudes = (
+            db.session.query(Solicitud)
+            .options(
+                joinedload(Solicitud.localidad_origen),
+                joinedload(Solicitud.localidad_destino),
+                # Carga el presupuesto activo y su transportista en la misma query
+                joinedload(Solicitud.presupuesto)
+                .joinedload(Presupuesto.transportista)
+                .joinedload(Transportista.usuario),
+            )
+            .filter_by(cliente_id=usuario.usuario_id)
+            .order_by(Solicitud.fecha_creacion.desc())
+            .all()
+        )
+
+        # 3. Cache y construcción de respuesta
+        transportistas_cache = {}
+        resultado = []
+
+        for solicitud in solicitudes:
+            # Convierte datos básicos
+            sol_dict = solicitud.to_dict()
+
+            # 4. Datos del presupuesto ACTIVO y Transportista
+            # Como usamos joinedload arriba, acceder a .presupuesto NO hace otra query
+            if solicitud.presupuesto:
+                sol_dict['presupuesto'] = solicitud.presupuesto.to_dict()
+
+                # Datos del Transportista (optimizados con caché simple)
+                if solicitud.presupuesto.transportista:
+                    transportista = solicitud.presupuesto.transportista
+                    t_id = transportista.transportista_id
+
+                    if t_id not in transportistas_cache:
+                        transportistas_cache[t_id] = {
+                            'transportista_id': transportista.transportista_id,
+                            'descripcion': transportista.descripcion,
+                            #'calificacion_promedio': float(transportista.calificacion_promedio or 0),
+                            #'total_calificaciones': transportista.total_calificaciones or 0,
+                            'usuario': {
+                                'usuario_id': transportista.usuario.usuario_id,
+                                'nombre': transportista.usuario.nombre,
+                                'apellido': transportista.usuario.apellido,
+                                'telefono': transportista.usuario.telefono,
+                                'email': transportista.usuario.email,
+                            }
+                        }
+
+                    # Asignamos del caché
+                    sol_dict['presupuesto']['transportista'] = transportistas_cache[t_id]
+            else:
+                sol_dict['presupuesto'] = None
+
+            resultado.append(sol_dict)
+
+        print(f"✨ Respuesta optimizada: {len(resultado)} solicitudes")
+        return jsonify(resultado), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+
+@solicitudes_bp.route('/solicitudes/mis-pedidos-optimizado', methods=['GET'])
+@require_auth
+def get_mis_pedidos_optimizado():
+    """
+    🚀 ENDPOINT ULTRA-OPTIMIZADO — 2 queries totales.
+
+    Query 1 (joinedload): solicitudes + localidades + presupuesto + transportista + usuario
+    Query 2 (IN):         todas las calificaciones del cliente de una sola vez
+
+    El frontend ya NO necesita llamar a:
+      - getEstadisticasTransportista() → calificacion_promedio y total_calificaciones vienen aquí
+      - getCalificacionSolicitud()     → _calificacion viene aquí
+    """
+    try:
+        # ── 1. Usuario ──────────────────────────────────────────────────────
+        user_uid = request.uid
+        usuario = db.session.query(Usuario).filter_by(u_id=user_uid).first()
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        # ── 2. Query principal: todo en una sola query SQL ───────────────────
+        solicitudes = (
+            db.session.query(Solicitud)
+            .options(
+                joinedload(Solicitud.localidad_origen),
+                joinedload(Solicitud.localidad_destino),
+                joinedload(Solicitud.presupuesto)
+                    .joinedload(Presupuesto.transportista)
+                    .joinedload(Transportista.usuario),
+            )
+            .filter_by(cliente_id=usuario.usuario_id)
+            .order_by(Solicitud.fecha_creacion.desc())
+            .all()
+        )
+
+        # ── 3. Query de calificaciones: 1 sola query con IN ─────────────────
+        # En vez de N queries (una por solicitud completada), traemos todas juntas
+        # y armamos un dict para lookup O(1) por solicitud_id
+        ids_solicitudes = [s.solicitud_id for s in solicitudes]
+        calificaciones_map = {}
+
+        if ids_solicitudes:
+            calificaciones = (
+                db.session.query(Calificacion)
+                .filter(Calificacion.solicitud_id.in_(ids_solicitudes))
+                .all()
+            )
+            calificaciones_map = {
+                c.solicitud_id: {
+                    'calificacion_id': c.calificacion_id,
+                    'puntuacion':      c.puntuacion,
+                    'comentario':      c.comentario,
+                    'creado_en':  c.creado_en.isoformat() if c.creado_en else None,
+                }
+                for c in calificaciones
+            }
+
+        # ── 4. Serialización ────────────────────────────────────────────────
+        transportistas_cache = {}
+        resultado = []
+
+        for solicitud in solicitudes:
+            sol_dict = solicitud.to_dict()
+
+            # Localidades (ya en memoria por joinedload, sin query extra)
+            sol_dict['localidad_origen']  = solicitud.localidad_origen.to_dict()  if solicitud.localidad_origen  else None
+            sol_dict['localidad_destino'] = solicitud.localidad_destino.to_dict() if solicitud.localidad_destino else None
+
+            # Presupuesto activo + transportista
+            if solicitud.presupuesto:
+                sol_dict['presupuesto'] = solicitud.presupuesto.to_dict()
+
+                if solicitud.presupuesto.transportista:
+                    transportista = solicitud.presupuesto.transportista
+                    t_id = transportista.transportista_id
+
+                    # Cache: si el mismo transportista tiene varias solicitudes, no repetimos el dict
+                    if t_id not in transportistas_cache:
+                        transportistas_cache[t_id] = {
+                            'transportista_id':      transportista.transportista_id,
+                            'descripcion':           transportista.descripcion,
+                            'calificacion_promedio': float(transportista.calificacion_promedio or 0),
+                            'total_calificaciones':  transportista.total_calificaciones or 0,
+                            'usuario': {
+                                'usuario_id': transportista.usuario.usuario_id,
+                                'nombre':     transportista.usuario.nombre,
+                                'apellido':   transportista.usuario.apellido,
+                                'telefono':   transportista.usuario.telefono,
+                                'email':      transportista.usuario.email,
+                            } if transportista.usuario else None,
+                        }
+
+                    sol_dict['presupuesto']['transportista'] = transportistas_cache[t_id]
+            else:
+                sol_dict['presupuesto'] = None
+
+            # Calificación de esta solicitud (lookup O(1), sin query extra)
+            sol_dict['_calificacion'] = calificaciones_map.get(solicitud.solicitud_id)
+
+            resultado.append(sol_dict)
+
+        print(f"✨ [mis-pedidos-optimizado] {len(resultado)} solicitudes, {len(calificaciones_map)} calificaciones")
+        return jsonify(resultado), 200
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
