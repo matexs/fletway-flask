@@ -7,6 +7,7 @@ from services.auth import require_auth
 from datetime import datetime
 from sqlalchemy.orm import joinedload
 from extensions import socketio
+from services import notificacion_service
 
 
 presupuestos_bp = Blueprint('presupuestos', __name__)
@@ -101,7 +102,29 @@ def crear_presupuesto():
         # 8. 🔥 EMITIR EVENTO SOCKET.IO
         socketio.emit('nuevo_presupuesto', presupuesto_completo)
 
-        # 9. Retornar presupuesto creado con datos del transportista
+        # 9. Enviar notificación por email al cliente
+        try:
+            # Recargar solicitud con relaciones para el email
+            solicitud_email = Solicitud.query.options(
+                joinedload(Solicitud.cliente),
+                joinedload(Solicitud.localidad_origen),
+                joinedload(Solicitud.localidad_destino)
+            ).get(solicitud_id)
+            
+            # Recargar transportista con usuario
+            transportista_email = Transportista.query.options(
+                joinedload(Transportista.usuario)
+            ).get(transportista.transportista_id)
+            
+            notificacion_service.enviar_notificacion_presupuesto(
+                solicitud_email, 
+                nuevo_presupuesto, 
+                transportista_email
+            )
+        except Exception as email_error:
+            print(f"⚠️ [crear_presupuesto] Error enviando email: {email_error}")
+
+        # 10. Retornar presupuesto creado con datos del transportista
         presupuesto_dict = nuevo_presupuesto.to_dict()
 
         return jsonify(presupuesto_dict), 201
