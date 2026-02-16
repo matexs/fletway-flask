@@ -7,6 +7,7 @@ from services.auth import require_auth
 from datetime import datetime
 from sqlalchemy.orm import joinedload
 from extensions import socketio
+from services import notificacion_service
 
 solicitudes_bp = Blueprint('solicitudes', __name__)
 
@@ -239,6 +240,12 @@ def crear_solicitud():
 
         socketio.emit('nueva_solicitud', solicitud_completa)
 
+        # Enviar notificación por email
+        try:
+            notificacion_service.enviar_notificacion_estado(nueva_solicitud, 'sin transportista')
+        except Exception as email_error:
+            print(f"⚠️ [crear_solicitud] Error enviando email: {email_error}")
+
         return jsonify(nueva_solicitud.to_dict()), 201
 
     except Exception as e:
@@ -369,6 +376,18 @@ def cancelar_solicitud(id):
         # Emitimos que la solicitud se actualizó, no que se eliminó.
         socketio.emit('solicitud_cancelada', {'solicitud_id': id})
 
+        # Enviar notificación por email
+        try:
+            # Recargar solicitud con relaciones para el email
+            solicitud_completa = Solicitud.query.options(
+                joinedload(Solicitud.cliente),
+                joinedload(Solicitud.localidad_origen),
+                joinedload(Solicitud.localidad_destino)
+            ).get(id)
+            notificacion_service.enviar_notificacion_estado(solicitud_completa, 'cancelado')
+        except Exception as email_error:
+            print(f"⚠️ [cancelar_solicitud] Error enviando email: {email_error}")
+
         return jsonify({"message": "Solicitud cancelada correctamente"}), 200
 
     except Exception as e:
@@ -446,6 +465,19 @@ def aceptar_presupuesto_solicitud(id):
             'transportista_id': presupuesto.transportista_id,
             'presupuesto': presupuesto_completo  # ✅ Datos completos del presupuesto
         })
+
+        # Enviar notificación por email
+        try:
+            # Recargar solicitud con todas las relaciones para el email
+            solicitud_email = Solicitud.query.options(
+                joinedload(Solicitud.cliente),
+                joinedload(Solicitud.localidad_origen),
+                joinedload(Solicitud.localidad_destino),
+                joinedload(Solicitud.presupuesto).joinedload(Presupuesto.transportista).joinedload(Transportista.usuario)
+            ).get(id)
+            notificacion_service.enviar_notificacion_estado(solicitud_email, 'pendiente')
+        except Exception as email_error:
+            print(f"⚠️ [aceptar_presupuesto] Error enviando email: {email_error}")
 
         return jsonify(solicitud.to_dict()), 200
 
@@ -537,6 +569,12 @@ def comenzar_viaje(id):
             solicitud_completa['presupuesto'] = presupuesto_dict
 
         socketio.emit('viaje_iniciado', solicitud_completa)
+
+        # Enviar notificación por email
+        try:
+            notificacion_service.enviar_notificacion_estado(solicitud, 'en viaje')
+        except Exception as email_error:
+            print(f"⚠️ [comenzar_viaje] Error enviando email: {email_error}")
 
         return jsonify({
             "message": "Viaje iniciado correctamente",
@@ -630,6 +668,12 @@ def completar_viaje(id):
         solicitud_completa['puede_calificar'] = True
 
         socketio.emit('viaje_completado', solicitud_completa)
+
+        # Enviar notificación por email
+        try:
+            notificacion_service.enviar_notificacion_estado(solicitud, 'completada')
+        except Exception as email_error:
+            print(f"⚠️ [completar_viaje] Error enviando email: {email_error}")
 
         return jsonify({
             "message": "Viaje completado exitosamente",
