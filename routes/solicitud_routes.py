@@ -265,9 +265,13 @@ def actualizar_solicitud(id):
         if solicitud.cliente_id != usuario.usuario_id:
             return jsonify({"error": "No tienes permiso"}), 403
 
+        # Solo se puede editar si aún no tiene transportista asignado
+        if solicitud.estado != EstadoSolicitud.SIN_TRANSPORTISTA:
+            return jsonify({"error": f"No se puede editar, estado actual: {solicitud.estado.value}"}), 400
+
         data = request.get_json()
 
-        # Actualizar campos
+        # Actualizar solo los campos presentes en el body
         if 'direccion_origen' in data:
             solicitud.direccion_origen = data['direccion_origen']
         if 'direccion_destino' in data:
@@ -285,47 +289,33 @@ def actualizar_solicitud(id):
         if 'localidad_destino_id' in data:
             solicitud.localidad_destino_id = data['localidad_destino_id']
 
-
-
         db.session.commit()
-
         print(f"✅ [actualizar_solicitud] Solicitud {id} actualizada")
 
-        # Construir objeto completo actualizado
-        solicitud_actualizada = solicitud.to_dict()
-        solicitud_actualizada['localidad_origen'] = solicitud.localidad_origen.to_dict() if solicitud.localidad_origen else None
-        solicitud_actualizada['localidad_destino'] = solicitud.localidad_destino.to_dict() if solicitud.localidad_destino else None
+        # Re-fetch con relaciones frescas (localidades pueden haber cambiado)
+        solicitud = Solicitud.query.options(
+            joinedload(Solicitud.localidad_origen),
+            joinedload(Solicitud.localidad_destino),
+            joinedload(Solicitud.cliente),
+        ).get(id)
 
+        # Construir respuesta completa (igual para HTTP response y socket)
+        solicitud_data = solicitud.to_dict()
+        solicitud_data['localidad_origen']  = solicitud.localidad_origen.to_dict()  if solicitud.localidad_origen  else None
+        solicitud_data['localidad_destino'] = solicitud.localidad_destino.to_dict() if solicitud.localidad_destino else None
         if solicitud.cliente:
-            solicitud_actualizada['cliente'] = {
+            solicitud_data['cliente'] = {
                 'usuario_id': solicitud.cliente.usuario_id,
-                'nombre': solicitud.cliente.nombre,
-                'apellido': solicitud.cliente.apellido,
-                'telefono': solicitud.cliente.telefono,
-                'email': solicitud.cliente.email
+                'nombre':     solicitud.cliente.nombre,
+                'apellido':   solicitud.cliente.apellido,
+                'telefono':   solicitud.cliente.telefono,
+                'email':      solicitud.cliente.email,
             }
-        # Si tiene presupuesto aceptado, incluir datos del transportista
-        if solicitud.presupuesto_aceptado and solicitud.presupuesto:
-            presupuesto_dict = solicitud.presupuesto.to_dict()
-            if solicitud.presupuesto.transportista:
-                presupuesto_dict['transportista'] = {
-                    'transportista_id': solicitud.presupuesto.transportista.transportista_id,
-                    'calificacion_promedio': float(solicitud.presupuesto.transportista.calificacion_promedio or 0),
-                    'total_calificaciones': solicitud.presupuesto.transportista.total_calificaciones or 0,
-                    'usuario': {
-                        'usuario_id': solicitud.presupuesto.transportista.usuario.usuario_id,
-                        'nombre': solicitud.presupuesto.transportista.usuario.nombre,
-                        'apellido': solicitud.presupuesto.transportista.usuario.apellido,
-                        'telefono': solicitud.presupuesto.transportista.usuario.telefono,
-                        'email': solicitud.presupuesto.transportista.usuario.email
-                    } if solicitud.presupuesto.transportista.usuario else None
-                }
-            solicitud_actualizada['presupuesto'] = presupuesto_dict
 
-        socketio.emit('solicitud_actualizada', solicitud_actualizada)
+        # Notificar a fleteros que tienen esta zona para que vean los cambios
+        socketio.emit('solicitud_actualizada', solicitud_data)
 
-
-        return jsonify(solicitud.to_dict()), 200
+        return jsonify(solicitud_data), 200
 
     except Exception as e:
         db.session.rollback()
@@ -333,8 +323,14 @@ def actualizar_solicitud(id):
         return jsonify({"error": str(e)}), 500
 
 
+
 # ============================================
 # ENDPOINT: CANCELAR SOLICITUD
+# ============================================
+# ============================================
+# ENDPOINT: CANCELAR POR CLIENTE (sin transportista)
+# Solo cuando estado = 'sin transportista'
+# Rechaza todos los presupuestos existentes
 # ============================================
 @solicitudes_bp.route('/api/solicitudes/<int:id>/cancelar', methods=['PATCH'])
 @require_auth
@@ -343,37 +339,125 @@ def cancelar_solicitud(id):
 
     try:
         usuario = Usuario.query.filter_by(u_id=current_uid).first()
-        solicitud = Solicitud.query.get(id)
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
 
+        solicitud = Solicitud.query.get(id)
         if not solicitud:
             return jsonify({"error": "Solicitud no encontrada"}), 404
 
-        # Validación de permisos
+        # Solo el cliente puede usar este endpoint
         if solicitud.cliente_id != usuario.usuario_id:
-            return jsonify({"error": "No tienes permiso para cancelar esta solicitud"}), 403
+            return jsonify({"error": "Solo el cliente puede cancelar con este endpoint"}), 403
 
-        # ✅ CAMBIO 2: Validación de lógica de negocio
-        # No deberíamos cancelar si ya está en viaje o finalizada
-        if solicitud.estado not in ["pendiente", "cancelado", "completado","en viaje"]:
-            return jsonify({"error": "No se puede cancelar la solicitud se ecuentra: " + solicitud.estado}), 400
+        # Solo se puede cancelar si aún no tiene transportista asignado
+        if solicitud.estado != EstadoSolicitud.SIN_TRANSPORTISTA:
+            return jsonify({"error": f"Solo puedes cancelar en estado 'sin transportista'. Estado actual: {solicitud.estado.value}"}), 400
 
-        # ✅ CAMBIO 3: Actualizar estado en vez de borrar
-        # Antes: db.session.delete(solicitud)
-        solicitud.estado = "cancelado"  # O el string que uses para cancelados
+        # Rechazar todos los presupuestos pendientes de esta solicitud
+        presupuestos_rechazados = Presupuesto.query.filter(
+            Presupuesto.solicitud_id == id,
+            Presupuesto.estado == EstadoPresupuesto.PENDIENTE
+        ).all()
 
+        ids_presupuestos_rechazados = [p.presupuesto_id for p in presupuestos_rechazados]
+
+        Presupuesto.query.filter(
+            Presupuesto.solicitud_id == id,
+            Presupuesto.estado == EstadoPresupuesto.PENDIENTE
+        ).update({'estado': EstadoPresupuesto.RECHAZADO}, synchronize_session=False)
+
+        # Cancelar la solicitud
+        solicitud.estado = EstadoSolicitud.CANCELADO
         db.session.commit()
 
-        print(f"✅ [cancelar_solicitud] Solicitud {id} marcada como Cancelada")
+        print(f"✅ [cancelar_solicitud] Solicitud {id} cancelada por el cliente. Presupuestos rechazados: {ids_presupuestos_rechazados}")
 
-        # ✅ CAMBIO 4: Evento de Socket más descriptivo
-        # Emitimos que la solicitud se actualizó, no que se eliminó.
-        socketio.emit('solicitud_cancelada', {'solicitud_id': id})
+        # Emitir a todos los fleteros: la solicitud desaparece de "disponibles"
+        socketio.emit('solicitud_cancelada', {
+            'solicitud_id': id,
+            'cancelado_por': 'cliente',
+            'presupuestos_rechazados': ids_presupuestos_rechazados
+        })
 
         return jsonify({"message": "Solicitud cancelada correctamente"}), 200
 
     except Exception as e:
         db.session.rollback()
         print(f"❌ [cancelar_solicitud] Error: {e}")
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+# ============================================
+# ENDPOINT: CANCELAR POR FLETERO (pendiente o en viaje)
+# Solo el transportista asignado puede usar este endpoint
+# Notifica al cliente por socket
+# ============================================
+@solicitudes_bp.route('/api/solicitudes/<int:id>/cancelar-fletero', methods=['PATCH'])
+@require_auth
+def cancelar_solicitud_fletero(id):
+    current_uid = request.uid
+
+    try:
+        usuario = Usuario.query.filter_by(u_id=current_uid).first()
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        transportista = Transportista.query.filter_by(usuario_id=usuario.usuario_id).first()
+        if not transportista:
+            return jsonify({"error": "No eres transportista"}), 403
+
+        solicitud = Solicitud.query.options(
+            joinedload(Solicitud.cliente),
+            joinedload(Solicitud.localidad_origen),
+            joinedload(Solicitud.localidad_destino),
+            joinedload(Solicitud.presupuesto).joinedload(Presupuesto.transportista).joinedload(Transportista.usuario)
+        ).get(id)
+
+        if not solicitud:
+            return jsonify({"error": "Solicitud no encontrada"}), 404
+
+        # Verificar que sea el transportista asignado
+        if not solicitud.presupuesto or solicitud.presupuesto.transportista_id != transportista.transportista_id:
+            return jsonify({"error": "No eres el transportista asignado a esta solicitud"}), 403
+
+        # Solo se puede cancelar en estado pendiente o en viaje
+        if solicitud.estado not in [EstadoSolicitud.PENDIENTE, EstadoSolicitud.EN_VIAJE]:
+            return jsonify({"error": f"Solo puedes cancelar en estado 'pendiente' o 'en viaje'. Estado actual: {solicitud.estado.value}"}), 400
+
+        # Cancelar la solicitud
+        solicitud.estado = EstadoSolicitud.CANCELADO
+        db.session.commit()
+
+        print(f"✅ [cancelar_solicitud_fletero] Solicitud {id} cancelada por el fletero (transportista_id={transportista.transportista_id})")
+
+        # Construir payload completo para notificar al cliente
+        solicitud_data = solicitud.to_dict()
+        solicitud_data['localidad_origen']  = solicitud.localidad_origen.to_dict()  if solicitud.localidad_origen  else None
+        solicitud_data['localidad_destino'] = solicitud.localidad_destino.to_dict() if solicitud.localidad_destino else None
+        if solicitud.cliente:
+            solicitud_data['cliente'] = {
+                'usuario_id': solicitud.cliente.usuario_id,
+                'nombre':     solicitud.cliente.nombre,
+                'apellido':   solicitud.cliente.apellido,
+                'telefono':   solicitud.cliente.telefono,
+                'email':      solicitud.cliente.email,
+            }
+
+        # Emitir al cliente: su solicitud fue cancelada por el fletero
+        socketio.emit('solicitud_cancelada', {
+            'solicitud_id': id,
+            'cancelado_por': 'fletero',
+            'solicitud': solicitud_data
+        })
+
+        return jsonify({"message": "Solicitud cancelada correctamente"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ [cancelar_solicitud_fletero] Error: {e}")
+        import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 # ============================================
@@ -429,7 +513,6 @@ def aceptar_presupuesto_solicitud(id):
                 'transportista_id': presupuesto.transportista.transportista_id,
                 'calificacion_promedio': float(presupuesto.transportista.calificacion_promedio or 0),
                 'total_calificaciones': presupuesto.transportista.total_calificaciones or 0,
-                'cantidad_calificaciones': presupuesto.transportista.cantidad_calificaciones or 0,
                 'usuario': {
                     'usuario_id': presupuesto.transportista.usuario.usuario_id,
                     'nombre': presupuesto.transportista.usuario.nombre,
@@ -481,11 +564,12 @@ def comenzar_viaje(id):
         if solicitud.presupuesto.transportista.transportista_id != transportista.transportista_id:
             return jsonify({"error": "No eres el transportista asignado"}), 403
 
-        if solicitud.estado != 'pendiente':
+       # if solicitud.estado != 'pendiente':
+        if solicitud.estado != EstadoSolicitud.PENDIENTE:
             return jsonify({"error": f"Estado actual: {solicitud.estado}"}), 400
 
         # Actualizar estado
-        solicitud.estado = 'en viaje'
+        solicitud.estado = EstadoSolicitud.EN_VIAJE
         db.session.commit()
 
         print(f"✅ [comenzar_viaje] Viaje iniciado: solicitud {id}")
@@ -525,7 +609,6 @@ def comenzar_viaje(id):
                     'transportista_id': solicitud.presupuesto.transportista.transportista_id,
                     'calificacion_promedio': float(solicitud.presupuesto.transportista.calificacion_promedio or 0),
                     'total_calificaciones': solicitud.presupuesto.transportista.total_calificaciones or 0,
-                    'cantidad_calificaciones': solicitud.presupuesto.transportista.cantidad_calificaciones or 0,
                     'usuario': {
                         'usuario_id': solicitud.presupuesto.transportista.usuario.usuario_id,
                         'nombre': solicitud.presupuesto.transportista.usuario.nombre,
@@ -572,11 +655,11 @@ def completar_viaje(id):
         if not solicitud.presupuesto or solicitud.presupuesto.transportista_id != transportista.transportista_id:
             return jsonify({"error": "No eres el transportista de esta solicitud"}), 403
 
-        if solicitud.estado != 'en viaje':
+        if solicitud.estado != EstadoSolicitud.EN_VIAJE:
             return jsonify({"error": f"Estado actual: {solicitud.estado}"}), 400
 
         # Actualizar estado
-        solicitud.estado = 'completada'
+        solicitud.estado = EstadoSolicitud.COMPLETADO
         db.session.commit()
 
         print(f"✅ [completar_viaje] Viaje completado: solicitud {id}")
@@ -615,7 +698,6 @@ def completar_viaje(id):
                     'transportista_id': solicitud.presupuesto.transportista.transportista_id,
                     'calificacion_promedio': float(solicitud.presupuesto.transportista.calificacion_promedio or 0),
                     'total_calificaciones': solicitud.presupuesto.transportista.total_calificaciones or 0,
-                    'cantidad_calificaciones': solicitud.presupuesto.transportista.cantidad_calificaciones or 0,
                     'usuario': {
                         'usuario_id': solicitud.presupuesto.transportista.usuario.usuario_id,
                         'nombre': solicitud.presupuesto.transportista.usuario.nombre,
@@ -923,3 +1005,6 @@ def get_mis_pedidos_optimizado():
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+
+
