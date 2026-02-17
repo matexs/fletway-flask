@@ -12,7 +12,7 @@ from sqlalchemy.orm import joinedload
 # Configuración Email
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-EMAIL_SENDER = "soporte.fletway@gmail.com"
+EMAIL_SENDER = "mateo.carp100@gmail.com"
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_ADMIN = "mateoreyx@gmail.com"
 
@@ -57,12 +57,12 @@ def crear_nuevo_reporte(usuario_id, solicitud_id, motivo, mensaje_usuario):
         db.session.commit()
 
         # Enviar correo (no bloqueante)
-        _enviar_correo_admin(nuevo_reporte)
+        email_ok = _enviar_correo_admin(nuevo_reporte)  # capturar resultado
 
         return {
             "success": True,
             "reporte": nuevo_reporte,
-            "email_enviado": True
+            "email_enviado": email_ok  # ← ahora refleja la realidad
         }
 
     except Exception as e:
@@ -71,46 +71,47 @@ def crear_nuevo_reporte(usuario_id, solicitud_id, motivo, mensaje_usuario):
         print(f"Error creando reporte: {e}")
         raise e
 
-# --- CONSULTAS ---
-
 def obtener_viajes_fletero_por_uuid(supabase_uuid):
     try:
-        # 1. Obtener Usuario
+        # 1. Validar y convertir UUID
         try:
             uuid_obj = uuid.UUID(str(supabase_uuid))
-        except ValueError:
+        except (ValueError, AttributeError):
             return []
 
+        # 2. Obtener Usuario
         usuario = Usuario.query.filter_by(u_id=uuid_obj).first()
         if not usuario:
             return []
 
-        usuario_int_id = usuario.usuario_id
-
-        # 2. Obtener Transportista
-        transportista = Transportista.query.filter_by(usuario_id=usuario_int_id).first()
+        # 3. Obtener Transportista
+        transportista = Transportista.query.filter_by(usuario_id=usuario.usuario_id).first()
         if not transportista:
             return []
 
-        # 3. LÓGICA CORREGIDA: JOIN entre Solicitud y Presupuesto
-        # Buscamos solicitudes cuyo 'presupuesto_aceptado' coincida con un presupuesto de ESTE transportista.
-
-        # SQL equivalente:
-        # SELECT s.* FROM solicitud s
-        # JOIN presupuesto p ON s.presupuesto_aceptado = p.presupuesto_id
-        # WHERE p.transportista_id = MI_ID
-
-        viajes = db.session.query(Solicitud)\
-            .join(Presupuesto, Solicitud.presupuesto_aceptado == Presupuesto.presupuesto_id)\
-            .filter(Presupuesto.transportista_id == transportista.transportista_id)\
-            .order_by(Solicitud.fecha_creacion.desc())\
+        # 4. Consulta con JOIN (Corregida la sintaxis de multilínea con paréntesis)
+        viajes = (
+            db.session.query(Solicitud)
+            .join(Presupuesto, Solicitud.presupuesto_aceptado == Presupuesto.presupuesto_id)
+            .options(
+                joinedload(Solicitud.localidad_origen),
+                joinedload(Solicitud.localidad_destino),
+                joinedload(Solicitud.cliente),
+                joinedload(Solicitud.presupuesto)
+                    .joinedload(Presupuesto.transportista)
+                    .joinedload(Transportista.usuario)
+            )
+            .filter(Presupuesto.transportista_id == transportista.transportista_id)
+            .order_by(Solicitud.fecha_creacion.desc())
             .all()
+        )
 
         return [_serializar_solicitud(v) for v in viajes]
 
     except Exception as e:
-        print(f"Error fletero: {e}")
-        raise e
+        print(f"Error en obtener_viajes_fletero: {str(e)}")
+        # Es mejor relanzar o manejar el error según tu flujo de Flask
+        return []
 
 def obtener_pedidos_cliente_por_uuid(supabase_uuid):
     try:
@@ -200,25 +201,22 @@ def _serializar_solicitud(solicitud):
     if solicitud.presupuesto:
         presupuesto_info = {
             'presupuesto_id': solicitud.presupuesto.presupuesto_id,
-            'monto': float(solicitud.presupuesto.monto) if solicitud.presupuesto.monto else None,
-            'observaciones': solicitud.presupuesto.observaciones
+
         }
 
     return {
         "solicitud_id": solicitud.solicitud_id,
-        "descripcion": solicitud.detalles_carga,
+        "detalles_carga": solicitud.detalles_carga,
         "direccion_origen": solicitud.direccion_origen,
         "direccion_destino": solicitud.direccion_destino,
         "localidad_origen": localidad_origen,
         "localidad_destino": localidad_destino,
-        "fecha_hora": fecha_iso,
+        "fecha_creacion": fecha_iso,
         "estado": estado_str,  # ✅ Ahora es string, no enum
         "cliente": cliente,
         "transportista": transportista,
         "presupuesto": presupuesto_info,
-        "foto": solicitud.foto,
-        "peso": float(solicitud.peso) if solicitud.peso else None,
-        "medidas": solicitud.medidas
+
     }
 
 def _enviar_correo_admin(reporte):
