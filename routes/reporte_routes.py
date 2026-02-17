@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify,g
+from flask import Blueprint, request, jsonify
 from services.auth import require_auth
-from services import reporte_service # Importamos nuestro nuevo servicio
+from services import reporte_service
+import traceback
 
 reporte_bp = Blueprint("reporte_bp", __name__)
 
@@ -38,7 +39,7 @@ def enviar_reporte():
         }), 201
 
     except Exception as e:
-        # Aquí capturamos errores graves (ej. Base de datos caída)
+        traceback.print_exc()
         return jsonify({"error": f"Error interno al procesar el reporte: {str(e)}"}), 500
 
 
@@ -46,28 +47,23 @@ def enviar_reporte():
 @require_auth
 def mis_viajes_fletero():
     try:
-        # Usamos el UUID del token para buscar al usuario en la BD
         supabase_uuid = request.uid
-
         viajes = reporte_service.obtener_viajes_fletero_por_uuid(supabase_uuid)
-
+        # ✅ El servicio ya devuelve diccionarios serializados correctamente
         return jsonify(viajes), 200
-
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
-# --- GET: PEDIDOS CLIENTE ---
 @reporte_bp.route('/mis-pedidos-cliente', methods=['GET'])
 @require_auth
 def mis_pedidos_cliente():
     try:
-        # Usamos el UUID del token para buscar al usuario en la BD
         supabase_uuid = request.uid
-
         pedidos = reporte_service.obtener_pedidos_cliente_por_uuid(supabase_uuid)
-
+        # ✅ El servicio ya devuelve diccionarios serializados correctamente
         return jsonify(pedidos), 200
-
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500

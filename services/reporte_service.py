@@ -7,6 +7,7 @@ import uuid
 # Importamos SQLAlchemy y los Modelos necesarios
 from config import db
 from models import Reporte, Transportista, Solicitud, Usuario, Presupuesto
+from sqlalchemy.orm import joinedload
 
 # Configuración Email
 SMTP_SERVER = "smtp.gmail.com"
@@ -128,8 +129,13 @@ def obtener_pedidos_cliente_por_uuid(supabase_uuid):
         # 2. LÓGICA CORREGIDA: Verificar si tiene presupuesto aceptado
         # Buscamos solicitudes del usuario donde 'presupuesto_aceptado' NO SEA NULL
 
-        pedidos = Solicitud.query.filter(
-            Solicitud.cliente_id == usuario_int_id, # Asegúrate que en tu modelo se llame 'usuario_id' (o 'cliente_id' si no lo cambiaste)
+        pedidos = Solicitud.query.options(
+            joinedload(Solicitud.localidad_origen),
+            joinedload(Solicitud.localidad_destino),
+            joinedload(Solicitud.cliente),
+            joinedload(Solicitud.presupuesto).joinedload(Presupuesto.transportista).joinedload(Transportista.usuario)
+        ).filter(
+            Solicitud.cliente_id == usuario_int_id,
             Solicitud.presupuesto_aceptado != None
         ).order_by(Solicitud.fecha_creacion.desc()).all()
 
@@ -144,16 +150,75 @@ def obtener_pedidos_cliente_por_uuid(supabase_uuid):
 def _serializar_solicitud(solicitud):
     # Validamos fechas para evitar errores si son None
     fecha_iso = solicitud.fecha_creacion.isoformat() if hasattr(solicitud, 'fecha_creacion') and solicitud.fecha_creacion else None
-    # Si usas 'fecha_hora' en lugar de 'fecha_creacion', ajusta aquí.
-    # En tu modelo Solicitud vi 'fecha_creacion', por eso lo usé.
+
+    # ✅ FIX CRÍTICO: Convertir enum EstadoSolicitud a string
+    estado_str = solicitud.estado.value if hasattr(solicitud.estado, 'value') else str(solicitud.estado)
+
+    # Serializar localidades si existen (evita N+1 queries con joinedload)
+    localidad_origen = None
+    if solicitud.localidad_origen:
+        localidad_origen = {
+            'localidad_id': solicitud.localidad_origen.localidad_id,
+            'nombre': solicitud.localidad_origen.nombre,
+            'provincia': solicitud.localidad_origen.provincia
+        }
+
+    localidad_destino = None
+    if solicitud.localidad_destino:
+        localidad_destino = {
+            'localidad_id': solicitud.localidad_destino.localidad_id,
+            'nombre': solicitud.localidad_destino.nombre,
+            'provincia': solicitud.localidad_destino.provincia
+        }
+
+    # Serializar cliente si existe
+    cliente = None
+    if solicitud.cliente:
+        cliente = {
+            'usuario_id': solicitud.cliente.usuario_id,
+            'nombre': solicitud.cliente.nombre,
+            'apellido': solicitud.cliente.apellido,
+            'email': solicitud.cliente.email,
+            'telefono': solicitud.cliente.telefono
+        }
+
+    # Serializar transportista si existe
+    transportista = None
+    if solicitud.presupuesto and solicitud.presupuesto.transportista:
+        transp = solicitud.presupuesto.transportista
+        transportista = {
+            'transportista_id': transp.transportista_id,
+            'nombre': transp.usuario.nombre if transp.usuario else None,
+            'apellido': transp.usuario.apellido if transp.usuario else None,
+            'telefono': transp.usuario.telefono if transp.usuario else None,
+            'calificacion_promedio': float(transp.calificacion_promedio) if transp.calificacion_promedio else None,
+            'total_calificaciones': transp.total_calificaciones or 0
+        }
+
+    # Presupuesto si existe
+    presupuesto_info = None
+    if solicitud.presupuesto:
+        presupuesto_info = {
+            'presupuesto_id': solicitud.presupuesto.presupuesto_id,
+            'monto': float(solicitud.presupuesto.monto) if solicitud.presupuesto.monto else None,
+            'observaciones': solicitud.presupuesto.observaciones
+        }
 
     return {
         "solicitud_id": solicitud.solicitud_id,
-        "descripcion": solicitud.detalles_carga, # Ajustado a 'detalles_carga' según tu modelo
+        "descripcion": solicitud.detalles_carga,
         "direccion_origen": solicitud.direccion_origen,
         "direccion_destino": solicitud.direccion_destino,
+        "localidad_origen": localidad_origen,
+        "localidad_destino": localidad_destino,
         "fecha_hora": fecha_iso,
-        "estado": solicitud.estado
+        "estado": estado_str,  # ✅ Ahora es string, no enum
+        "cliente": cliente,
+        "transportista": transportista,
+        "presupuesto": presupuesto_info,
+        "foto": solicitud.foto,
+        "peso": float(solicitud.peso) if solicitud.peso else None,
+        "medidas": solicitud.medidas
     }
 
 def _enviar_correo_admin(reporte):

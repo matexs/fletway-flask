@@ -84,6 +84,29 @@ def crear_presupuesto():
 
         print(f"✅ [crear_presupuesto] Presupuesto creado: ID {nuevo_presupuesto.presupuesto_id}")
 
+        # Enviar notificación por email
+        try:
+            # Recargar solicitud con relaciones para el email
+            solicitud_email = Solicitud.query.options(
+                joinedload(Solicitud.cliente),
+                joinedload(Solicitud.localidad_origen),
+                joinedload(Solicitud.localidad_destino)
+            ).get(solicitud_id)
+            
+            # Recargar transportista con usuario
+            transportista_email = Transportista.query.options(
+                joinedload(Transportista.usuario)
+            ).get(transportista.transportista_id)
+            
+            if solicitud_email and transportista_email:
+                notificacion_service.enviar_notificacion_presupuesto(
+                    solicitud_email, 
+                    nuevo_presupuesto, 
+                    transportista_email
+                )
+        except Exception as email_error:
+            print(f"⚠️ [crear_presupuesto] Error enviando email: {email_error}")
+
         ##### OBTENER DATOS COMPLETOS DEL PRESUPUESTO CON TRANSPORTISTA PARA EMITIR EN EL EVENTO
         presupuesto_completo = nuevo_presupuesto.to_dict()
         presupuesto_completo['transportista'] = {
@@ -102,29 +125,7 @@ def crear_presupuesto():
         # 8. 🔥 EMITIR EVENTO SOCKET.IO
         socketio.emit('nuevo_presupuesto', presupuesto_completo)
 
-        # 9. Enviar notificación por email al cliente
-        try:
-            # Recargar solicitud con relaciones para el email
-            solicitud_email = Solicitud.query.options(
-                joinedload(Solicitud.cliente),
-                joinedload(Solicitud.localidad_origen),
-                joinedload(Solicitud.localidad_destino)
-            ).get(solicitud_id)
-            
-            # Recargar transportista con usuario
-            transportista_email = Transportista.query.options(
-                joinedload(Transportista.usuario)
-            ).get(transportista.transportista_id)
-            
-            notificacion_service.enviar_notificacion_presupuesto(
-                solicitud_email, 
-                nuevo_presupuesto, 
-                transportista_email
-            )
-        except Exception as email_error:
-            print(f"⚠️ [crear_presupuesto] Error enviando email: {email_error}")
-
-        # 10. Retornar presupuesto creado con datos del transportista
+        # 9. Retornar presupuesto creado con datos del transportista
         presupuesto_dict = nuevo_presupuesto.to_dict()
 
         return jsonify(presupuesto_dict), 201

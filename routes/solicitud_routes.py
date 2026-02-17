@@ -389,13 +389,13 @@ def cancelar_solicitud(id):
 
         # Enviar notificación por email
         try:
-            # Recargar solicitud con relaciones para el email
             solicitud_completa = Solicitud.query.options(
                 joinedload(Solicitud.cliente),
                 joinedload(Solicitud.localidad_origen),
                 joinedload(Solicitud.localidad_destino)
             ).get(id)
-            notificacion_service.enviar_notificacion_estado(solicitud_completa, 'cancelado')
+            if solicitud_completa:
+                notificacion_service.enviar_notificacion_estado(solicitud_completa, 'cancelado')
         except Exception as email_error:
             print(f"⚠️ [cancelar_solicitud] Error enviando email: {email_error}")
 
@@ -558,7 +558,8 @@ def aceptar_presupuesto_solicitud(id):
                 joinedload(Solicitud.localidad_destino),
                 joinedload(Solicitud.presupuesto).joinedload(Presupuesto.transportista).joinedload(Transportista.usuario)
             ).get(id)
-            notificacion_service.enviar_notificacion_estado(solicitud_email, 'pendiente')
+            if solicitud_email:
+                notificacion_service.enviar_notificacion_estado(solicitud_email, 'pendiente')
         except Exception as email_error:
             print(f"⚠️ [aceptar_presupuesto] Error enviando email: {email_error}")
 
@@ -1049,6 +1050,4 @@ def get_mis_pedidos_optimizado():
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-
 
