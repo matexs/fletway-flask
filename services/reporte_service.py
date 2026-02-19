@@ -12,9 +12,9 @@ from sqlalchemy.orm import joinedload
 # Configuración Email
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-EMAIL_SENDER = "mateo.carp100@gmail.com"
+EMAIL_SENDER = "soporte.fletway01@gmail.com"
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-EMAIL_ADMIN = "mateoreyx@gmail.com"
+EMAIL_ADMIN = "franrojas331@gmail.com"
 
 # --- CREACIÓN ---
 def crear_nuevo_reporte(usuario_id, solicitud_id, motivo, mensaje_usuario):
