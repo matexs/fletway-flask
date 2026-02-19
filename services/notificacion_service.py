@@ -11,7 +11,8 @@ from email.mime.multipart import MIMEMultipart
 # Configuración SMTP (reutilizamos las mismas credenciales que reporte_service)
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-EMAIL_SENDER = "soporte.fletway@gmail.com"
+# EMAIL_SENDER = "soporte.fletway@gmail.com"
+EMAIL_SENDER = "soporte.fletway01@gmail.com"
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 

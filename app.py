@@ -3,11 +3,13 @@ Módulo principal de la aplicación Flask.
 """
 
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 
 # Cargar .env SOLO en desarrollo
 if os.getenv("ENV") != "production":
-    from dotenv import load_dotenv
-    load_dotenv()
+    env_path = Path(__file__).parent / '.env'
+    load_dotenv(dotenv_path=env_path)
 
 from flask import Flask
 from flask_cors import CORS
@@ -41,18 +43,20 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB
 
+# [CORS] Configuración CORS para rutas HTTP (Socket.IO tiene su propia configuración en extensions.py)
 CORS(
     app,
     resources={
         r"/*": {
             "origins": [
                 "http://localhost:4200",
-                "http://localhost:4200/",
-                "https://fletway-api-533654897399.us-central1.run.app/",
-                "https://fletway.netlify.app",  # opcional
+                "http://127.0.0.1:4200",
+                "https://fletway-api-533654897399.us-central1.run.app",
+                "https://fletway.netlify.app",
             ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
             "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True,
         }
     },
 )
@@ -73,9 +77,11 @@ def health():
     return {"status": "ok"}
 
 
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    socketio.run(app, host="0.0.0.0", port=port)
+    print("[INIT] Iniciando servidor...")
+    port = int(os.environ.get("PORT", 5000))
+    print(f"[INIT] Ejecutando en puerto: {port}")
+    print("[INIT] Servidor iniciado correctamente")
+    socketio.run(app, host="127.0.0.1", port=port, debug=True)
 
     #app.run(debug=True, host="127.0.0.1", port=5000)
