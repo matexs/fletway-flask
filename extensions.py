@@ -15,15 +15,11 @@ socketio = SocketIO(
 )
 
 
-"""
-@socketio.on('connect')
-def handle_connect():
-
-    # Aquí deberías validar quién es el usuario (usando el token, por ejemplo)
-    # Supongamos que verificaste que el usuario es un 'transportista'
-    es_transportista = True # Lógica tuya de validación
-
-    if es_transportista:
-        join_room('transportistas')
-        print("🚚 Transportista unido a la sala de notificaciones")
-"""
+@socketio.on('join_room')
+def on_join_room(data):
+    room = data.get('room')
+    # Acepta: 'fleteros', 'clientes', 'cliente_123', 'fletero_45'
+    if room and (room in ['fleteros', 'clientes'] or
+                 room.startswith('cliente_') or
+                 room.startswith('fletero_')):
+        join_room(room)

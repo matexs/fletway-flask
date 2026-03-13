@@ -238,7 +238,8 @@ def crear_solicitud():
                 'email': nueva_solicitud.cliente.email
             }
 
-        socketio.emit('nueva_solicitud', solicitud_completa)
+
+        socketio.emit('nueva_solicitud', solicitud_completa, to='fleteros')
 
         # Enviar notificación por email
         try:
@@ -320,7 +321,7 @@ def actualizar_solicitud(id):
             }
 
         # Notificar a fleteros que tienen esta zona para que vean los cambios
-        socketio.emit('solicitud_actualizada', solicitud_data)
+        socketio.emit('solicitud_actualizada', solicitud_data, to='fleteros')
 
         return jsonify(solicitud_data), 200
 
@@ -385,7 +386,7 @@ def cancelar_solicitud(id):
             'solicitud_id': id,
             'cancelado_por': 'cliente',
             'presupuestos_rechazados': ids_presupuestos_rechazados
-        })
+        }, to='fleteros')
 
         # Enviar notificación por email
         try:
@@ -469,7 +470,7 @@ def cancelar_solicitud_fletero(id):
             'solicitud_id': id,
             'cancelado_por': 'fletero',
             'solicitud': solicitud_data
-        })
+        },to='clientes')
 
         return jsonify({"message": "Solicitud cancelada correctamente"}), 200
 
@@ -547,7 +548,7 @@ def aceptar_presupuesto_solicitud(id):
             'presupuesto_id': presupuesto_id,
             'transportista_id': presupuesto.transportista_id,
             'presupuesto': presupuesto_completo  # ✅ Datos completos del presupuesto
-        })
+        },to='fleteros')
 
         # Enviar notificación por email
         try:
@@ -652,7 +653,7 @@ def comenzar_viaje(id):
                 }
             solicitud_completa['presupuesto'] = presupuesto_dict
 
-        socketio.emit('viaje_iniciado', solicitud_completa)
+        socketio.emit('viaje_iniciado', solicitud_completa,to='clientes')
 
         # Enviar notificación por email
         try:
@@ -750,7 +751,7 @@ def completar_viaje(id):
         # ✅ IMPORTANTE: Agregar flag de que puede calificar
         solicitud_completa['puede_calificar'] = True
 
-        socketio.emit('viaje_completado', solicitud_completa)
+        socketio.emit('viaje_completado', solicitud_completa,to=f"cliente_{solicitud.cliente_id}")
 
         # Enviar notificación por email
         try:
