@@ -103,6 +103,78 @@ Equipo Fletway
         return False
 
 
+def enviar_notificacion_presupuesto_aceptado(solicitud, presupuesto, transportista):
+    """
+    Envía un correo al fletero cuando su presupuesto es aceptado por el cliente.
+    
+    Args:
+        solicitud: Objeto Solicitud con relaciones cargadas (cliente, localidades)
+        presupuesto: Objeto Presupuesto aceptado
+        transportista: Objeto Transportista con usuario cargado
+    
+    Returns:
+        bool: True si el correo se envió correctamente, False en caso contrario
+    """
+    try:
+        # Validar que tenemos un transportista con email
+        if not transportista.usuario or not transportista.usuario.email:
+            print(f"⚠️ [notificacion_service] Transportista sin email")
+            return False
+
+        email_destino = transportista.usuario.email
+        nombre_fletero = f"{transportista.usuario.nombre} {transportista.usuario.apellido}"
+
+        # Información del cliente
+        nombre_cliente = "Cliente"
+        if solicitud.cliente:
+            nombre_cliente = f"{solicitud.cliente.nombre} {solicitud.cliente.apellido}"
+
+        # Información de la solicitud
+        solicitud_id = solicitud.solicitud_id
+        origen = solicitud.direccion_origen or "Origen no especificado"
+        destino = solicitud.direccion_destino or "Destino no especificado"
+
+        asunto = f"🎉 ¡Tu presupuesto fue aceptado! - Solicitud #{solicitud_id}"
+        cuerpo = f"""¡Hola {nombre_fletero}!
+
+¡Buenas noticias! Tu presupuesto para la solicitud #{solicitud_id} fue aceptado por {nombre_cliente}.
+
+📋 Detalles de la solicitud:
+   - Origen: {origen}
+   - Destino: {destino}
+   - Precio aceptado: ${presupuesto.precio_estimado:,.2f}
+
+Ingresá a Fletway para coordinar el viaje con el cliente.
+
+¡Gracias por usar Fletway!
+Equipo Fletway"""
+
+        # Crear mensaje MIME
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = asunto
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = email_destino
+
+        parte_texto = MIMEText(cuerpo, 'plain')
+        msg.attach(parte_texto)
+
+        # Enviar correo
+        print(f"📧 [notificacion_service] Enviando email al fletero {email_destino} - Presupuesto aceptado")
+        
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_SENDER, email_destino, msg.as_string())
+        server.quit()
+
+        print(f"✅ [notificacion_service] Email enviado correctamente al fletero {email_destino}")
+        return True
+
+    except Exception as e:
+        print(f"❌ [notificacion_service] Error enviando email de presupuesto aceptado al fletero: {e}")
+        return False
+
+
 def enviar_notificacion_estado(solicitud, estado_nuevo):
     """
     Envía un correo al cliente cuando cambia el estado de su solicitud.

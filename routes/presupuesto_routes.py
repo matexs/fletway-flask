@@ -122,8 +122,8 @@ def crear_presupuesto():
             } if transportista.usuario else None
         }
 
-        # 8. 🔥 EMITIR EVENTO SOCKET.IO
-        socketio.emit('nuevo_presupuesto', presupuesto_completo)
+        # 8. 🔥 EMITIR EVENTO SOCKET.IO - Solo al cliente dueño de la solicitud
+        socketio.emit('nuevo_presupuesto', presupuesto_completo, to=f'cliente_{solicitud.cliente_id}')
 
         # 9. Retornar presupuesto creado con datos del transportista
         presupuesto_dict = nuevo_presupuesto.to_dict()
@@ -321,7 +321,7 @@ def aceptar_presupuesto(presupuesto_id):
 
         # 9. 🔥 EMITIR EVENTO SOCKET.IO CON DATOS COMPLETOS
         print(f"🔥 [Socket] Emitiendo 'aceptar_solicitud' con presupuesto completo")
-        socketio.emit('aceptar_solicitud', solicitud_data)
+        socketio.emit('aceptar_solicitud', solicitud_data, to='fleteros')
 
         # 10. También emitir evento de solicitud actualizada (para el SolicitudService)
         try:

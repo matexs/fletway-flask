@@ -240,6 +240,7 @@ def crear_solicitud():
 
 
         socketio.emit('nueva_solicitud', solicitud_completa, to='fleteros')
+        socketio.emit('nueva_solicitud', solicitud_completa, to=f"cliente_{usuario.usuario_id}")
 
         # Enviar notificación por email
         try:
@@ -322,6 +323,7 @@ def actualizar_solicitud(id):
 
         # Notificar a fleteros que tienen esta zona para que vean los cambios
         socketio.emit('solicitud_actualizada', solicitud_data, to='fleteros')
+        socketio.emit('solicitud_actualizada', solicitud_data, to=f'cliente_{usuario.usuario_id}')
 
         return jsonify(solicitud_data), 200
 
@@ -387,6 +389,12 @@ def cancelar_solicitud(id):
             'cancelado_por': 'cliente',
             'presupuestos_rechazados': ids_presupuestos_rechazados
         }, to='fleteros')
+
+        socketio.emit('solicitud_cancelada', {
+            'solicitud_id': id,
+            'cancelado_por': 'cliente',
+            'presupuestos_rechazados': ids_presupuestos_rechazados
+        }, to=f'cliente_{usuario.usuario_id}')
 
         # Enviar notificación por email
         try:
@@ -542,15 +550,15 @@ def aceptar_presupuesto_solicitud(id):
                 } if presupuesto.transportista.usuario else None
             }
 
-        # Emitir evento completo
+        # Emitir evento completo - dirigido al fletero ganador específico
         socketio.emit('presupuesto_aceptado', {
             'solicitud_id': id,
             'presupuesto_id': presupuesto_id,
             'transportista_id': presupuesto.transportista_id,
             'presupuesto': presupuesto_completo  # ✅ Datos completos del presupuesto
-        },to='fleteros')
+        }, to=f'fletero_{presupuesto.transportista_id}')
 
-        # Enviar notificación por email
+        # Enviar notificación por email al CLIENTE
         try:
             # Recargar solicitud con todas las relaciones para el email
             solicitud_email = Solicitud.query.options(
@@ -562,7 +570,23 @@ def aceptar_presupuesto_solicitud(id):
             if solicitud_email:
                 notificacion_service.enviar_notificacion_estado(solicitud_email, 'pendiente')
         except Exception as email_error:
-            print(f"⚠️ [aceptar_presupuesto] Error enviando email: {email_error}")
+            print(f"⚠️ [aceptar_presupuesto] Error enviando email al cliente: {email_error}")
+
+        # Enviar notificación por email al FLETERO ganador
+        try:
+            solicitud_para_fletero = Solicitud.query.options(
+                joinedload(Solicitud.cliente),
+                joinedload(Solicitud.localidad_origen),
+                joinedload(Solicitud.localidad_destino)
+            ).get(id)
+            if solicitud_para_fletero and presupuesto.transportista and presupuesto.transportista.usuario:
+                notificacion_service.enviar_notificacion_presupuesto_aceptado(
+                    solicitud_para_fletero,
+                    presupuesto,
+                    presupuesto.transportista
+                )
+        except Exception as email_error:
+            print(f"⚠️ [aceptar_presupuesto] Error enviando email al fletero: {email_error}")
 
         return jsonify(solicitud.to_dict()), 200
 
