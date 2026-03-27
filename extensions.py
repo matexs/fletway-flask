@@ -6,7 +6,7 @@ socketio = SocketIO(
     cors_allowed_origins=[
         "http://localhost:4200",
         "http://127.0.0.1:4200",
-        "https://fletway-api-533654897399.us-central1.run.app",
+        "https://fletway-api-568207456643.us-central1.run.app",
         "https://fletway.netlify.app"
     ],
     async_mode="eventlet",
