@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Entorno local (NO subir al contenedor)
+.env
+
+# Archivos de desarrollo
+.pylintrc
+README.md
+Procfile
+runtime.txt
+
+# Uploads locales (se crean en runtime)
+uploads/
+
+# Cloud Build config
+cloudbuild.yaml
+Dockerfile
+.dockerignore

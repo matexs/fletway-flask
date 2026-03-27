@@ -1,0 +1,43 @@
+steps:
+  # ─── Paso 1: Construir la imagen Docker ───────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/fletway-api:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/fletway-api:latest'
+      - '.'
+
+  # ─── Paso 2: Subir la imagen a Container Registry ─────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'gcr.io/$PROJECT_ID/fletway-api'
+
+  # ─── Paso 3: Deploy en Cloud Run ──────────────────────────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'fletway-api'
+      - '--image=gcr.io/$PROJECT_ID/fletway-api:$COMMIT_SHA'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8080'
+      - '--set-env-vars=ENV=production'
+      # DATABASE_URI se configura como Secret o env var en Cloud Run Console (no hardcodear aquí)
+
+# Imagen final producida (queda en Container Registry)
+images:
+  - 'gcr.io/$PROJECT_ID/fletway-api:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/fletway-api:latest'
+
+# Timeout total del pipeline (10 minutos)
+timeout: '600s'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
