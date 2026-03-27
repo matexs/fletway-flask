@@ -36,4 +36,4 @@ CMD exec gunicorn \
     --timeout 120 \
     --access-logfile - \
     --error-logfile - \
-    "app:socketio"
+    "app:app"
