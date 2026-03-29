@@ -28,9 +28,6 @@ steps:
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--port=8080'
-      - '--set-env-vars=ENV=production'
-      # DATABASE_URI se configura como Secret o env var en Cloud Run Console (no hardcodear aquí)
-
 # Imagen final producida (queda en Container Registry)
 images:
   - 'gcr.io/$PROJECT_ID/fletway-api:$COMMIT_SHA'
