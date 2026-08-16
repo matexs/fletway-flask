@@ -11,7 +11,7 @@ ENV ENV=production
 # Directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Instalar dependencias del sistema necesarias para eventlet y compilación
+# Instalar dependencias del sistema necesarias para gevent y compilación
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
@@ -28,10 +28,10 @@ COPY . .
 RUN mkdir -p uploads
 
 # Cloud Run inyecta el puerto via la variable PORT (por defecto 8080)
-# gunicorn con worker eventlet para Flask-SocketIO
+# gunicorn con worker gevent para Flask-SocketIO
 CMD exec gunicorn \
     --bind "0.0.0.0:${PORT:-8080}" \
-    --worker-class eventlet \
+    --worker-class gevent_wsgi \
     --workers 1 \
     --timeout 120 \
     --access-logfile - \
