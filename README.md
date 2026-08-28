@@ -79,6 +79,9 @@ Variables requeridas:
 | `DRIVER_EMAIL` / `DRIVER_PASSWORD` | Cuenta de prueba asociada a un transportista |
 | `SEARCH_QUERY` | Texto utilizado en la búsqueda de localidades |
 | `REQUEST_TIMEOUT` | Timeout de cada request; valor recomendado: `10s` |
+| `SETUP_REQUEST_TIMEOUT` | Timeout exclusivo de preparación/cold start; recomendado: `60s` |
+| `SETUP_MAX_ATTEMPTS` | Intentos de disponibilidad antes de cancelar; recomendado: `3` |
+| `SETUP_RETRY_DELAY_SECONDS` | Pausa entre intentos de preparación; recomendado: `2` |
 | `THINK_TIME_SECONDS` | Pausa entre requests por VU; valor recomendado: `1` |
 
 `performance/.env.performance` está ignorado por Git. No se deben agregar
@@ -136,8 +139,14 @@ Estados utilizados:
 
 - **APROBADA**: cumple los objetivos recomendados;
 - **ADVERTENCIA**: existe degradación moderada, sin alcanzar el límite duro;
+- **NO EJECUTADA**: falló la prevalidación de disponibilidad, autenticación o
+  roles y no existen muestras para evaluar;
 - **FALLIDA**: se alcanza un límite severo de latencia, errores, timeouts o
-  ausencia de respuestas válidas.
+  respuestas inválidas durante la prueba.
+
+La preparación usa un timeout independiente y reintentos para tolerar el arranque
+en frío de Render. Esas solicitudes no forman parte de las métricas de negocio:
+`REQUEST_TIMEOUT` continúa limitando cada request medido a 10 segundos.
 
 La documentación completa de perfiles, thresholds y estructura está en
 [`performance/README.md`](performance/README.md).

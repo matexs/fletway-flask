@@ -14,9 +14,12 @@ import {
 import { evaluateSummary, renderConsole, renderHtml, renderMarkdown } from '../lib/report.js';
 
 const PROFILE = __ENV.PROFILE || 'smoke';
-const BASE_URL = (__ENV.BASE_URL || 'https://fletway.onrender.com').replace(/\/$/, '');
-const SUPABASE_URL = (__ENV.SUPABASE_URL || '').replace(/\/$/, '');
+const BASE_URL = normalizeUrl(__ENV.BASE_URL || 'https://fletway.onrender.com');
+const SUPABASE_URL = normalizeUrl(__ENV.SUPABASE_URL || '');
 const REQUEST_TIMEOUT = __ENV.REQUEST_TIMEOUT || '10s';
+const SETUP_REQUEST_TIMEOUT = __ENV.SETUP_REQUEST_TIMEOUT || '60s';
+const SETUP_MAX_ATTEMPTS = Math.max(1, Number(__ENV.SETUP_MAX_ATTEMPTS || '3'));
+const SETUP_RETRY_DELAY_SECONDS = Math.max(0, Number(__ENV.SETUP_RETRY_DELAY_SECONDS || '2'));
 const THINK_TIME_SECONDS = Number(__ENV.THINK_TIME_SECONDS || '1');
 const RUN_ID = __ENV.RUN_ID || new Date().toISOString().replace(/[:.]/g, '-');
 const PROFILE_IDS = profileIdsFor(PROFILE);
@@ -59,11 +62,15 @@ function buildThresholds() {
 export const options = {
   scenarios: buildScenarios(PROFILE),
   thresholds: buildThresholds(),
-  setupTimeout: '60s',
+  setupTimeout: '4m',
   discardResponseBodies: true,
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'count'],
   userAgent: 'Fletway-k6-performance/1.0',
 };
+
+function normalizeUrl(value) {
+  return String(value).trim().replace(/[\\/,]+$/, '');
+}
 
 function requireEnvironment() {
   const required = [
@@ -90,7 +97,7 @@ function login(role, email, password) {
       },
       responseType: 'text',
       tags: { kind: 'auth', role, endpoint: 'supabase_login' },
-      timeout: REQUEST_TIMEOUT,
+      timeout: SETUP_REQUEST_TIMEOUT,
     },
   );
   if (response.status !== 200) {
@@ -109,7 +116,7 @@ function validateRole(role, path, token) {
   const response = http.get(`${BASE_URL}${path}`, {
     headers: authHeaders(token),
     tags: { kind: 'validation', role, endpoint: 'role_validation' },
-    timeout: REQUEST_TIMEOUT,
+    timeout: SETUP_REQUEST_TIMEOUT,
   });
   if (response.status !== 200) {
     throw new Error(`La validación del rol ${role} falló en ${path}. HTTP ${response.status}.`);
@@ -118,11 +125,24 @@ function validateRole(role, path, token) {
 
 export function setup() {
   requireEnvironment();
-  const health = http.get(`${BASE_URL}/`, {
-    tags: { kind: 'validation', role: 'public', endpoint: 'health' },
-    timeout: REQUEST_TIMEOUT,
-  });
-  if (health.status !== 200) throw new Error(`El backend no está disponible. HTTP ${health.status}.`);
+  let health;
+  for (let attempt = 1; attempt <= SETUP_MAX_ATTEMPTS; attempt += 1) {
+    health = http.get(`${BASE_URL}/`, {
+      tags: { kind: 'validation', role: 'public', endpoint: 'health' },
+      timeout: SETUP_REQUEST_TIMEOUT,
+    });
+    if (health.status === 200) break;
+    const detail = health.error ? ` (${health.error})` : '';
+    console.warn(`Prevalidación ${attempt}/${SETUP_MAX_ATTEMPTS}: HTTP ${health.status}${detail}.`);
+    if (attempt < SETUP_MAX_ATTEMPTS) sleep(SETUP_RETRY_DELAY_SECONDS);
+  }
+  if (!health || health.status !== 200) {
+    const detail = health?.error ? ` (${health.error})` : '';
+    throw new Error(
+      `El backend no superó la prevalidación tras ${SETUP_MAX_ATTEMPTS} intentos. ` +
+      `HTTP ${health?.status || 0}${detail}. La prueba de rendimiento no llegó a ejecutarse.`,
+    );
+  }
 
   const clientToken = login('client', __ENV.CLIENT_EMAIL, __ENV.CLIENT_PASSWORD);
   const driverToken = login('driver', __ENV.DRIVER_EMAIL, __ENV.DRIVER_PASSWORD);

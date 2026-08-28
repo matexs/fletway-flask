@@ -21,7 +21,6 @@ function evaluateMetricSet(data, profileId, endpointKey = '') {
   const soft = profileId === 'smoke' ? softLimits.smoke : softLimits.default;
 
   const hardFailure =
-    requests === 0 ||
     p95Ms >= hardLimits.p95Ms ||
     successRate <= hardLimits.successRate ||
     errorRate >= hardLimits.errorRate ||
@@ -40,8 +39,8 @@ function evaluateMetricSet(data, profileId, endpointKey = '') {
     successRate,
     errorRate,
     timeoutRate,
-    state: endpointKey && requests === 0
-      ? 'SIN MUESTRAS'
+    state: requests === 0
+      ? endpointKey ? 'SIN MUESTRAS' : 'NO EJECUTADA'
       : hardFailure
         ? 'FALLIDA'
         : softFailure
@@ -53,6 +52,7 @@ function evaluateMetricSet(data, profileId, endpointKey = '') {
 function worstState(states) {
   if (states.includes('FALLIDA')) return 'FALLIDA';
   if (states.includes('ADVERTENCIA')) return 'ADVERTENCIA';
+  if (states.includes('NO EJECUTADA')) return 'NO EJECUTADA';
   return 'APROBADA';
 }
 
@@ -78,7 +78,7 @@ export function evaluateSummary(data, profile, context) {
     .filter((item) => item.id.startsWith('stress_') && item.state === 'APROBADA')
     .map((item) => Number(item.id.split('_')[1]));
   const degradedStressLevel = profiles.find(
-    (item) => item.id.startsWith('stress_') && item.state !== 'APROBADA',
+    (item) => item.id.startsWith('stress_') && item.requests > 0 && item.state !== 'APROBADA',
   );
 
   return {
@@ -108,7 +108,7 @@ function ms(value) {
 }
 
 function mdState(state) {
-  if (state === 'SIN MUESTRAS') return `➖ ${state}`;
+  if (state === 'SIN MUESTRAS' || state === 'NO EJECUTADA') return `➖ ${state}`;
   return state === 'APROBADA' ? `✅ ${state}` : state === 'ADVERTENCIA' ? `⚠️ ${state}` : `❌ ${state}`;
 }
 
@@ -152,6 +152,7 @@ export function renderMarkdown(evaluation) {
     '## Interpretación',
     '',
     '- **Hecho:** las cifras anteriores provienen del resumen generado por k6.',
+    '- **No ejecutada:** la preparación (disponibilidad, login o roles) no terminó; no se evalúa el rendimiento sin muestras.',
     '- **Interpretación:** `ADVERTENCIA` indica un incumplimiento del objetivo recomendado sin alcanzar el límite de fallo severo.',
     '- **Hipótesis:** una causa técnica requiere métricas adicionales de servidor, base de datos, CPU, memoria o logs.',
     '',
@@ -190,10 +191,10 @@ export function renderHtml(evaluation) {
     : '';
 
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rendimiento Fletway</title><style>
-  :root{font-family:Inter,Segoe UI,sans-serif;color:#172033;background:#f3f6fb}body{margin:0;padding:32px}main{max-width:1180px;margin:auto}header,section{background:#fff;border:1px solid #dfe6f0;border-radius:14px;padding:24px;margin-bottom:18px;box-shadow:0 6px 20px #1720330d}h1,h2{margin-top:0}header p{color:#536079}.hero{display:flex;justify-content:space-between;gap:24px;align-items:start}.state{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}.aprobada{background:#d9f7e8;color:#08653b}.advertencia{background:#fff2c7;color:#7a5200}.fallida{background:#ffe0df;color:#9b1c1c}.sin-muestras{background:#e8edf5;color:#536079}table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e7ecf3}th{color:#536079}.cards{display:flex;gap:14px}.cards article{background:#f3f6fb;border-radius:12px;padding:18px;min-width:190px}.cards strong{font-size:30px;display:block}.cards span,.note{color:#667085;font-size:13px}@media(max-width:760px){body{padding:12px}.hero,.cards{display:block}section{overflow:auto}}
+  :root{font-family:Inter,Segoe UI,sans-serif;color:#172033;background:#f3f6fb}body{margin:0;padding:32px}main{max-width:1180px;margin:auto}header,section{background:#fff;border:1px solid #dfe6f0;border-radius:14px;padding:24px;margin-bottom:18px;box-shadow:0 6px 20px #1720330d}h1,h2{margin-top:0}header p{color:#536079}.hero{display:flex;justify-content:space-between;gap:24px;align-items:start}.state{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}.aprobada{background:#d9f7e8;color:#08653b}.advertencia{background:#fff2c7;color:#7a5200}.fallida{background:#ffe0df;color:#9b1c1c}.sin-muestras,.no-ejecutada{background:#e8edf5;color:#536079}table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e7ecf3}th{color:#536079}.cards{display:flex;gap:14px}.cards article{background:#f3f6fb;border-radius:12px;padding:18px;min-width:190px}.cards strong{font-size:30px;display:block}.cards span,.note{color:#667085;font-size:13px}@media(max-width:760px){body{padding:12px}.hero,.cards{display:block}section{overflow:auto}}
   </style></head><body><main><header><div class="hero"><div><h1>Informe de rendimiento de Fletway</h1><p>${escapeHtml(evaluation.baseUrl)} · ${escapeHtml(evaluation.generatedAt)} · Perfil ${escapeHtml(evaluation.requestedProfile)}</p></div>${stateBadge(evaluation.state)}</div></header>
   <section><h2>Resumen</h2><table><thead><tr><th>Prueba</th><th>Requests</th><th>p95</th><th>Éxito</th><th>Errores</th><th>Timeouts</th><th>Estado</th></tr></thead><tbody>${summaryRows}</tbody></table></section>
-  ${capacity}${evaluation.profiles.map(profileTable).join('')}<section><h2>Lectura del resultado</h2><p><strong>Hecho:</strong> las métricas provienen de k6. <strong>Advertencia:</strong> se superó un objetivo recomendado sin alcanzar el límite severo. Las causas técnicas son hipótesis hasta contar con métricas del servidor.</p></section></main></body></html>`;
+  ${capacity}${evaluation.profiles.map(profileTable).join('')}<section><h2>Lectura del resultado</h2><p><strong>Hecho:</strong> las métricas provienen de k6. <strong>No ejecutada:</strong> la preparación no terminó y no existen muestras para evaluar. <strong>Advertencia:</strong> se superó un objetivo recomendado sin alcanzar el límite severo. Las causas técnicas son hipótesis hasta contar con métricas del servidor.</p></section></main></body></html>`;
 }
 
 export function renderConsole(evaluation, paths) {

@@ -5,13 +5,16 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$OutputEncoding = [Console]::OutputEncoding
 $performanceRoot = $PSScriptRoot
 $backendRoot = Split-Path -Parent $performanceRoot
 $envFile = Join-Path $performanceRoot '.env.performance'
 $allowedKeys = @(
     'BASE_URL', 'SUPABASE_URL', 'SUPABASE_ANON_KEY',
     'CLIENT_EMAIL', 'CLIENT_PASSWORD', 'DRIVER_EMAIL', 'DRIVER_PASSWORD',
-    'SEARCH_QUERY', 'REQUEST_TIMEOUT', 'THINK_TIME_SECONDS'
+    'SEARCH_QUERY', 'REQUEST_TIMEOUT', 'SETUP_REQUEST_TIMEOUT',
+    'SETUP_MAX_ATTEMPTS', 'SETUP_RETRY_DELAY_SECONDS', 'THINK_TIME_SECONDS'
 )
 
 if (Test-Path -LiteralPath $envFile) {
@@ -58,8 +61,12 @@ try {
         $env:RUN_ID = $runId
         Write-Host "`nEjecutando perfil $selectedProfile contra $($env:BASE_URL)..." -ForegroundColor Cyan
         & $k6Executable run $scriptPath
-        if ($LASTEXITCODE -ne 0) {
-            throw "El perfil $selectedProfile terminó con código $LASTEXITCODE. Revise el reporte generado."
+        $k6ExitCode = $LASTEXITCODE
+        if ($k6ExitCode -eq 107) {
+            throw "El perfil $selectedProfile no se ejecuto porque fallo la prevalidacion (codigo 107). Revise disponibilidad, autenticacion y roles en el reporte."
+        }
+        if ($k6ExitCode -ne 0) {
+            throw "El perfil $selectedProfile termino con codigo $k6ExitCode. Revise el reporte generado."
         }
     }
 }

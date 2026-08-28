@@ -48,8 +48,11 @@ Puede cambiar el destino sin editar archivos:
 
 - **APROBADA:** p95, éxito, errores y timeouts cumplen los objetivos recomendados.
 - **ADVERTENCIA:** existe degradación moderada, pero la API continúa por encima de los límites duros.
-- **FALLIDA:** no hay muestras válidas, p95 ≥ 5000 ms, éxito ≤ 80%, errores ≥ 20% o timeouts ≥ 10%.
+- **NO EJECUTADA:** falló la prevalidación de disponibilidad, autenticación o roles; no hay muestras para evaluar.
+- **FALLIDA:** durante la prueba, p95 ≥ 5000 ms, éxito ≤ 80%, errores ≥ 20% o timeouts ≥ 10%.
 
 Los objetivos blandos generales son p95 < 2000 ms, éxito > 95%, errores < 5% y timeouts < 1%. Smoke usa p95 < 1000 ms, éxito > 99%, errores < 1% y cero timeouts.
+
+La prevalidación tolera el arranque en frío de Render mediante `SETUP_REQUEST_TIMEOUT=60s`, tres intentos y una pausa de dos segundos. Este margen solo se usa antes de iniciar VUs; las solicitudes medidas conservan `REQUEST_TIMEOUT=10s`.
 
 Los reportes nunca incluyen emails, contraseñas ni JWT. Los archivos generados quedan en `performance/reports/` y los resúmenes objetivos de k6 en `performance/results/`.
