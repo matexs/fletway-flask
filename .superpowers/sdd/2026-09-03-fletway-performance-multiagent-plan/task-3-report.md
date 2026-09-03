@@ -76,3 +76,39 @@ No output (success).
 - Cleanup intentionally requires the caller to provide the endpoint URI template and bearer token; it does not infer or discover targets.
 - Merge output uses deterministic agent-name ordering and refuses to overwrite an existing `merged.jsonl`; rerunning a merge requires a new run directory.
 - No live load or live cleanup was run.
+
+## Fix round
+
+Addressed all five review findings:
+
+1. Cleanup reads `FLETWAY_CLEANUP_BEARER_TOKEN` from the environment rather than accepting a token command-line parameter, and requires an HTTPS URI when that token is set.
+2. Merge ordering uses explicit UTF-16 code-unit comparison. Concurrent appends by the same agent are append-only but their relative ordering is intentionally unspecified.
+3. Run and agent path components are UTF-8 hex encoded, preventing distinct identifiers from colliding after sanitization.
+4. Each module ledger has a write-once provenance sidecar; merge ignores unregistered JSONL files and validates metadata plus every record's envelope and run/agent consistency.
+5. Cleanup validates run ID, agent, resource type, test name, ISO date, and positive integer ID before any DELETE operation.
+
+### Fix-round tests and exact outputs
+
+`node --test performance\\tests\\resource-ledger.test.js`
+
+`1..6`
+
+`# tests 6`
+
+`# pass 6`
+
+`# fail 0`
+
+`Invoke-Pester -Path performance\\tests\\cleanup-created-data.test.ps1`
+
+`Describing cleanup-created-data`
+
+`[+] does not accept a bearer token parameter and requires HTTPS for the environment token`
+
+`[+] previews only the ledger ID and preserves the ledger with WhatIf`
+
+`[+] refuses to run without explicit confirmation`
+
+`[+] rejects a positive ID without the required resource record envelope`
+
+`Passed: 4 Failed: 0 Skipped: 0 Pending: 0 Inconclusive: 0`
