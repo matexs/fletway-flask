@@ -28,7 +28,13 @@ test('contains every Presupuestos P0 endpoint declared in the canonical manifest
     const filePath = path.join(directory, `${endpoint.id}.js`);
     assert.equal(fs.existsSync(filePath), true, `missing endpoint script: ${endpoint.id}`);
     const source = fs.readFileSync(filePath, 'utf8');
-    assert.match(source, new RegExp(`"id": "${endpoint.id}"`));
+    const metadataMatch = source.match(/const endpoint = (\{[\s\S]*?\});\r?\n(?:\/\/.*\r?\n)*const adapter = adapterFor\(endpoint\);/);
+    assert.ok(metadataMatch, `missing generated endpoint metadata: ${endpoint.id}`);
+    assert.deepEqual(JSON.parse(metadataMatch[1]), {
+      id: endpoint.id,
+      role: endpoint.role,
+      mutation: endpoint.mutation,
+    }, `generated metadata drift: ${endpoint.id}`);
     assert.match(source, /adapterFor\(endpoint\)/);
     assert.match(source, /resolvePath\(adapter\.path\)/);
     assert.match(source, /http\.request\(adapter\.method/);
