@@ -30,6 +30,16 @@ function Number($Value, [string]$Name, [string]$Context) {
 }
 function Format-Number([double]$Value) { return $Value.ToString('0.###', [Globalization.CultureInfo]::InvariantCulture) }
 function Escape-Md([string]$Value) { return ([string]$Value).Replace('|','\|').Replace("`r",' ').Replace("`n",' ') }
+function Escape-Md-FreeForm([string]$Value) {
+    $punctuation = @('\','`','*','_','{','}','[',']','<','>','(',')','#','+','-','.','!','|','~','&')
+    $text = ([string]$Value).Replace("`r",' ').Replace("`n",' ')
+    $builder = [Text.StringBuilder]::new()
+    foreach ($character in $text.ToCharArray()) {
+        if ($punctuation -contains ([string]$character)) { [void]$builder.Append('\') }
+        [void]$builder.Append($character)
+    }
+    return $builder.ToString()
+}
 function Escape-Html([string]$Value) { return ([string]$Value).Replace('&','&amp;').Replace('<','&lt;').Replace('>','&gt;').Replace('"','&quot;') }
 function Assert-SafeOutput([string]$Path) {
     if ([string]::IsNullOrWhiteSpace($Path) -or $Path -match '[*?<>|]' -or $Path -match '(^|[\\/])\.\.([\\/]|$)') { Fail 'output path is not safe' }
@@ -140,7 +150,8 @@ function Get-WorstResult($Rows) {
 function Report-Text($Model, [string]$Name) {
     $p = $Model.profiles[$Name]
     if ($null -eq $p) { return "**Configuración:** no ejecutada o sin raw JSON.  `n**Resultado:** NO_EJECUTADA" }
-    return "**Configuración:** $($p.vu_min)→$($p.vu_max) VUs  `n**p95:** $(Value-Or-NA $p.p95) ms  `n**Error:** $(Value-Or-NA $p.error_pct)%  `n**RPS:** $(Value-Or-NA $p.rps)  `n**Resultado:** $(if ($p.result) { $p.result } else { 'observado' })"
+    $resultText = if ($p.result) { Escape-Md-FreeForm $p.result } else { 'observado' }
+    return "**Configuración:** $($p.vu_min)→$($p.vu_max) VUs  `n**p95:** $(Value-Or-NA $p.p95) ms  `n**Error:** $(Value-Or-NA $p.error_pct)%  `n**RPS:** $(Value-Or-NA $p.rps)  `n**Resultado:** $resultText"
 }
 function Render-Stress($Model) {
     if ($Model.stress.Count -eq 0) { return '**Resultado:** NO_EJECUTADA; no hay escalones stress_<VU> disponibles.' }
@@ -163,7 +174,8 @@ function Render-Spike($Model) {
         $spikeParts[$name] = [pscustomobject]@{ vus=$vus; p95_ms=(Number $part.p95_ms 'p95_ms' "spike $name"); error_pct=(Number $part.error_pct 'error_pct' "spike $name"); rps=(Number $part.rps 'rps' "spike $name") }
     }
     $recoverySeconds = if (Has-Property $raw.recovery 'seconds') { Number $raw.recovery.seconds 'recovery seconds' 'spike' } elseif (Has-Property $raw 'recovery_seconds') { Number $raw.recovery_seconds 'recovery seconds' 'spike' } else { Fail 'spike requires recovery seconds' }
-    return "**Baseline:** $($spikeParts.baseline.vus) VU, p95 $(Value-Or-NA $spikeParts.baseline.p95_ms) ms, error $(Value-Or-NA $spikeParts.baseline.error_pct)%, RPS $(Value-Or-NA $spikeParts.baseline.rps)`n`n**Peak:** $($spikeParts.peak.vus) VU, p95 $(Value-Or-NA $spikeParts.peak.p95_ms) ms, error $(Value-Or-NA $spikeParts.peak.error_pct)%, RPS $(Value-Or-NA $spikeParts.peak.rps)`n`n**Recovery:** $($spikeParts.recovery.vus) VU, p95 $(Value-Or-NA $spikeParts.recovery.p95_ms) ms, error $(Value-Or-NA $spikeParts.recovery.error_pct)%, RPS $(Value-Or-NA $spikeParts.recovery.rps), $recoverySeconds s.`n`n**Resultado:** $(if ($p.result) { $p.result } else { 'observado' })"
+    $resultText = if ($p.result) { Escape-Md-FreeForm $p.result } else { 'observado' }
+    return "**Baseline:** $($spikeParts.baseline.vus) VU, p95 $(Value-Or-NA $spikeParts.baseline.p95_ms) ms, error $(Value-Or-NA $spikeParts.baseline.error_pct)%, RPS $(Value-Or-NA $spikeParts.baseline.rps)`n`n**Peak:** $($spikeParts.peak.vus) VU, p95 $(Value-Or-NA $spikeParts.peak.p95_ms) ms, error $(Value-Or-NA $spikeParts.peak.error_pct)%, RPS $(Value-Or-NA $spikeParts.peak.rps)`n`n**Recovery:** $($spikeParts.recovery.vus) VU, p95 $(Value-Or-NA $spikeParts.recovery.p95_ms) ms, error $(Value-Or-NA $spikeParts.recovery.error_pct)%, RPS $(Value-Or-NA $spikeParts.recovery.rps), $recoverySeconds s.`n`n**Resultado:** $resultText"
 }
 function Render-Matrix($Rows) {
     $lines=@('| endpoint | test | objetivo | carga_vu_min | carga_vu_max | p95_ms | error_pct | capacidad_rps | resultado | usuarios |','|---|---|---|---:|---:|---:|---:|---:|---|---|')

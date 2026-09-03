@@ -83,6 +83,12 @@ try {
     Assert-True ($md -match 'Score endpoint:\*\*\s*N/D.*Task 10' -and $html -match 'N/D.*Task 10') 'score must be present but explicitly not calculated until Task 10'
     Assert-True ($md -match '\| 10 \|' -and $md -match '\| 20 \|' -and $md -match '\| 30 \|' -and $md -match '400.*1000.*1900.*2800.*1.*11' -and $md -match 'Primer punto de degradación.*20 VU') 'stress must include per-VU metrics and first degradation'
     Assert-True ($md -match '(?i)Baseline:' -and $md -match '3 VU' -and $md -match '(?i)Peak:' -and $md -match '30 VU' -and $md -match '18 s' -and $md -match '(?i)Recovery:') 'spike must include baseline, peak, recovery and result'
+    $freeFormResultRaw = $raw.Clone(); $freeFormResultRaw['smoke'] = Clone-Value $raw['smoke']; [void]$freeFormResultRaw['smoke'].PSObject.Properties.Add([PSNoteProperty]::new('result','[FAILED](https://evil.example) <b>*boom*</b> | `code`')); $freeFormResultRaw['spike'] = Clone-Value $raw['spike']; [void]$freeFormResultRaw['spike'].PSObject.Properties.Add([PSNoteProperty]::new('result',$freeFormResultRaw['smoke'].result))
+    $freeFormResult = Invoke-Report $matrix $freeFormResultRaw $manifest 'free-form-result'
+    Assert-True ($freeFormResult.ExitCode -eq 0) "free-form result fixture should generate: $($freeFormResult.Stdout)"
+    $freeFormMd = Get-Content -Raw (Join-Path $freeFormResult.Output 'endpoint-report.md')
+    Assert-True ($freeFormMd.Contains('\[FAILED\]\(https://evil\.example\) \<b\>\*boom\*\</b\> \| \`code\`')) 'free-form profile results must be Markdown-escaped in Report-Text and Render-Spike'
+    Assert-True ($freeFormMd -notmatch '\[FAILED\]\(https://evil\.example\)' -and $freeFormMd -notmatch '<b>\*boom\*') 'raw Markdown/HTML result syntax must not remain active'
     Assert-True ($md -match '\| GET /api/orders \| smoke \|' -and $md -match '\| GET /api/orders \| load \|' -and $md -match '\| GET /api/orders \| stress \|' -and $md -match '\| GET /api/orders \| spike \|') 'matrix must include all four canonical rows'
     Assert-True ($md -match 'Hecho:' -and $md -match 'Hipótesis:' -and $md -match 'no hay telemetría') 'conclusion must distinguish evidence from hypothesis'
     Assert-True ($md -notmatch '(?i)(causad[oa]|debido|provocad[oa]).{0,30}(sql|memoria)|(sql|memoria).{0,30}(causad[oa]|debido|provocad[oa])|password|bearer|eyJ[A-Za-z0-9_-]+') 'report must not claim unsupported causes or leak secrets'
