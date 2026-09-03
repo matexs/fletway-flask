@@ -112,3 +112,7 @@ Addressed all five review findings:
 `[+] rejects a positive ID without the required resource record envelope`
 
 `Passed: 4 Failed: 0 Skipped: 0 Pending: 0 Inconclusive: 0`
+
+### Fix commit
+
+`f6fe2fe fix(performance): harden resource cleanup ledger`
