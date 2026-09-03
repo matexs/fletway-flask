@@ -21,9 +21,10 @@ Mutation response events now carry explicit `resource_action` and boolean `creat
 - Module contract test: PASS (canonical manifest-derived P0 set; 7/7 scripts).
 - Node syntax checks: PASS (7/7 scripts).
 - Direct endpoint contract validation: PASS (7/7 scripts).
-- Focused regression suite: PASS (20 tests).
+- Focused regression suite: PASS (21 tests).
 - Manifest validation: PASS (39 endpoints; temporary output used, shared coverage plan unchanged).
-- Non-executing `k6 inspect`: PASS for all 7 scripts; standalone scripts now declare and record the overall and endpoint-specific Trend/Rate metrics referenced by their thresholds.
+- Non-executing `k6 inspect`: PASS for all 7 scripts; standalone scripts declare and record the overall and endpoint-specific Trend/Rate metrics referenced by their thresholds.
+- CLI entrypoint contract: PASS; each script exports a default function receiving k6 setup data and delegating to named `runFlow`.
 - Live load: NOT RUN, per task instruction.
 
 ## Per-endpoint preflight evidence
@@ -50,7 +51,7 @@ Preflight policy: only transient read-only requests are allowed; POST/PATCH muta
 
 ## Concerns
 
-The standalone metric preflight issue is resolved. Backend availability and authentication remain unverified because safe read-only preflights were not configured. Mutation endpoints remain intentionally safety-blocked. No live request or load run was performed.
+The standalone metric and CLI entrypoint preflight issues are resolved. Backend availability and authentication remain unverified because safe read-only preflights were not configured. Mutation endpoints remain intentionally safety-blocked. No live request or load run was performed.
 
 ## Files
 
@@ -59,4 +60,4 @@ The standalone metric preflight issue is resolved. Backend availability and auth
 - `performance/config/thresholds.js` — valid k6 metric-name normalization helper.
 - `performance/scripts/generate-endpoint-test.mjs` — explicit create/update event semantics in generated mutation scripts.
 - `performance/tests/thresholds.test.mjs` — metric-name regression test.
-- `performance/tests/endpoint-generator.test.mjs` — ledger-event semantics regression test.
+- `performance/tests/endpoint-generator.test.mjs` — ledger-event, metric-declaration, and CLI-entrypoint regression tests.

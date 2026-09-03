@@ -55,3 +55,4 @@ export function runFlow(auth) {
   const responseIds = endpoint.mutation ? captureResponseIds(response) : {};
   endpoint.mutation && emitLedgerEvent({ endpoint_id: endpoint.id, method: adapter.method, path: adapter.path, status: response.status, response_ids: responseIds, resource_action: 'update', created_by_test: false });
 }
+export default function (auth) { return runFlow(auth); }

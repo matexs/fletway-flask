@@ -66,6 +66,7 @@ export function runFlow(auth) {
   const responseIds = endpoint.mutation ? captureResponseIds(response) : {};
   endpoint.mutation && emitLedgerEvent({ endpoint_id: endpoint.id, method: adapter.method, path: adapter.path, status: response.status, response_ids: responseIds, resource_action: '${createsResource ? 'create' : 'update'}', created_by_test: ${createsResource} });
 }
+export default function (auth) { return runFlow(auth); }
 `;
 }
 

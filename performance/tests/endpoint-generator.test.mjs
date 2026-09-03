@@ -53,6 +53,12 @@ test('declares and records every metric used by standalone endpoint thresholds',
   assert.match(output, /metricSet\.endpoint\.timeouts\.add\(timedOut/);
 });
 
+test('exports a CLI default entrypoint that delegates to runFlow with setup data', () => {
+  const output = generateEndpointTest(manifestPath, 'mis-pedidos');
+  assert.match(output, /export default function\s*\(auth\)\s*\{\s*return runFlow\(auth\);\s*\}/);
+  assert.match(output, /export function runFlow\(auth\)/);
+});
+
 test('writes one generated endpoint file and refuses unknown manifest IDs', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'fletway-generator-'));
   const outputPath = path.join(directory, 'crear-solicitud.js');
