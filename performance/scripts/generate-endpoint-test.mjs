@@ -26,7 +26,7 @@ const PROFILE = __ENV.PROFILE || 'smoke';
 
 export const options = { scenarios: buildScenarios(PROFILE), thresholds: buildThresholds(profileIdsFor(PROFILE), [{ key: endpoint.id }]) };
 export function setup() { return setupAuth(endpoint.role); }
-export default function runEndpoint(auth) {
+export function runFlow(auth) {
   const body = adapter.body ? adapter.body() : undefined;
   const tags = requestTags({ endpointId: endpoint.id, profile: PROFILE, stage: __ENV.STAGE || 'measure', role: endpoint.role });
   const token = tokenForRole(endpoint.role, auth);

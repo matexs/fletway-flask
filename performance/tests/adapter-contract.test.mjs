@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
-import { adapterFor } from '../k6/adapters/endpoint-adapters.js';
+globalThis.open = (name) => fs.readFileSync(path.resolve('performance/k6/adapters', name), 'utf8');
+const { adapterFor } = await import('../k6/adapters/endpoint-adapters.js');
 
 globalThis.__ENV = {
   REQUEST_BODY_JSON: '{"should_not":"be_used"}',
@@ -33,7 +36,11 @@ test('provides a non-empty multipart fixture contract for subir-foto-solicitud',
 });
 
 test('derives method and path from the manifest endpoint, preventing adapter drift', () => {
-  const adapter = adapterFor({ id: 'crear-solicitud', method: 'PUT', path: '/manifest-owned-path' });
-  assert.equal(adapter.method, 'PUT');
-  assert.equal(adapter.path, '/manifest-owned-path');
+  assert.throws(() => adapterFor({ id: 'crear-solicitud', method: 'PUT', path: '/manifest-owned-path' }), /drift/i);
+});
+
+test('accepts the generated endpoint shape and resolves its canonical route', () => {
+  const adapter = adapterFor({ id: 'crear-solicitud', role: 'client', mutation: true });
+  assert.equal(adapter.method, 'POST');
+  assert.equal(adapter.path, '/api/solicitudes');
 });

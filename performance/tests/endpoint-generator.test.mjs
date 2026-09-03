@@ -32,6 +32,7 @@ test('uses adapter method and path at runtime and calls the ledger hook for muta
   assert.doesNotMatch(output, /path:\s*['"]\/api\/solicitudes['"]/);
   assert.match(output, /endpoint\.mutation\s*&&\s*emitLedgerEvent/);
   assert.match(output, /setupAuth\(endpoint\.role\)/);
+  assert.match(output, /export function runFlow\(/);
 });
 
 test('writes one generated endpoint file and refuses unknown manifest IDs', () => {

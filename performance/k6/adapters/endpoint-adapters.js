@@ -1,4 +1,5 @@
 const PLACEHOLDER_ENV = { id: 'REQUEST_ID', solicitud_id: 'SOLICITUD_ID', presupuesto_id: 'PRESUPUESTO_ID', transportista_id: 'TRANSPORTISTA_ID', filename: 'FILENAME' };
+const canonicalManifest = typeof open === 'function' ? JSON.parse(open('../../config/endpoints.manifest.json')) : null;
 
 function required(name) {
   const value = __ENV[name];
@@ -28,6 +29,9 @@ export function resolvePath(path) {
 }
 
 export function adapterFor(endpoint) {
-  if (!endpoint || !endpoint.id || !endpoint.method || !endpoint.path) throw new Error('Manifest endpoint with id, method, and path is required.');
-  return { method: endpoint.method, path: endpoint.path, ...(endpointAdapters[endpoint.id] || {}) };
+  if (!endpoint || !endpoint.id) throw new Error('Manifest endpoint with id is required.');
+  const canonical = canonicalManifest?.endpoints?.find(({ id }) => id === endpoint.id);
+  if (!canonical) throw new Error(`Endpoint is missing from canonical manifest: ${endpoint.id}`);
+  if ((endpoint.method && endpoint.method !== canonical.method) || (endpoint.path && endpoint.path !== canonical.path)) throw new Error(`Endpoint route drift detected: ${endpoint.id}`);
+  return { method: canonical.method, path: canonical.path, ...(endpointAdapters[endpoint.id] || {}) };
 }
