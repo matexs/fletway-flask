@@ -31,9 +31,8 @@ if (Test-Path -LiteralPath $envFile) {
 }
 
 if ($BaseUrl) { $env:BASE_URL = $BaseUrl.TrimEnd('/') }
-if (-not $env:BASE_URL) { $env:BASE_URL = 'https://fletway.onrender.com' }
-
 $requiredKeys = @('SUPABASE_URL', 'SUPABASE_ANON_KEY', 'CLIENT_EMAIL', 'CLIENT_PASSWORD', 'DRIVER_EMAIL', 'DRIVER_PASSWORD')
+$requiredKeys += 'BASE_URL'
 $missingKeys = $requiredKeys | Where-Object { -not [Environment]::GetEnvironmentVariable($_, 'Process') }
 if ($missingKeys) {
     throw "Faltan variables: $($missingKeys -join ', '). Copie .env.performance.example como .env.performance y complete los valores."

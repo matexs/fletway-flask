@@ -23,6 +23,8 @@ El estrés mide escalones independientes y no pretende encontrar un breakpoint d
 
 2. Copie `.env.performance.example` como `.env.performance` y complete las credenciales de prueba. El archivo real está ignorado por Git.
 
+La configuración común está en `performance/config/`: `profiles.js` define los perfiles y `thresholds.js` centraliza los límites. Los scripts deben recibir `PROFILE` por `__ENV.PROFILE`; el runner lo establece automáticamente. Cada solicitud emite los tags `endpoint_id`, `profile` y `stage`.
+
 3. Ejecute primero el smoke:
 
    ```powershell

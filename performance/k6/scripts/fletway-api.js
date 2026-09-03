@@ -7,14 +7,21 @@ import { Rate, Trend } from 'k6/metrics';
 import {
   buildScenarios,
   endpoints,
-  hardLimits,
+  buildThresholds,
   metricName,
   profileIdsFor,
 } from '../config/performance.config.js';
+import {
+  authHeaders,
+  login,
+  normalizeUrl,
+  requestTags,
+  requireEnvironment,
+} from '../../templates/endpoint.template.js';
 import { evaluateSummary, renderConsole, renderHtml, renderMarkdown } from '../lib/report.js';
 
 const PROFILE = __ENV.PROFILE || 'smoke';
-const BASE_URL = normalizeUrl(__ENV.BASE_URL || 'https://fletway.onrender.com');
+const BASE_URL = normalizeUrl(__ENV.BASE_URL);
 const SUPABASE_URL = normalizeUrl(__ENV.SUPABASE_URL || '');
 const REQUEST_TIMEOUT = __ENV.REQUEST_TIMEOUT || '10s';
 const SETUP_REQUEST_TIMEOUT = __ENV.SETUP_REQUEST_TIMEOUT || '60s';
@@ -48,74 +55,19 @@ function buildMetrics() {
 
 const metrics = buildMetrics();
 
-function buildThresholds() {
-  const thresholds = {};
-  for (const profileId of PROFILE_IDS) {
-    thresholds[metricName(profileId, 'duration_ms')] = [`p(95)<${hardLimits.p95Ms}`];
-    thresholds[metricName(profileId, 'success_rate')] = [`rate>${hardLimits.successRate}`];
-    thresholds[metricName(profileId, 'error_rate')] = [`rate<${hardLimits.errorRate}`];
-    thresholds[metricName(profileId, 'timeout_rate')] = [`rate<${hardLimits.timeoutRate}`];
-  }
-  return thresholds;
-}
-
 export const options = {
   scenarios: buildScenarios(PROFILE),
-  thresholds: buildThresholds(),
+  thresholds: buildThresholds(PROFILE_IDS),
   setupTimeout: '4m',
   discardResponseBodies: true,
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'count'],
   userAgent: 'Fletway-k6-performance/1.0',
 };
 
-function normalizeUrl(value) {
-  return String(value).trim().replace(/[\\/,]+$/, '');
-}
-
-function requireEnvironment() {
-  const required = [
-    'SUPABASE_URL',
-    'SUPABASE_ANON_KEY',
-    'CLIENT_EMAIL',
-    'CLIENT_PASSWORD',
-    'DRIVER_EMAIL',
-    'DRIVER_PASSWORD',
-  ];
-  const missing = required.filter((name) => !__ENV[name]);
-  if (missing.length) throw new Error(`Faltan variables requeridas: ${missing.join(', ')}`);
-}
-
-function login(role, email, password) {
-  const response = http.post(
-    `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
-    JSON.stringify({ email, password }),
-    {
-      headers: {
-        apikey: __ENV.SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${__ENV.SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      responseType: 'text',
-      tags: { kind: 'auth', role, endpoint: 'supabase_login' },
-      timeout: SETUP_REQUEST_TIMEOUT,
-    },
-  );
-  if (response.status !== 200) {
-    throw new Error(`No se pudo autenticar el rol ${role}. HTTP ${response.status}.`);
-  }
-  const token = response.json('access_token');
-  if (!token) throw new Error(`Supabase no devolvió access_token para ${role}.`);
-  return token;
-}
-
-function authHeaders(token) {
-  return { Authorization: `Bearer ${token}`, Accept: 'application/json' };
-}
-
 function validateRole(role, path, token) {
   const response = http.get(`${BASE_URL}${path}`, {
     headers: authHeaders(token),
-    tags: { kind: 'validation', role, endpoint: 'role_validation' },
+    tags: requestTags({ endpointId: 'role_validation', profile: 'setup', stage: 'validate', role }),
     timeout: SETUP_REQUEST_TIMEOUT,
   });
   if (response.status !== 200) {
@@ -128,7 +80,7 @@ export function setup() {
   let health;
   for (let attempt = 1; attempt <= SETUP_MAX_ATTEMPTS; attempt += 1) {
     health = http.get(`${BASE_URL}/`, {
-      tags: { kind: 'validation', role: 'public', endpoint: 'health' },
+      tags: requestTags({ endpointId: 'health', profile: 'setup', stage: 'validate', role: 'public' }),
       timeout: SETUP_REQUEST_TIMEOUT,
     });
     if (health.status === 200) break;
@@ -144,8 +96,16 @@ export function setup() {
     );
   }
 
-  const clientToken = login('client', __ENV.CLIENT_EMAIL, __ENV.CLIENT_PASSWORD);
-  const driverToken = login('driver', __ENV.DRIVER_EMAIL, __ENV.DRIVER_PASSWORD);
+  const clientToken = login('client', __ENV.CLIENT_EMAIL, __ENV.CLIENT_PASSWORD, {
+    supabaseUrl: SUPABASE_URL,
+    anonKey: __ENV.SUPABASE_ANON_KEY,
+    timeout: SETUP_REQUEST_TIMEOUT,
+  });
+  const driverToken = login('driver', __ENV.DRIVER_EMAIL, __ENV.DRIVER_PASSWORD, {
+    supabaseUrl: SUPABASE_URL,
+    anonKey: __ENV.SUPABASE_ANON_KEY,
+    timeout: SETUP_REQUEST_TIMEOUT,
+  });
   validateRole('client', '/api/solicitudes/mis-pedidos', clientToken);
   validateRole('driver', '/api/transportista/dashboard', driverToken);
   return { clientToken, driverToken };
@@ -180,7 +140,7 @@ export function runFlow(data) {
   const profileId = execution.scenario.name;
   const endpoint = endpointForIteration(execution.scenario.iterationInTest);
   const token = tokenFor(endpoint, data);
-  const tags = { kind: 'api', profile: profileId, endpoint: endpoint.key, role: endpoint.role };
+  const tags = requestTags({ endpointId: endpoint.key, profile: profileId, stage: 'measure', role: endpoint.role });
   const response = http.get(requestUrl(endpoint), {
     headers: token ? authHeaders(token) : { Accept: 'application/json' },
     tags,
