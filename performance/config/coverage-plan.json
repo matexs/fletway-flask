@@ -1,0 +1,256 @@
+{
+  "coverage_target": 0.8,
+  "normalized_prioritized_traffic_coverage": 0.8,
+  "total_traffic_weight": 130,
+  "selected_endpoint_ids": [
+    "mis-pedidos",
+    "dashboard-transportista",
+    "mis-pedidos-optimizado",
+    "buscar-localidades",
+    "historial-transportista",
+    "localidades",
+    "mis-presupuestos",
+    "health",
+    "presupuestos-completo-batch",
+    "actualizar-solicitud",
+    "crear-solicitud",
+    "detalle-solicitud",
+    "presupuestos-solicitud"
+  ],
+  "selected_endpoints": [
+    {
+      "id": "mis-pedidos",
+      "method": "GET",
+      "path": "/api/solicitudes/mis-pedidos",
+      "module": "routes/solicitud_routes.py",
+      "role": "client",
+      "mutation": false,
+      "objective": "List authenticated client requests",
+      "priority": "P0",
+      "traffic_weight": 20,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real+documented"
+    },
+    {
+      "id": "dashboard-transportista",
+      "method": "GET",
+      "path": "/api/transportista/dashboard",
+      "module": "routes/solicitud_routes.py",
+      "role": "driver",
+      "mutation": false,
+      "objective": "Read driver dashboard",
+      "priority": "P0",
+      "traffic_weight": 15,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real+documented"
+    },
+    {
+      "id": "mis-pedidos-optimizado",
+      "method": "GET",
+      "path": "/solicitudes/mis-pedidos-optimizado",
+      "module": "routes/solicitud_routes.py",
+      "role": "client",
+      "mutation": false,
+      "objective": "List optimized client requests",
+      "priority": "P0",
+      "traffic_weight": 15,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real+documented"
+    },
+    {
+      "id": "buscar-localidades",
+      "method": "GET",
+      "path": "/api/localidades/buscar",
+      "module": "routes/localidad_routes.py",
+      "role": "client",
+      "mutation": false,
+      "objective": "Search localities",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real+documented"
+    },
+    {
+      "id": "historial-transportista",
+      "method": "GET",
+      "path": "/api/transportista/historial",
+      "module": "routes/solicitud_routes.py",
+      "role": "driver",
+      "mutation": false,
+      "objective": "Read driver trip history",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real+documented"
+    },
+    {
+      "id": "localidades",
+      "method": "GET",
+      "path": "/api/localidades",
+      "module": "routes/localidad_routes.py",
+      "role": "client",
+      "mutation": false,
+      "objective": "Read locality catalog",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real+documented"
+    },
+    {
+      "id": "mis-presupuestos",
+      "method": "GET",
+      "path": "/api/presupuestos/mis-presupuestos",
+      "module": "routes/presupuesto_routes.py",
+      "role": "driver",
+      "mutation": false,
+      "objective": "List driver quotes",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real+documented"
+    },
+    {
+      "id": "health",
+      "method": "GET",
+      "path": "/",
+      "module": "app.py",
+      "role": "public",
+      "mutation": false,
+      "objective": "Confirm service availability",
+      "priority": "P0",
+      "traffic_weight": 5,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real+documented"
+    },
+    {
+      "id": "presupuestos-completo-batch",
+      "method": "GET",
+      "path": "/api/presupuestos/completo-batch",
+      "module": "routes/presupuesto_routes.py",
+      "role": "client",
+      "mutation": false,
+      "objective": "Read grouped client quotes",
+      "priority": "P0",
+      "traffic_weight": 5,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real+documented"
+    },
+    {
+      "id": "actualizar-solicitud",
+      "method": "PATCH",
+      "path": "/api/solicitudes/<id>",
+      "module": "routes/solicitud_routes.py",
+      "role": "client",
+      "mutation": true,
+      "objective": "Update transport request",
+      "priority": "P0",
+      "traffic_weight": 1,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real"
+    },
+    {
+      "id": "crear-solicitud",
+      "method": "POST",
+      "path": "/api/solicitudes",
+      "module": "routes/solicitud_routes.py",
+      "role": "client",
+      "mutation": true,
+      "objective": "Create transport request",
+      "priority": "P0",
+      "traffic_weight": 1,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real"
+    },
+    {
+      "id": "detalle-solicitud",
+      "method": "GET",
+      "path": "/api/solicitudes/<id>",
+      "module": "routes/solicitud_routes.py",
+      "role": "client",
+      "mutation": false,
+      "objective": "Read request details",
+      "priority": "P0",
+      "traffic_weight": 1,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real"
+    },
+    {
+      "id": "presupuestos-solicitud",
+      "method": "GET",
+      "path": "/api/presupuestos/solicitud/<solicitud_id>",
+      "module": "routes/presupuesto_routes.py",
+      "role": "client",
+      "mutation": false,
+      "objective": "List quotes for request",
+      "priority": "P0",
+      "traffic_weight": 1,
+      "enabled_profiles": [
+        "smoke",
+        "load",
+        "stress",
+        "spike"
+      ],
+      "source": "real"
+    }
+  ]
+}
