@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "smoke": { "p95_ms": 1000, "error_pct": 1, "timeout_pct": 0 },
+    "load": { "p95_ms": 2000, "error_pct": 5, "timeout_pct": 1 },
+    "stress": { "p95_ms": 3000, "error_pct": 10, "timeout_pct": 10 },
+    "spike": { "p95_ms": 5000, "error_pct": 20, "timeout_pct": 20 }
+  },
+  "hard": { "p95_ms": 5000, "error_pct": 20, "timeout_pct": 10 }
+}
