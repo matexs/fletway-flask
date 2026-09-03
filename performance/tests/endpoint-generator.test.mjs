@@ -44,6 +44,15 @@ test('marks create and update response events explicitly for cleanup safety', ()
   assert.match(updateOutput, /created_by_test:\s*false/);
 });
 
+test('declares and records every metric used by standalone endpoint thresholds', () => {
+  const output = generateEndpointTest(manifestPath, 'mis-pedidos');
+  assert.match(output, /import \{ Rate, Trend \} from ['"]k6\/metrics['"]/);
+  assert.match(output, /metricName\(profileId, 'duration_ms'\)/);
+  assert.match(output, /metricName\(profileId, 'success_rate', endpoint\.id\)/);
+  assert.match(output, /metricSet\.overall\.duration\.add\(response\.timings\.duration/);
+  assert.match(output, /metricSet\.endpoint\.timeouts\.add\(timedOut/);
+});
+
 test('writes one generated endpoint file and refuses unknown manifest IDs', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'fletway-generator-'));
   const outputPath = path.join(directory, 'crear-solicitud.js');
