@@ -13,8 +13,12 @@ function file(contents) {
 }
 
 test('accepts generated endpoint contract without stages, thresholds, or secrets', () => {
-  const result = validateTestContract(file("import { setupAuth } from '../templates/endpoint.template.js';\nimport { adapterFor } from '../k6/adapters/endpoint-adapters.js';\nconst endpoint = { id: 'localidades' };\nsetupAuth; adapterFor(endpoint);"));
+  const result = validateTestContract(file("import { setupAuth } from '../templates/endpoint.template.js';\nimport { adapterFor } from '../k6/adapters/endpoint-adapters.js';\nconst endpoint = { id: 'localidades' };\nsetupAuth(); adapterFor(endpoint);"));
   assert.equal(result.valid, true);
+});
+
+test('rejects bare setupAuth and adapter identifiers even when semicolon-terminated', () => {
+  assert.throws(() => validateTestContract(file("import { setupAuth } from '../templates/endpoint.template.js';\nimport { adapterFor } from '../k6/adapters/endpoint-adapters.js';\nsetupAuth; adapterFor;")), /call|usage|adapter/i);
 });
 
 test('rejects hardcoded stages and thresholds in endpoint scripts', () => {

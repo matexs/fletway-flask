@@ -11,6 +11,7 @@ test('exposes a named structured ledger hook and role-aware setupAuth', () => {
   assert.match(template, /export function setupAuth\(requiredRole\s*=\s*null\)/);
   assert.match(template, /requiredRole/);
   assert.match(template, /requiredRole === 'public'/);
+  assert.match(template, /requiredRole === 'public'\) return \['BASE_URL'\]/);
 });
 
 test('uses timeout status, k6 error code, and timing-aware detection', () => {

@@ -22,7 +22,7 @@ export function validateTestContract(filePath) {
   const source = fs.readFileSync(filePath, 'utf8');
   const executable = withoutComments(source);
   const violations = forbidden.filter(({ pattern }) => pattern.test(source)).map(({ message }) => message);
-  if (!/import\s+\{[^}]*\b(?:setupAuth|requestOptions)\b[^}]*\}\s+from\s+['"][^'"]*endpoint\.template\.js['"]/.test(executable)) violations.push('missing executable shared template import');
+  if (!/import\s+\{[^}]*\b(?:setupAuth|requestOptions)\b[^}]*\}\s+from\s+['"][^'"]*endpoint\.template\.js['"]/.test(executable) || !/\bsetupAuth\s*\(/.test(executable)) violations.push('missing executable shared template setup call');
   if (!/import\s+\{[^}]*\badapterFor\b[^}]*\}\s+from\s+['"][^'"]*endpoint-adapters\.js['"]/.test(executable) || !/\badapterFor\s*\(/.test(executable)) violations.push('missing executable endpoint adapter usage');
   if (violations.length) throw new Error(`${path.basename(filePath)} violates endpoint contract: ${violations.join(', ')}`);
   return { valid: true, filePath, violations: [] };

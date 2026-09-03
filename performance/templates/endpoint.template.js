@@ -6,7 +6,7 @@ export function normalizeUrl(value) {
 
 export function requiredEnvironment(requiredRole = null) {
   const common = ['BASE_URL', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'];
-  if (requiredRole === 'public') return common;
+  if (requiredRole === 'public') return ['BASE_URL'];
   if (requiredRole === 'client') return [...common, 'CLIENT_EMAIL', 'CLIENT_PASSWORD'];
   if (requiredRole === 'driver') return [...common, 'DRIVER_EMAIL', 'DRIVER_PASSWORD'];
   return [...common, 'CLIENT_EMAIL', 'CLIENT_PASSWORD', 'DRIVER_EMAIL', 'DRIVER_PASSWORD'];
@@ -73,9 +73,9 @@ export function emitLedgerEvent(event, sink = console.log) {
   return ledgerEvent;
 }
 
-export function requestOptions(token, tags, body) {
+export function requestOptions(token, tags, body, { multipart = false } = {}) {
   return {
-    headers: token ? { ...authHeaders(token), 'Content-Type': 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
+    headers: token ? { ...authHeaders(token), ...(multipart ? {} : { 'Content-Type': 'application/json' }) } : { Accept: 'application/json', ...(multipart ? {} : { 'Content-Type': 'application/json' }) },
     tags, timeout: __ENV.REQUEST_TIMEOUT || '10s', ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   };
 }
