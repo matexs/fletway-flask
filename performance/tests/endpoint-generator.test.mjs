@@ -10,8 +10,7 @@ const manifestPath = path.resolve('performance/config/endpoints.manifest.json');
 test('generates a manifest endpoint with shared setup and adapter request metadata', () => {
   const output = generateEndpointTest(manifestPath, 'crear-solicitud');
   assert.match(output, /from ['"].*templates[\\/]endpoint\.template\.js/);
-  assert.match(output, /method:\s*['"]POST['"]/);
-  assert.match(output, /\/api\/solicitudes/);
+  assert.match(output, /adapterFor\(endpoint\)/);
   assert.match(output, /adapter\.body/);
   assert.match(output, /captureResponseIds/);
   assert.doesNotMatch(output, /stages\s*:/);
@@ -23,6 +22,16 @@ test('captures path IDs from environment without hardcoding a concrete ID', () =
   assert.match(output, /resolvePath/);
   assert.match(output, /REQUEST_ID/);
   assert.doesNotMatch(output, /\/api\/solicitudes\/\d+/);
+});
+
+test('uses adapter method and path at runtime and calls the ledger hook for mutations', () => {
+  const output = generateEndpointTest(manifestPath, 'crear-solicitud');
+  assert.match(output, /http\.request\(adapter\.method/);
+  assert.match(output, /resolvePath\(adapter\.path\)/);
+  assert.doesNotMatch(output, /method:\s*['"]POST['"]/);
+  assert.doesNotMatch(output, /path:\s*['"]\/api\/solicitudes['"]/);
+  assert.match(output, /endpoint\.mutation\s*&&\s*emitLedgerEvent/);
+  assert.match(output, /setupAuth\(endpoint\.role\)/);
 });
 
 test('writes one generated endpoint file and refuses unknown manifest IDs', () => {

@@ -15,26 +15,26 @@ export function renderEndpointTest(endpoint, outputPath) {
   const pathIdComment = placeholders.length ? `// Path IDs come from environment variables: ${placeholders.join(', ')}.\n` : '';
   return `import http from 'k6/http';
 import { check } from 'k6';
-import { captureResponseIds, requestOptions, requestTags, setupAuth, tokenForRole } from '${template}';
+import { captureResponseIds, emitLedgerEvent, isTimeout, requestOptions, requestTags, setupAuth, tokenForRole } from '${template}';
 import { adapterFor, resolvePath } from '${adapters}';
 import { buildScenarios, buildThresholds, profileIdsFor } from '${config}';
 
-const endpoint = ${JSON.stringify(endpoint, null, 2)};
-${pathIdComment}const adapter = { ...adapterFor(endpoint), method: '${endpoint.method}', path: '${endpoint.path}' };
+const endpoint = ${JSON.stringify({ id: endpoint.id, role: endpoint.role, mutation: endpoint.mutation }, null, 2)};
+${pathIdComment}const adapter = adapterFor(endpoint);
 const BASE_URL = String(__ENV.BASE_URL || '').replace(/[\\/,]+$/, '');
 const PROFILE = __ENV.PROFILE || 'smoke';
 
 export const options = { scenarios: buildScenarios(PROFILE), thresholds: buildThresholds(profileIdsFor(PROFILE), [{ key: endpoint.id }]) };
-export function setup() { return setupAuth(); }
+export function setup() { return setupAuth(endpoint.role); }
 export default function runEndpoint(auth) {
   const body = adapter.body ? adapter.body() : undefined;
-  const tags = requestTags({ endpointId: endpoint.id, profile: __ENV.PROFILE || 'smoke', stage: __ENV.STAGE || 'measure', role: endpoint.role });
+  const tags = requestTags({ endpointId: endpoint.id, profile: PROFILE, stage: __ENV.STAGE || 'measure', role: endpoint.role });
   const token = tokenForRole(endpoint.role, auth);
   const response = http.request(adapter.method, BASE_URL + resolvePath(adapter.path), body === undefined ? null : JSON.stringify(body), requestOptions(token, tags));
-  const timedOut = String(response.error || '').toLowerCase().includes('timeout');
+  const timedOut = isTimeout(response, __ENV.REQUEST_TIMEOUT || '10s');
   check(response, { [endpoint.id + ' status is successful']: () => response.status >= 200 && response.status < 400, [endpoint.id + ' does not time out']: () => !timedOut }, tags);
   const responseIds = endpoint.mutation ? captureResponseIds(response) : {};
-  if (Object.keys(responseIds).length) console.log(JSON.stringify({ endpoint_id: endpoint.id, response_ids: responseIds }));
+  endpoint.mutation && emitLedgerEvent({ endpoint_id: endpoint.id, method: adapter.method, path: adapter.path, status: response.status, response_ids: responseIds });
 }
 `;
 }

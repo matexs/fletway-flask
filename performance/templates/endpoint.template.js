@@ -4,12 +4,15 @@ export function normalizeUrl(value) {
   return String(value || '').trim().replace(/[\\/,]+$/, '');
 }
 
-export function requiredEnvironment() {
-  return ['BASE_URL', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'CLIENT_EMAIL', 'CLIENT_PASSWORD', 'DRIVER_EMAIL', 'DRIVER_PASSWORD'];
+export function requiredEnvironment(requiredRole = null) {
+  const common = ['BASE_URL', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+  if (requiredRole === 'client') return [...common, 'CLIENT_EMAIL', 'CLIENT_PASSWORD'];
+  if (requiredRole === 'driver') return [...common, 'DRIVER_EMAIL', 'DRIVER_PASSWORD'];
+  return [...common, 'CLIENT_EMAIL', 'CLIENT_PASSWORD', 'DRIVER_EMAIL', 'DRIVER_PASSWORD'];
 }
 
-export function requireEnvironment(env = __ENV) {
-  const missing = requiredEnvironment().filter((name) => !env[name]);
+export function requireEnvironment(env = __ENV, requiredRole = null) {
+  const missing = requiredEnvironment(requiredRole).filter((name) => !env[name]);
   if (missing.length) throw new Error(`Faltan variables requeridas: ${missing.join(', ')}`);
 }
 
@@ -34,10 +37,13 @@ export function requestTags({ endpointId, profile, stage, role }) {
   return { endpoint_id: endpointId, profile, stage, role };
 }
 
-export function setupAuth() {
-  requireEnvironment();
+export function setupAuth(requiredRole = null) {
+  requireEnvironment(__ENV, requiredRole);
   const options = { supabaseUrl: __ENV.SUPABASE_URL, anonKey: __ENV.SUPABASE_ANON_KEY, timeout: __ENV.SETUP_REQUEST_TIMEOUT || '60s' };
-  return { clientToken: login('client', __ENV.CLIENT_EMAIL, __ENV.CLIENT_PASSWORD, options), driverToken: login('driver', __ENV.DRIVER_EMAIL, __ENV.DRIVER_PASSWORD, options) };
+  return {
+    clientToken: requiredRole === 'driver' ? null : login('client', __ENV.CLIENT_EMAIL, __ENV.CLIENT_PASSWORD, options),
+    driverToken: requiredRole === 'client' ? null : login('driver', __ENV.DRIVER_EMAIL, __ENV.DRIVER_PASSWORD, options),
+  };
 }
 
 export function tokenForRole(role, auth) {
@@ -60,9 +66,17 @@ export function captureResponseIds(response) {
   return ids;
 }
 
+export function emitLedgerEvent(event, sink = console.log) {
+  const ledgerEvent = { ledger_event_version: 1, event_type: 'performance_response', ...event };
+  sink(JSON.stringify(ledgerEvent));
+  return ledgerEvent;
+}
+
 export function requestOptions(token, tags, body) {
   return {
     headers: token ? { ...authHeaders(token), 'Content-Type': 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
     tags, timeout: __ENV.REQUEST_TIMEOUT || '10s', ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   };
 }
+
+export { isTimeout } from '../k6/lib/timeout.js';
