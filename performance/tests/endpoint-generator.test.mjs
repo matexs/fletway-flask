@@ -35,6 +35,15 @@ test('uses adapter method and path at runtime and calls the ledger hook for muta
   assert.match(output, /export function runFlow\(/);
 });
 
+test('marks create and update response events explicitly for cleanup safety', () => {
+  const createOutput = generateEndpointTest(manifestPath, 'crear-solicitud');
+  const updateOutput = generateEndpointTest(manifestPath, 'actualizar-solicitud');
+  assert.match(createOutput, /resource_action:\s*'create'/);
+  assert.match(createOutput, /created_by_test:\s*true/);
+  assert.match(updateOutput, /resource_action:\s*'update'/);
+  assert.match(updateOutput, /created_by_test:\s*false/);
+});
+
 test('writes one generated endpoint file and refuses unknown manifest IDs', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'fletway-generator-'));
   const outputPath = path.join(directory, 'crear-solicitud.js');

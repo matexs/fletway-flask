@@ -6,7 +6,8 @@ export const softLimits = {
 export const hardLimits = { p95Ms: 5000, successRate: 0.80, errorRate: 0.20, timeoutRate: 0.10 };
 
 export function metricName(profileId, kind, endpointKey = '') {
-  return `fletway_${profileId}${endpointKey ? `_${endpointKey}` : ''}_${kind}`;
+  const safeEndpointKey = String(endpointKey).replace(/[^A-Za-z0-9_]/g, '_');
+  return `fletway_${profileId}${safeEndpointKey ? `_${safeEndpointKey}` : ''}_${kind}`;
 }
 
 export function buildThresholds(profileIds, endpoints = []) {

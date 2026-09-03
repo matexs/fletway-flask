@@ -26,5 +26,5 @@ export function runFlow(auth) {
   const timedOut = isTimeout(response, __ENV.REQUEST_TIMEOUT || '10s');
   check(response, { [endpoint.id + ' status is successful']: () => response.status >= 200 && response.status < 400, [endpoint.id + ' does not time out']: () => !timedOut }, tags);
   const responseIds = endpoint.mutation ? captureResponseIds(response) : {};
-  endpoint.mutation && emitLedgerEvent({ endpoint_id: endpoint.id, method: adapter.method, path: adapter.path, status: response.status, response_ids: responseIds });
+  endpoint.mutation && emitLedgerEvent({ endpoint_id: endpoint.id, method: adapter.method, path: adapter.path, status: response.status, response_ids: responseIds, resource_action: 'create', created_by_test: true });
 }

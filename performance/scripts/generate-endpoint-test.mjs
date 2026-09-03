@@ -13,6 +13,7 @@ export function renderEndpointTest(endpoint, outputPath) {
   const placeholderEnv = { id: 'REQUEST_ID', solicitud_id: 'SOLICITUD_ID', presupuesto_id: 'PRESUPUESTO_ID', transportista_id: 'TRANSPORTISTA_ID', filename: 'FILENAME' };
   const placeholders = [...String(endpoint.path).matchAll(/<([^>]+)>/g)].map(([, name]) => placeholderEnv[name] || name.toUpperCase());
   const pathIdComment = placeholders.length ? `// Path IDs come from environment variables: ${placeholders.join(', ')}.\n` : '';
+  const createsResource = endpoint.id.startsWith('crear-');
   return `import http from 'k6/http';
 import { check } from 'k6';
 import { captureResponseIds, emitLedgerEvent, isTimeout, requestOptions, requestTags, setupAuth, tokenForRole } from '${template}';
@@ -37,7 +38,7 @@ export function runFlow(auth) {
   const timedOut = isTimeout(response, __ENV.REQUEST_TIMEOUT || '10s');
   check(response, { [endpoint.id + ' status is successful']: () => response.status >= 200 && response.status < 400, [endpoint.id + ' does not time out']: () => !timedOut }, tags);
   const responseIds = endpoint.mutation ? captureResponseIds(response) : {};
-  endpoint.mutation && emitLedgerEvent({ endpoint_id: endpoint.id, method: adapter.method, path: adapter.path, status: response.status, response_ids: responseIds });
+  endpoint.mutation && emitLedgerEvent({ endpoint_id: endpoint.id, method: adapter.method, path: adapter.path, status: response.status, response_ids: responseIds, resource_action: '${createsResource ? 'create' : 'update'}', created_by_test: ${createsResource} });
 }
 `;
 }
