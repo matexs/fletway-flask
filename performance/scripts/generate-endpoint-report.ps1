@@ -62,7 +62,7 @@ function Get-Profile($Raw, [string]$Path) {
     if ($profile -notin $Profiles) { Fail "$Path has unsupported profile: $profile" }
     return $profile
 }
-function Get-MetricValues($Raw, [string]$Path) {
+function Get-MetricValues($Raw, [string]$Path, [bool]$RequireStressDetail = $false) {
     if (-not (Has-Property $Raw 'metrics')) { Fail "$Path requires metrics" }
     $metrics = $Raw.metrics
     if (-not (Has-Property $metrics 'http_req_duration') -or -not (Has-Property $metrics 'http_req_failed')) { Fail "$Path requires duration and error metrics" }
@@ -71,20 +71,32 @@ function Get-MetricValues($Raw, [string]$Path) {
     $failed = $metrics.http_req_failed.values
     if (-not (Has-Property $duration 'p(95)')) { Fail "$Path duration requires p(95)" }
     if (-not (Has-Property $failed 'rate')) { Fail "$Path error metric requires rate" }
+    if ($RequireStressDetail -and (-not (Has-Property $metrics 'http_reqs') -or -not (Has-Property $metrics.http_reqs 'values') -or -not (Has-Property $metrics.http_reqs.values 'count'))) { Fail "$Path stress request metrics require http_reqs.values.count" }
     $requestValues = if (Has-Property $metrics 'http_reqs' -and Has-Property $metrics.http_reqs 'values') { $metrics.http_reqs.values } else { $duration }
     if (-not (Has-Property $requestValues 'count')) { Fail "$Path request metrics require count" }
+    foreach ($field in @('p(50)','p(90)','p(95)','max')) {
+        if ($RequireStressDetail -and -not (Has-Property $duration $field)) { Fail "$Path stress duration requires $field" }
+    }
     $p50 = if (Has-Property $duration 'p(50)') { Number $duration.'p(50)' 'p(50)' $Path } else { $null }
     $p90 = if (Has-Property $duration 'p(90)') { Number $duration.'p(90)' 'p(90)' $Path } else { $null }
     $max = if (Has-Property $duration 'max') { Number $duration.max 'max' $Path } else { $null }
     return [pscustomobject]@{ p50=$p50; p90=$p90; p95=(Number $duration.'p(95)' 'p(95)' $Path); max=$max; count=(Number $requestValues.count 'count' $Path); error_pct=(Number $failed.rate 'error rate' $Path) * 100 }
 }
-function Get-Vu([object]$Raw, [string]$Name, [string]$Path) { if (-not (Has-Property $Raw $Name)) { Fail "$Path requires $Name" }; return [int](Number $Raw.$Name $Name $Path) }
+function Get-Vu([object]$Raw, [string]$Name, [string]$Path) {
+    if (-not (Has-Property $Raw $Name)) { Fail "$Path requires $Name" }
+    $value = Number $Raw.$Name $Name $Path
+    if ([math]::Floor($value) -ne $value) { Fail "$Path requires integer $Name" }
+    return [int]$value
+}
 function New-ProfileModel($Raw, [string]$Profile, [string]$Path) {
-    $values = Get-MetricValues $Raw $Path
+    $values = Get-MetricValues $Raw $Path ($Profile -like 'stress_*')
     $vuMin = if (Has-Property $Raw 'vu_min') { Get-Vu $Raw 'vu_min' $Path } else { 0 }
     $vuMax = if (Has-Property $Raw 'vu_max') { Get-Vu $Raw 'vu_max' $Path } else { 0 }
     $result = if (Has-Property $Raw 'result') { [string]$Raw.result } else { '' }
-    $rps = if (Has-Property $Raw 'measured_duration_seconds') { $values.count / (Number $Raw.measured_duration_seconds 'measured_duration_seconds' $Path) } else { 0 }
+    if (-not (Has-Property $Raw 'measured_duration_seconds')) { Fail "$Path requires measured_duration_seconds for RPS" }
+    $durationSeconds = Number $Raw.measured_duration_seconds 'measured_duration_seconds' $Path
+    if ($durationSeconds -le 0) { Fail "$Path measured_duration_seconds must be greater than zero" }
+    $rps = $values.count / $durationSeconds
     return [pscustomobject]@{ profile=$Profile; vu_min=$vuMin; vu_max=$vuMax; p95=$values.p95; error_pct=$values.error_pct; rps=$rps; result=$result; values=$values; raw=$Raw }
 }
 function Read-Models($Entry) {
@@ -93,7 +105,13 @@ function Read-Models($Entry) {
         $raw = Read-Json $file.FullName
         if (-not (Has-Property $raw 'endpoint_id') -or [string]$raw.endpoint_id -ne $Entry.id) { continue }
         $profile = Get-Profile $raw $file.Name
-        if ($profile -match '^stress_') { $stress[[int]($profile -replace '^stress_','')] = New-ProfileModel $raw $profile $file.Name }
+        if ($profile -match '^stress_') {
+            $vu = [int]($profile -replace '^stress_','')
+            if ($stress.ContainsKey($vu)) { Fail "duplicate raw stress profile: stress_$vu" }
+            $stressModel = New-ProfileModel $raw $profile $file.Name
+            if ($stressModel.vu_min -ne $vu -or $stressModel.vu_max -ne $vu) { Fail "$file.Name stress VU must match stress_$vu" }
+            $stress[$vu] = $stressModel
+        }
         elseif ($models.ContainsKey($profile)) { Fail "duplicate raw profile: $profile" }
         else { $models[$profile] = New-ProfileModel $raw $profile $file.Name }
     }
@@ -136,29 +154,42 @@ function Render-Spike($Model) {
     $p = $Model.profiles['spike']
     if ($null -eq $p) { return '**Resultado:** NO_EJECUTADA; no hay datos spike.' }
     $raw=$p.raw
-    foreach ($name in @('baseline','peak','recovery')) { if (-not (Has-Property $raw $name)) { Fail "spike requires $name data" } }
+    $spikeParts = @{}
+    foreach ($name in @('baseline','peak','recovery')) {
+        if (-not (Has-Property $raw $name)) { Fail "spike requires $name data" }
+        $part = $raw.$name
+        foreach ($field in @('vus','p95_ms','error_pct','rps')) { if (-not (Has-Property $part $field)) { Fail "spike $name requires $field" } }
+        $vus = Get-Vu $part 'vus' "spike $name"
+        $spikeParts[$name] = [pscustomobject]@{ vus=$vus; p95_ms=(Number $part.p95_ms 'p95_ms' "spike $name"); error_pct=(Number $part.error_pct 'error_pct' "spike $name"); rps=(Number $part.rps 'rps' "spike $name") }
+    }
     $recoverySeconds = if (Has-Property $raw.recovery 'seconds') { Number $raw.recovery.seconds 'recovery seconds' 'spike' } elseif (Has-Property $raw 'recovery_seconds') { Number $raw.recovery_seconds 'recovery seconds' 'spike' } else { Fail 'spike requires recovery seconds' }
-    return "**Baseline:** $($raw.baseline.vus) VU, p95 $(Value-Or-NA $raw.baseline.p95_ms) ms, error $(Value-Or-NA $raw.baseline.error_pct)%, RPS $(Value-Or-NA $raw.baseline.rps)`n`n**Peak:** $($raw.peak.vus) VU, p95 $(Value-Or-NA $raw.peak.p95_ms) ms, error $(Value-Or-NA $raw.peak.error_pct)%, RPS $(Value-Or-NA $raw.peak.rps)`n`n**Recovery:** p95 $(Value-Or-NA $raw.recovery.p95_ms) ms, error $(Value-Or-NA $raw.recovery.error_pct)%, $recoverySeconds s.`n`n**Resultado:** $(if ($p.result) { $p.result } else { 'observado' })"
+    return "**Baseline:** $($spikeParts.baseline.vus) VU, p95 $(Value-Or-NA $spikeParts.baseline.p95_ms) ms, error $(Value-Or-NA $spikeParts.baseline.error_pct)%, RPS $(Value-Or-NA $spikeParts.baseline.rps)`n`n**Peak:** $($spikeParts.peak.vus) VU, p95 $(Value-Or-NA $spikeParts.peak.p95_ms) ms, error $(Value-Or-NA $spikeParts.peak.error_pct)%, RPS $(Value-Or-NA $spikeParts.peak.rps)`n`n**Recovery:** $($spikeParts.recovery.vus) VU, p95 $(Value-Or-NA $spikeParts.recovery.p95_ms) ms, error $(Value-Or-NA $spikeParts.recovery.error_pct)%, RPS $(Value-Or-NA $spikeParts.recovery.rps), $recoverySeconds s.`n`n**Resultado:** $(if ($p.result) { $p.result } else { 'observado' })"
 }
 function Render-Matrix($Rows) {
     $lines=@('| endpoint | test | objetivo | carga_vu_min | carga_vu_max | p95_ms | error_pct | capacidad_rps | resultado | usuarios |','|---|---|---|---:|---:|---:|---:|---:|---|---|')
     foreach ($row in $Rows) { $lines += "| $(Escape-Md $row.endpoint) | $($row.test) | $(Escape-Md $row.objetivo) | $($row.carga_vu_min) | $($row.carga_vu_max) | $($row.p95_ms) | $($row.error_pct) | $($row.capacidad_rps) | $(Escape-Md $row.resultado) | $(Escape-Md $row.usuarios) |" }
     return $lines -join "`n"
 }
-function Render-Conclusion($Model, $Rows) {
-    $states=@($Rows | ForEach-Object resultado); $result=if ($states -contains 'FALLIDA') {'FALLIDA'} elseif ($states -contains 'ADVERTENCIA') {'ADVERTENCIA'} elseif ($states -contains 'NO_EJECUTADA') {'NO_EJECUTADA'} else {'APROBADA'}
-    $facts = @("**Hecho:** el endpoint alcanzó una carga máxima observada de $((@($Rows | ForEach-Object {[int]$_.carga_vu_max} | Measure-Object -Maximum).Maximum)) VU y la matriz reporta estado $result.")
-    if ($Model.stress.Count) { $facts += '**Hecho:** los escalones stress muestran las latencias, errores y RPS observados en la tabla; el primer punto de degradación se limita a esos escalones.' }
-    return ($facts -join "`n`n") + "`n`n**Hipótesis:** no hay telemetría de SQL, memoria, CPU o logs en este modelo; por tanto, no se atribuye la degradación a una causa técnica específica."
+function Get-ConclusionModel($Model, $Rows) {
+    $result=Get-WorstResult $Rows
+    $facts = @("el endpoint alcanzó una carga máxima observada de $((@($Rows | ForEach-Object {[int]$_.carga_vu_max} | Measure-Object -Maximum).Maximum)) VU y la matriz reporta estado $result.")
+    if ($Model.stress.Count) { $facts += 'los escalones stress muestran las latencias, errores y RPS observados en la tabla; el primer punto de degradación se limita a esos escalones.' }
+    return [pscustomobject]@{ facts=$facts; hypothesis='no hay telemetría de SQL, memoria, CPU o logs en este modelo; por tanto, no se atribuye la degradación a una causa técnica específica.' }
 }
-function Render-Html($Model, $Rows, [string]$Markdown) {
-    $entry=$Model.entry; $sections=@(); $overall=Get-WorstResult $Rows
+function Render-Conclusion($Model, $Rows) {
+    $conclusion=Get-ConclusionModel $Model $Rows
+    $lines=@($conclusion.facts | ForEach-Object { "**Hecho:** $_" }); $lines += "**Hipótesis:** $($conclusion.hypothesis)"
+    return $lines -join "`n`n"
+}
+function Render-Html($Model, $Rows) {
+    $entry=$Model.entry; $sections=@(); $overall=Get-WorstResult $Rows; $conclusion=Get-ConclusionModel $Model $Rows
     foreach ($name in @('smoke','load')) { $label = $name.Substring(0,1).ToUpperInvariant() + $name.Substring(1); $sections += "<section><h2>$label</h2><p>$(Escape-Html (Report-Text $Model $name))</p></section>" }
     $stress=Escape-Html (Render-Stress $Model) -replace '`n','<br>'
     $spike=Escape-Html (Render-Spike $Model) -replace '`n','<br>'
-    $matrixRows=($Rows | ForEach-Object { "<tr><td>$(Escape-Html $_.endpoint)</td><td>$($_.test)</td><td>$(Escape-Html $_.objetivo)</td><td>$($_.carga_vu_min)</td><td>$($_.carga_vu_max)</td><td>$($_.p95_ms)</td><td>$($_.error_pct)</td><td>$($_.capacidad_rps)</td><td>$($_.resultado)</td><td>$(Escape-Html $_.usuarios)</td></tr>" }) -join ''
-    $summary="<p>Score endpoint: no calculado por Task 9; resultado de matriz: $(Escape-Html $overall); carga máxima: $((@($Rows | ForEach-Object {[int]$_.carga_vu_max} | Measure-Object -Maximum).Maximum)) VU; capacidad máxima: $((@($Rows | ForEach-Object {[double]$_.capacidad_rps} | Measure-Object -Maximum).Maximum)) RPS.</p>"
-    return "<!doctype html><html lang='es'><head><meta charset='utf-8'><title>$(Escape-Html $entry.endpoint)</title><style>body{font:16px Segoe UI, sans-serif;max-width:1200px;margin:2rem auto;padding:0 1rem;color:#172033}section{border:1px solid #dfe6f0;border-radius:10px;padding:1rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #dfe6f0;padding:.4rem;text-align:left}th{background:#f3f6fb}.hypothesis{background:#fff7db;padding:1rem}</style></head><body><h1>$(Escape-Html $entry.endpoint)</h1><p><strong>Método/ruta:</strong> $(Escape-Html $entry.endpoint)<br><strong>Objetivo:</strong> $(Escape-Html $entry.objective)</p><h2>Resumen</h2>$summary$($sections -join '')<section><h2>Stress</h2><p>$stress</p></section><section><h2>Spike</h2><p>$spike</p></section><section><h2>Matriz</h2><table><thead><tr><th>endpoint</th><th>test</th><th>objetivo</th><th>carga_vu_min</th><th>carga_vu_max</th><th>p95_ms</th><th>error_pct</th><th>capacidad_rps</th><th>resultado</th><th>usuarios</th></tr></thead><tbody>$matrixRows</tbody></table></section><section class='hypothesis'><h2>Conclusión</h2><p>Hecho: las cifras proceden de la matriz y raw JSON observados.</p><p>Hipótesis: no hay telemetría de SQL, memoria, CPU o logs en este modelo; no se atribuye una causa técnica específica.</p></section></body></html>"
+    $matrixRows=($Rows | ForEach-Object { "<tr><td>$(Escape-Html ([string]$_.endpoint))</td><td>$(Escape-Html ([string]$_.test))</td><td>$(Escape-Html ([string]$_.objetivo))</td><td>$(Escape-Html ([string]$_.carga_vu_min))</td><td>$(Escape-Html ([string]$_.carga_vu_max))</td><td>$(Escape-Html ([string]$_.p95_ms))</td><td>$(Escape-Html ([string]$_.error_pct))</td><td>$(Escape-Html ([string]$_.capacidad_rps))</td><td>$(Escape-Html ([string]$_.resultado))</td><td>$(Escape-Html ([string]$_.usuarios))</td></tr>" }) -join ''
+    $summary="<p><strong>Score endpoint:</strong> N/D (no calculado hasta Task 10); resultado de matriz: $(Escape-Html $overall); carga máxima: $((@($Rows | ForEach-Object {[int]$_.carga_vu_max} | Measure-Object -Maximum).Maximum)) VU; capacidad máxima: $((@($Rows | ForEach-Object {[double]$_.capacidad_rps} | Measure-Object -Maximum).Maximum)) RPS.</p>"
+    $factHtml=($conclusion.facts | ForEach-Object { "<p><strong>Hecho:</strong> $(Escape-Html $_)</p>" }) -join ''
+    return "<!doctype html><html lang='es'><head><meta charset='utf-8'><title>$(Escape-Html $entry.endpoint)</title><style>body{font:16px Segoe UI, sans-serif;max-width:1200px;margin:2rem auto;padding:0 1rem;color:#172033}section{border:1px solid #dfe6f0;border-radius:10px;padding:1rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #dfe6f0;padding:.4rem;text-align:left}th{background:#f3f6fb}.hypothesis{background:#fff7db;padding:1rem}</style></head><body><h1>$(Escape-Html $entry.endpoint)</h1><p><strong>Método/ruta:</strong> $(Escape-Html $entry.endpoint)<br><strong>Objetivo:</strong> $(Escape-Html $entry.objective)</p><h2>Resumen</h2>$summary$($sections -join '')<section><h2>Stress</h2><p>$stress</p></section><section><h2>Spike</h2><p>$spike</p></section><section><h2>Matriz</h2><table><thead><tr><th>endpoint</th><th>test</th><th>objetivo</th><th>carga_vu_min</th><th>carga_vu_max</th><th>p95_ms</th><th>error_pct</th><th>capacidad_rps</th><th>resultado</th><th>usuarios</th></tr></thead><tbody>$matrixRows</tbody></table></section><section class='hypothesis'><h2>Conclusión</h2>$factHtml<p><strong>Hipótesis:</strong> $(Escape-Html $conclusion.hypothesis)</p></section></body></html>"
 }
 
 if (-not (Test-Path -LiteralPath $TemplatePath -PathType Leaf)) { Fail "template file not found: $TemplatePath" }
@@ -171,11 +202,11 @@ $stressMatrixRow = @($rows | Where-Object test -eq 'stress')[0]
 $stressMaxVu = [int]$stressMatrixRow.carga_vu_max
 if (-not $rawModels.stress.ContainsKey($stressMaxVu)) { Fail "stress raw profiles are missing the matrix maximum VU: $stressMaxVu" }
 $model = [pscustomobject]@{ entry=$entry; profiles=$rawModels.profiles; stress=$rawModels.stress; rows=$rows }
-$summary = "- **Score endpoint:** no calculado por Task 9`n- **Resultado:** $(Get-WorstResult $rows)`n- **Carga máxima:** $((@($rows | ForEach-Object {[int]$_.carga_vu_max} | Measure-Object -Maximum).Maximum)) VU`n- **Capacidad máxima:** $((@($rows | ForEach-Object {[double]$_.capacidad_rps} | Measure-Object -Maximum).Maximum)) RPS"
+$summary = "- **Score endpoint:** N/D (no calculado hasta Task 10)`n- **Resultado:** $(Get-WorstResult $rows)`n- **Carga máxima:** $((@($rows | ForEach-Object {[int]$_.carga_vu_max} | Measure-Object -Maximum).Maximum)) VU`n- **Capacidad máxima:** $((@($rows | ForEach-Object {[double]$_.capacidad_rps} | Measure-Object -Maximum).Maximum)) RPS"
 $template = Get-Content -Raw -LiteralPath $TemplatePath
 foreach ($token in @('{{ENDPOINT}}','{{OBJECTIVE}}','{{SUMMARY}}','{{SMOKE}}','{{LOAD}}','{{STRESS}}','{{SPIKE}}','{{MATRIX}}','{{CONCLUSION}}')) { if (-not $template.Contains($token)) { Fail "template missing token: $token" } }
 $markdown = $template.Replace('{{ENDPOINT}}',(Escape-Md $entry.endpoint)).Replace('{{OBJECTIVE}}',(Escape-Md $entry.objective)).Replace('{{SUMMARY}}',$summary).Replace('{{SMOKE}}',(Report-Text $model 'smoke')).Replace('{{LOAD}}',(Report-Text $model 'load')).Replace('{{STRESS}}',(Render-Stress $model)).Replace('{{SPIKE}}',(Render-Spike $model)).Replace('{{MATRIX}}',(Render-Matrix $rows)).Replace('{{CONCLUSION}}',(Render-Conclusion $model $rows))
-$html = Render-Html $model $rows $markdown
+$html = Render-Html $model $rows
 Assert-NoSecrets $markdown; Assert-NoSecrets $html
 New-Item -ItemType Directory -Force -Path $safeOutput | Out-Null
 $markdownPath=Join-Path $safeOutput 'endpoint-report.md'; $htmlPath=Join-Path $safeOutput 'endpoint-report.html'

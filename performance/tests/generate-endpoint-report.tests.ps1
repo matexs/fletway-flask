@@ -36,6 +36,13 @@ function Invoke-Report($matrix, $raw, $manifest, [string]$name = 'report') {
     return [pscustomobject]@{ ExitCode=$LASTEXITCODE; Stdout=$stdout; Output=$output }
 }
 
+function Clone-Value($value) { return ($value | ConvertTo-Json -Depth 30 | ConvertFrom-Json) }
+
+function Assert-ReportRejected($matrix, $raw, $manifest, [string]$name, [string]$pattern = 'stress|spike|duration|metric|profile') {
+    $result = Invoke-Report $matrix $raw $manifest $name
+    Assert-True ($result.ExitCode -ne 0 -and $result.Stdout -match $pattern) "$name must be rejected: $($result.Stdout)"
+}
+
 $header = 'endpoint,test,objetivo,carga_vu_min,carga_vu_max,p95_ms,error_pct,capacidad_rps,resultado,usuarios'
 $manifest = @{ endpoints = @(@{ id='orders'; method='GET'; path='/api/orders'; objective='Validate orders under representative traffic'; priority='P0'; enabled_profiles=@('smoke','load','stress','spike') }) }
 $matrix = @"
@@ -57,7 +64,7 @@ try {
         'stress-10' = @{ endpoint_id='orders'; profile='stress_10'; vu_min=10; vu_max=10; measured_duration_seconds=20; metrics=(Metric 400 1000 1900 2800 220 0.01) }
         'stress-20' = @{ endpoint_id='orders'; profile='stress_20'; vu_min=20; vu_max=20; measured_duration_seconds=20; metrics=(Metric 600 1800 3100 4700 300 0.07) }
         'stress-30' = @{ endpoint_id='orders'; profile='stress_30'; vu_min=30; vu_max=30; measured_duration_seconds=20; metrics=(Metric 900 2500 3800 6200 280 0.12) }
-        'spike' = @{ endpoint_id='orders'; profile='spike'; vu_min=3; vu_max=30; measured_duration_seconds=20; recovery_seconds=18; baseline=@{ vus=3; p95_ms=1200; error_pct=1; rps=10 }; peak=@{ vus=30; p95_ms=4100; error_pct=8; rps=15 }; recovery=@{ p95_ms=1300; error_pct=1; seconds=18 }; metrics=(Metric 800 2500 4100 6000 300 0.08) }
+        'spike' = @{ endpoint_id='orders'; profile='spike'; vu_min=3; vu_max=30; measured_duration_seconds=20; recovery_seconds=18; baseline=@{ vus=3; p95_ms=1200; error_pct=1; rps=10 }; peak=@{ vus=30; p95_ms=4100; error_pct=8; rps=15 }; recovery=@{ vus=3; p95_ms=1300; error_pct=1; rps=10; seconds=18 }; metrics=(Metric 800 2500 4100 6000 300 0.08) }
     }
 
     $first = Invoke-Report $matrix $raw $manifest
@@ -73,11 +80,61 @@ try {
     foreach ($section in @('Smoke','Load','Stress','Spike','Matriz')) {
         Assert-True ($md.Contains("## $section") -and $html.Contains("<h2>$section</h2>")) "both formats must include section: $section"
     }
+    Assert-True ($md -match 'Score endpoint:\*\*\s*N/D.*Task 10' -and $html -match 'N/D.*Task 10') 'score must be present but explicitly not calculated until Task 10'
     Assert-True ($md -match '\| 10 \|' -and $md -match '\| 20 \|' -and $md -match '\| 30 \|' -and $md -match '400.*1000.*1900.*2800.*1.*11' -and $md -match 'Primer punto de degradación.*20 VU') 'stress must include per-VU metrics and first degradation'
     Assert-True ($md -match '(?i)Baseline:' -and $md -match '3 VU' -and $md -match '(?i)Peak:' -and $md -match '30 VU' -and $md -match '18 s' -and $md -match '(?i)Recovery:') 'spike must include baseline, peak, recovery and result'
     Assert-True ($md -match '\| GET /api/orders \| smoke \|' -and $md -match '\| GET /api/orders \| load \|' -and $md -match '\| GET /api/orders \| stress \|' -and $md -match '\| GET /api/orders \| spike \|') 'matrix must include all four canonical rows'
     Assert-True ($md -match 'Hecho:' -and $md -match 'Hipótesis:' -and $md -match 'no hay telemetría') 'conclusion must distinguish evidence from hypothesis'
     Assert-True ($md -notmatch '(?i)(causad[oa]|debido|provocad[oa]).{0,30}(sql|memoria)|(sql|memoria).{0,30}(causad[oa]|debido|provocad[oa])|password|bearer|eyJ[A-Za-z0-9_-]+') 'report must not claim unsupported causes or leak secrets'
+    Assert-True ($html -match 'carga máxima observada de 30 VU' -and $html -match 'no hay telemetría de SQL') 'HTML conclusion must use the same model-derived facts and hypothesis as Markdown'
+
+    $escapedMatrix = $matrix.Replace('APROBADA','<script>alert(1)</script>')
+    $escaped = Invoke-Report $escapedMatrix $raw $manifest 'escaped-matrix'
+    Assert-True ($escaped.ExitCode -eq 0) "matrix values should be escaped, not rejected: $($escaped.Stdout)"
+    $escapedHtml = Get-Content -Raw (Join-Path $escaped.Output 'endpoint-report.html')
+    Assert-True ($escapedHtml.Contains('&lt;script&gt;alert(1)&lt;/script&gt;') -and $escapedHtml -notmatch '<script>') 'HTML must escape matrix resultado'
+
+    $duplicateStress = $raw.Clone(); $duplicateStress['stress-20-copy'] = Clone-Value $raw['stress-20']
+    Assert-ReportRejected $matrix $duplicateStress $manifest 'duplicate-stress' 'duplicate|stress'
+
+    foreach ($field in @('p(50)','p(90)','p(95)','max')) {
+        $invalid = $raw.Clone(); $invalid['stress-20'] = Clone-Value $raw['stress-20']; $invalid['stress-20'].metrics.http_req_duration.values.PSObject.Properties.Remove($field)
+        Assert-ReportRejected $matrix $invalid $manifest "missing-stress-$field" 'stress|p\('
+    }
+    $invalidStressError = $raw.Clone(); $invalidStressError['stress-20'] = Clone-Value $raw['stress-20']; $invalidStressError['stress-20'].metrics.http_req_failed.values.PSObject.Properties.Remove('rate')
+    Assert-ReportRejected $matrix $invalidStressError $manifest 'missing-stress-error' 'stress|error|rate'
+    $invalidStressCount = $raw.Clone(); $invalidStressCount['stress-20'] = Clone-Value $raw['stress-20']; $invalidStressCount['stress-20'].metrics.http_reqs.values.PSObject.Properties.Remove('count')
+    Assert-ReportRejected $matrix $invalidStressCount $manifest 'missing-stress-count' 'stress|count'
+    $invalidStressP90 = $raw.Clone(); $invalidStressP90['stress-20'] = Clone-Value $raw['stress-20']; $invalidStressP90['stress-20'].metrics.http_req_duration.values.'p(90)' = 'not-a-metric'
+    Assert-ReportRejected $matrix $invalidStressP90 $manifest 'invalid-stress-p90' 'stress|p\(90\)|invalid'
+    $invalidStressVu = $raw.Clone(); $invalidStressVu['stress-20'] = Clone-Value $raw['stress-20']; $invalidStressVu['stress-20'].vu_max = 'not-a-vu'
+    Assert-ReportRejected $matrix $invalidStressVu $manifest 'invalid-stress-vu' 'stress|vu'
+    $mismatchedStressVu = $raw.Clone(); $mismatchedStressVu['stress-20'] = Clone-Value $raw['stress-20']; $mismatchedStressVu['stress-20'].vu_min = 10
+    Assert-ReportRejected $matrix $mismatchedStressVu $manifest 'mismatched-stress-vu' 'stress|vu'
+
+    $missingDuration = $raw.Clone(); $missingDuration['load'] = Clone-Value $raw['load']; $missingDuration['load'].PSObject.Properties.Remove('measured_duration_seconds')
+    Assert-ReportRejected $matrix $missingDuration $manifest 'missing-duration' 'duration|RPS'
+
+    foreach ($profileToRemove in @('smoke','load','spike')) {
+        $missingProfile = $raw.Clone(); $missingProfile.Remove($profileToRemove)
+        $missingResult = Invoke-Report $matrix $missingProfile $manifest "missing-$profileToRemove"
+        Assert-True ($missingResult.ExitCode -eq 0) "missing $profileToRemove should render NO_EJECUTADA: $($missingResult.Stdout)"
+        $missingMd = Get-Content -Raw (Join-Path $missingResult.Output 'endpoint-report.md')
+        Assert-True ($missingMd -match "## $([regex]::Escape($profileToRemove.Substring(0,1).ToUpperInvariant()+$profileToRemove.Substring(1)))" -and $missingMd -match 'NO_EJECUTADA') "missing $profileToRemove must be visible as NO_EJECUTADA"
+    }
+
+    foreach ($part in @('baseline','peak','recovery')) {
+        $malformedSpike = $raw.Clone(); $malformedSpike['spike'] = Clone-Value $raw['spike']; $malformedSpike['spike'].$part.PSObject.Properties.Remove('p95_ms')
+        Assert-ReportRejected $matrix $malformedSpike $manifest "missing-spike-$part-p95" 'spike|p95'
+    }
+    $invalidSpikeVus = $raw.Clone(); $invalidSpikeVus['spike'] = Clone-Value $raw['spike']; $invalidSpikeVus['spike'].baseline.vus = 'bad'
+    Assert-ReportRejected $matrix $invalidSpikeVus $manifest 'invalid-spike-vus' 'spike|vus'
+    $invalidSpikeRps = $raw.Clone(); $invalidSpikeRps['spike'] = Clone-Value $raw['spike']; $invalidSpikeRps['spike'].peak.rps = 'bad'
+    Assert-ReportRejected $matrix $invalidSpikeRps $manifest 'invalid-spike-rps' 'spike|rps'
+    $invalidSpikeRecoveryError = $raw.Clone(); $invalidSpikeRecoveryError['spike'] = Clone-Value $raw['spike']; $invalidSpikeRecoveryError['spike'].recovery.error_pct = 'bad'
+    Assert-ReportRejected $matrix $invalidSpikeRecoveryError $manifest 'invalid-recovery-error' 'spike|recovery|error'
+    $missingRecoveryDuration = $raw.Clone(); $missingRecoveryDuration['spike'] = Clone-Value $raw['spike']; $missingRecoveryDuration['spike'].recovery.PSObject.Properties.Remove('seconds'); $missingRecoveryDuration['spike'].PSObject.Properties.Remove('recovery_seconds')
+    Assert-ReportRejected $matrix $missingRecoveryDuration $manifest 'missing-recovery-duration' 'spike|recovery|seconds'
 
     $missingRaw = $raw.Clone(); $missingRaw.Remove('stress-30'); $missing = Invoke-Report $matrix $missingRaw $manifest 'missing'
     Assert-True ($missing.ExitCode -ne 0 -and $missing.Stdout -match 'stress|profile|missing') 'missing required stress detail must be rejected'
