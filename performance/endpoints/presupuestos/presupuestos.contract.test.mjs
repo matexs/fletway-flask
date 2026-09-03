@@ -8,11 +8,6 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 const localManifestPath = path.resolve(directory, '../../config/endpoints.manifest.json');
 const siblingManifestPath = path.resolve(directory, '../../../../fletway-flask-performance/performance/config/endpoints.manifest.json');
 const manifestPath = process.env.PERFORMANCE_MANIFEST_PATH || (fs.existsSync(localManifestPath) ? localManifestPath : siblingManifestPath);
-const endpointIds = [
-  'mis-presupuestos',
-  'presupuestos-completo-batch',
-  'presupuestos-solicitud',
-];
 
 function loadManifest() {
   assert.equal(fs.existsSync(manifestPath), true, `missing canonical manifest: ${manifestPath}`);
@@ -22,7 +17,12 @@ function loadManifest() {
 test('contains every Presupuestos P0 endpoint declared in the canonical manifest', () => {
   const manifest = loadManifest();
   const endpoints = manifest.endpoints.filter((endpoint) => endpoint.module === 'routes/presupuesto_routes.py' && endpoint.priority === 'P0');
-  assert.deepEqual(endpoints.map((endpoint) => endpoint.id), endpointIds);
+  const manifestIds = endpoints.map((endpoint) => endpoint.id).sort();
+  const diskIds = fs.readdirSync(directory)
+    .filter((name) => name.endsWith('.js'))
+    .map((name) => path.basename(name, '.js'))
+    .sort();
+  assert.deepEqual(diskIds, manifestIds, 'on-disk endpoint scripts must exactly match manifest-owned Presupuestos P0 endpoints');
 
   for (const endpoint of endpoints) {
     const filePath = path.join(directory, `${endpoint.id}.js`);
