@@ -4,6 +4,7 @@ import {
   buildScenarios,
   profileIdsFor,
   profileLabels,
+  spikeRecovery,
   stressStages,
 } from '../config/profiles.js';
 
@@ -18,7 +19,6 @@ test('keeps standard stress levels independently addressable', () => {
   for (const [id, vus] of [['stress_10', 10], ['stress_20', 20], ['stress_30', 30]]) {
     assert.equal(scenarios[id].vus, vus);
     assert.equal(scenarios[id].startTime, '0s');
-    assert.equal(scenarios[id].stage, id);
   }
 });
 
@@ -32,7 +32,10 @@ test('supports configurable extended P0 stress stages', () => {
 
 test('provides an abrupt configurable spike with recovery metadata', () => {
   assert.equal(profileLabels.spike, 'Spike');
+  const defaults = buildScenarios('spike').spike;
+  assert.deepEqual(defaults.stages.map(({ target }) => target), [3, 30, 3, 0]);
+  assert.deepEqual(spikeRecovery(), { target: 3, duration: '30s' });
   const scenario = buildScenarios('spike', { baselineVus: 2, spikeVus: 25, recoveryVus: 2 }).spike;
   assert.deepEqual(scenario.stages.map(({ target }) => target), [2, 25, 2, 0]);
-  assert.deepEqual(scenario.recovery, { target: 2, duration: '30s' });
+  assert.deepEqual(spikeRecovery({ baselineVus: 2, recoveryVus: 2 }), { target: 2, duration: '30s' });
 });

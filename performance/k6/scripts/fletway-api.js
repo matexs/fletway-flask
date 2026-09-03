@@ -67,8 +67,6 @@ export const options = {
   userAgent: 'Fletway-k6-performance/1.0',
 };
 
-const selectedEndpoint = selectEndpointForIteration(endpoints, ENDPOINT_ID);
-
 function validateRole(role, path, token) {
   const response = http.get(`${BASE_URL}${path}`, {
     headers: authHeaders(token),

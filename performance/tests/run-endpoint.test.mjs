@@ -43,6 +43,17 @@ test('exposes configurable spike controls and records canonical recovery default
   assert.match(output, /RECOVERY_DURATION=30s/);
 });
 
+test('uses the plan spike defaults when controls are omitted', () => {
+  const output = execFileSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', runner,
+    '-EndpointId', 'health', '-Profile', 'spike', '-WhatIf'], { encoding: 'utf8' });
+  assert.match(output, /VU_MIN=3/);
+  assert.match(output, /VU_MAX=30/);
+  assert.match(output, /BASELINE_VUS=3/);
+  assert.match(output, /SPIKE_VUS=30/);
+  assert.match(output, /RECOVERY_VUS=3/);
+  assert.match(output, /RECOVERY_DURATION=30s/);
+});
+
 test('rejects output traversal and existing output without explicit overwrite', () => {
   assert.throws(() => execFileSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', runner,
     '-EndpointId', 'health', '-OutputPath', '..\\escaped.json', '-WhatIf'], { encoding: 'utf8', stdio: 'pipe' }), /results|path|ruta/i);

@@ -74,3 +74,51 @@ Passed: 4 Failed: 0 Skipped: 0 Pending: 0 Inconclusive: 0
 ```
 
 PowerShell parser validation returned no errors, and `git diff --check` returned clean. No live k6 load was run.
+
+## Follow-up review fix
+
+Removed the duplicate top-level `selectedEndpoint` declaration from `fletway-api.js`. The canonical spike defaults are now baseline 3 VUs and spike 30 VUs; baseline, spike, recovery, and duration controls remain configurable, with recovery metadata retained.
+
+### Exact follow-up verification commands and outputs
+
+`node --experimental-default-type=module --test performance/tests/profiles.test.mjs performance/tests/run-endpoint.test.mjs performance/tests/endpoint-selection.test.mjs`
+
+```text
+1..15
+# tests 15
+# pass 15
+# fail 0
+```
+
+`node --check performance/config/profiles.js; node --check performance/k6/lib/endpoint-selection.js; node --check performance/k6/config/performance.config.js; node --check performance/k6/scripts/fletway-api.js`
+
+```text
+exit=0
+```
+
+`k6 inspect performance/k6/scripts/fletway-api.js`
+
+```text
+scenarios.smoke.executor = ramping-vus
+scenarios.smoke.stages = 10s/1, 20s/3, 10s/0
+exit=0
+```
+
+`k6 inspect --env ENDPOINT_ID=health --env PROFILE=stress_20 performance/k6/scripts/fletway-api.js`
+
+```text
+"stress_20": {
+  "executor": "constant-vus",
+  "vus": 20,
+  "duration": "30s"
+}
+exit=0
+```
+
+`node --test performance/tests/resource-ledger.test.js` → `1..6`, `# pass 6`, `# fail 0`.
+
+`python -m unittest discover -s performance/tests -p 'test_*.py'` → `Ran 10 tests`, `OK`.
+
+`Invoke-Pester -Path performance/tests/cleanup-created-data.test.ps1` → `Passed: 4 Failed: 0 Skipped: 0 Pending: 0 Inconclusive: 0`.
+
+PowerShell parser validation and `git diff --check` both returned clean. No live k6 load was run.

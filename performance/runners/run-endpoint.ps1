@@ -38,7 +38,7 @@ switch ($Profile) {
         if ($VuMin -eq 0) { $VuMin = $stageVus }; if ($VuMax -eq 0) { $VuMax = $stageVus }
     }
     'spike' {
-        if ($BaselineVus -eq 0) { $BaselineVus = 1 }; if ($SpikeVus -eq 0) { $SpikeVus = 20 }
+        if ($BaselineVus -eq 0) { $BaselineVus = 3 }; if ($SpikeVus -eq 0) { $SpikeVus = 30 }
         if ($RecoveryVus -eq 0) { $RecoveryVus = $BaselineVus }; if (-not $RecoveryDuration) { $RecoveryDuration = '30s' }
         if ($VuMin -eq 0) { $VuMin = $BaselineVus }; if ($VuMax -eq 0) { $VuMax = $SpikeVus }
     }

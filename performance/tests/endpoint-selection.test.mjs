@@ -26,4 +26,5 @@ test('k6 flow uses the exact selector and manifest endpoint tag', () => {
   const script = fs.readFileSync(path.resolve('performance/k6/scripts/fletway-api.js'), 'utf8');
   assert.match(script, /selectEndpointForIteration\(endpoints, ENDPOINT_ID/);
   assert.match(script, /endpointId: endpoint\.manifestId/);
+  assert.equal((script.match(/const selectedEndpoint/g) || []).length, 1);
 });

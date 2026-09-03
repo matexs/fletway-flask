@@ -37,13 +37,16 @@ function stressScenario(id, vus, options = {}) {
   return {
     executor: 'constant-vus', exec: 'runFlow', vus,
     duration: options.duration || '30s', startTime: '0s', gracefulStop: options.gracefulStop || '5s',
-    stage: id, vu_min: options.vuMin ?? vus, vu_max: options.vuMax ?? vus,
   };
 }
 
+export function spikeRecovery(options = {}) {
+  return { target: options.recoveryVus ?? options.baselineVus ?? 3, duration: options.recoveryDuration || '30s' };
+}
+
 export function buildScenarios(profile, options = {}) {
-  if (profile === 'smoke') return { smoke: { executor: 'ramping-vus', exec: 'runFlow', startVUs: 0, stages: [{ duration: '10s', target: 1 }, { duration: '20s', target: 3 }, { duration: '10s', target: 0 }], gracefulRampDown: '5s', stage: 'smoke', vu_min: 0, vu_max: 3 } };
-  if (profile === 'load') return { load: { executor: 'ramping-vus', exec: 'runFlow', startVUs: 0, stages: [{ duration: '15s', target: 10 }, { duration: '60s', target: 10 }, { duration: '15s', target: 0 }], gracefulRampDown: '5s', stage: 'load', vu_min: 0, vu_max: 10 } };
+  if (profile === 'smoke') return { smoke: { executor: 'ramping-vus', exec: 'runFlow', startVUs: 0, stages: [{ duration: '10s', target: 1 }, { duration: '20s', target: 3 }, { duration: '10s', target: 0 }], gracefulRampDown: '5s' } };
+  if (profile === 'load') return { load: { executor: 'ramping-vus', exec: 'runFlow', startVUs: 0, stages: [{ duration: '15s', target: 10 }, { duration: '60s', target: 10 }, { duration: '15s', target: 0 }], gracefulRampDown: '5s' } };
   if (profile === 'stress' || profile === 'stress_p0') {
     const vus = stressStages(profile === 'stress_p0' ? 'p0' : 'standard', options.vus);
     return Object.fromEntries(vus.map((level) => {
@@ -57,10 +60,10 @@ export function buildScenarios(profile, options = {}) {
     return { [profile]: stressScenario(profile, vus, options) };
   }
   if (profile === 'spike') {
-    const baselineVus = options.baselineVus ?? 1;
-    const spikeVus = options.spikeVus ?? 20;
+    const baselineVus = options.baselineVus ?? 3;
+    const spikeVus = options.spikeVus ?? 30;
     const recoveryVus = options.recoveryVus ?? baselineVus;
-    const recovery = { target: recoveryVus, duration: options.recoveryDuration || '30s' };
+    const recovery = spikeRecovery({ ...options, recoveryVus });
     return { spike: {
       executor: 'ramping-vus', exec: 'runFlow', startVUs: baselineVus,
       stages: [
@@ -69,7 +72,7 @@ export function buildScenarios(profile, options = {}) {
         recovery,
         { duration: options.cooldownDuration || '10s', target: 0 },
       ],
-      gracefulRampDown: '5s', stage: 'spike', vu_min: baselineVus, vu_max: spikeVus, recovery,
+      gracefulRampDown: '5s',
     } };
   }
   throw new Error(`PROFILE inválido: ${profile}. Valores permitidos: smoke, load, stress, stress_p0, spike.`);
