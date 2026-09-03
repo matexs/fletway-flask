@@ -29,17 +29,17 @@ Mutation response events now carry explicit `resource_action` and boolean `creat
 
 ## Per-endpoint preflight evidence
 
-Preflight policy: only transient read-only requests are allowed; POST/PATCH mutations are safety-blocked. No `BASE_URL`, `.env.performance`, or role credentials were configured in this worktree/session, so no backend request was issued.
+Preflight policy: only transient read-only requests were allowed; POST/PATCH mutations were safety-blocked. The controller used the ignored original environment file transiently; credentials were not copied, persisted, or committed.
 
 | Endpoint | Method | Evidence status | Reason |
 |---|---|---|---|
-| `mis-pedidos` | GET | NOT-RUN | No configured `BASE_URL` and client auth prerequisites. |
-| `mis-pedidos-optimizado` | GET | NOT-RUN | No configured `BASE_URL` and client auth prerequisites. |
-| `dashboard-transportista` | GET | NOT-RUN | No configured `BASE_URL` and driver auth prerequisites. |
-| `historial-transportista` | GET | NOT-RUN | No configured `BASE_URL` and driver auth prerequisites. |
-| `crear-solicitud` | POST | SAFETY-BLOCKED | Mutation prohibited by task; no live request issued. |
-| `actualizar-solicitud` | PATCH | SAFETY-BLOCKED | Mutation prohibited by task; no live request issued. |
-| `detalle-solicitud` | GET | NOT-RUN | No configured `BASE_URL`, client auth prerequisites, or request ID. |
+| `mis-pedidos` | GET | FAIL | Timed out at `https://fletway.onrender.com/api/solicitudes/mis-pedidos` with `REQUEST_TIMEOUT=10s`; k6 exit 99. |
+| `mis-pedidos-optimizado` | GET | PASS | One iteration, HTTP success, `REQUEST_TIMEOUT=3s`; k6 exit 0. |
+| `dashboard-transportista` | GET | PASS | One iteration, HTTP success, `REQUEST_TIMEOUT=3s`; k6 exit 0. |
+| `historial-transportista` | GET | PASS | One iteration, HTTP success, `REQUEST_TIMEOUT=3s`; k6 exit 0. |
+| `crear-solicitud` | POST | SAFETY-BLOCKED | Mutation prohibited by task; not executed. |
+| `actualizar-solicitud` | PATCH | SAFETY-BLOCKED | Mutation prohibited by task; not executed. |
+| `detalle-solicitud` | GET | NOT-RUN | `REQUEST_ID` was not configured. |
 
 ## Resources and prerequisites
 
@@ -51,7 +51,7 @@ Preflight policy: only transient read-only requests are allowed; POST/PATCH muta
 
 ## Concerns
 
-The standalone metric and CLI entrypoint preflight issues are resolved. Backend availability and authentication remain unverified because safe read-only preflights were not configured. Mutation endpoints remain intentionally safety-blocked. No live request or load run was performed.
+The standalone metric and CLI entrypoint preflight issues are resolved. `mis-pedidos` timed out while the other three configured read-only endpoint preflights passed. Mutation endpoints remain intentionally safety-blocked, and `detalle-solicitud` was not run without `REQUEST_ID`. No load ran; credentials remained transient and uncommitted.
 
 ## Files
 
