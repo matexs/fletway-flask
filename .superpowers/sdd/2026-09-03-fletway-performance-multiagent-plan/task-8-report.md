@@ -2,9 +2,9 @@
 
 ## Scope
 
-Implemented the per-endpoint raw k6 summary aggregator in
-`performance/scripts/aggregate-results.ps1` and focused fixture coverage in
-`performance/tests/aggregate-results.tests.ps1`.
+Implemented the corrective pass for the per-endpoint raw k6 summary
+aggregator in `performance/scripts/aggregate-results.ps1` and focused fixture
+coverage in `performance/tests/aggregate-results.tests.ps1`.
 
 No live traffic, k6 execution, or endpoint calls were performed.
 
@@ -16,9 +16,13 @@ The output CSV always uses exactly this ordered schema:
 endpoint,test,objetivo,carga_vu_min,carga_vu_max,p95_ms,error_pct,capacidad_rps,resultado,usuarios
 ```
 
-Only P0 endpoints from the manifest are emitted. Each supplied canonical
-profile (`smoke`, `load`, `stress`, `spike`) produces one row per endpoint;
-duplicate endpoint/profile inputs and unknown endpoints are rejected.
+Only P0 endpoints from the manifest are emitted. Every P0 endpoint with at
+least one valid raw input produces exactly four rows for
+`smoke`, `load`, `stress`, and `spike`. Missing profiles are synthesized as
+`NO_EJECUTADA`; their explicit reason is stored in the existing `usuarios`
+column (for example, `NO_EJECUTADA: no raw result for load`) so the ten-column
+contract remains unchanged. Duplicate endpoint/profile inputs and unknown
+endpoints are rejected.
 
 Endpoint labels are normalized as `METHOD /path`, and the objective comes from
 the manifest rather than raw data. CSV numeric values use invariant decimal
@@ -44,10 +48,24 @@ p95 is read from `values.p(95)` and remains numeric milliseconds. Error and
 timeout rates must be ratios in `[0, 1]` and are emitted as numeric
 percentages.
 
-Malformed JSON, missing required fields, ambiguous endpoint metrics, invalid
-units, invalid ratios, missing p95/count/duration data, duplicate rows, and
-schema mismatches fail fast. Explicit `NOT_EXECUTED`/`NO_EJECUTADA` inputs are
-preserved as `NO_EJECUTADA`; explicit failed records remain `FALLIDA`.
+Malformed JSON, unknown top-level fields, unknown manifest fields, ambiguous
+`metrics`/`k6` alternatives, multiple duration sources, ambiguous endpoint
+metrics, invalid metric fields or missing metric values, invalid units,
+invalid ratios, missing p95/count/duration data, duplicate rows, invalid
+profiles, and schema mismatches fail fast. Explicit
+`NOT_EXECUTED`/`NO_EJECUTADA` inputs are preserved as `NO_EJECUTADA`; explicit
+failed records remain `FALLIDA`. Timeout ratios participate in hard/soft
+classification.
+
+## Shared threshold source
+
+Canonical normalization thresholds live in
+`performance/config/thresholds.json`. The aggregator loads this file at
+runtime, and the fixture tests load the same file for their threshold-source
+assertion. Values preserve the existing JS semantics for smoke, load, and
+shared hard limits; stress/spike entries encode the Task 8 canonical profile
+limits from the approved plan. The JS k6 evaluator remains behaviorally
+compatible with those smoke/load/hard values.
 
 ## Centralized result rules
 
@@ -75,10 +93,12 @@ pwsh -NoProfile -File performance/tests/aggregate-results.tests.ps1
 Observed result: `PASS aggregate-results.tests.ps1`.
 
 The fixtures verify numeric p95 conversion, ratio-to-percent conversion,
-RPS calculation, manifest objective and endpoint normalization, all four
-profile rows, `APROBADA`/`ADVERTENCIA`/`FALLIDA` classification,
-`NOT_EXECUTED` preservation, malformed schema rejection, and exact CSV
-columns.
+RPS calculation, manifest objective and endpoint normalization, exact four-row
+cardinality including synthesized profiles, `APROBADA`/`ADVERTENCIA`/
+`FALLIDA` classification, timeout and failed states, `NOT_EXECUTED`
+preservation, k6-wrapper extraction, unknown/ambiguous/invalid schemas,
+invalid ratios and units, duplicate rows, shared threshold loading, and exact
+CSV columns.
 
 ## Risks and follow-up
 
