@@ -4,23 +4,61 @@ param(
     [string]$Stage = '',
     [int]$VuMin = 0,
     [int]$VuMax = 0,
+    [int]$BaselineVus = 0,
+    [int]$SpikeVus = 0,
     [int]$RecoveryVus = 0,
     [string]$RecoveryDuration = '',
     [string]$BaseUrl = '',
     [string]$K6Script = '',
     [string]$OutputPath = '',
+    [switch]$Force,
     [switch]$WhatIf
 )
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $scriptPath = if ($K6Script) { $K6Script } else { Join-Path $repoRoot 'performance\k6\scripts\fletway-api.js' }
+$manifestPath = Join-Path $repoRoot 'performance\config\endpoints.manifest.json'
+$manifestIds = @((Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json).endpoints | ForEach-Object { $_.id })
+if ($manifestIds -notcontains $EndpointId) { throw "Unknown endpoint ID: $EndpointId." }
+
 $stageName = if ($Stage) { $Stage } else { $Profile }
-$rawPath = if ($OutputPath) { $OutputPath } else { Join-Path $repoRoot ("performance\results\endpoint-{0}-{1}-{2}.json" -f $EndpointId, $Profile, ([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ'))) }
-$arguments = @('run', $scriptPath, '--env', "ENDPOINT_ID=$EndpointId", '--env', "PROFILE=$Profile", '--env', "STAGE=$stageName", '--env', "VU_MIN=$VuMin", '--env', "VU_MAX=$VuMax")
+$effectiveProfile = $Profile
+switch ($Profile) {
+    'smoke' { if ($VuMin -eq 0) { $VuMin = 0 }; if ($VuMax -eq 0) { $VuMax = 3 } }
+    'load' { if ($VuMin -eq 0) { $VuMin = 0 }; if ($VuMax -eq 0) { $VuMax = 10 } }
+    'stress' {
+        if (-not $Stage -or $Stage -notmatch '^stress_(10|20|30)$') { throw 'Stress requires one canonical stage: stress_10, stress_20, or stress_30.' }
+        $effectiveProfile = $Stage; $stageVus = [int]$Stage.Substring(7)
+        if ($VuMin -eq 0) { $VuMin = $stageVus }; if ($VuMax -eq 0) { $VuMax = $stageVus }
+    }
+    'stress_p0' {
+        if (-not $Stage -or $Stage -notmatch '^stress_p0_(20|40|60|80|100)$') { throw 'Stress P0 requires one canonical stage: stress_p0_20, stress_p0_40, stress_p0_60, stress_p0_80, or stress_p0_100.' }
+        $effectiveProfile = $Stage; $stageVus = [int]$Stage.Substring(10)
+        if ($VuMin -eq 0) { $VuMin = $stageVus }; if ($VuMax -eq 0) { $VuMax = $stageVus }
+    }
+    'spike' {
+        if ($BaselineVus -eq 0) { $BaselineVus = 1 }; if ($SpikeVus -eq 0) { $SpikeVus = 20 }
+        if ($RecoveryVus -eq 0) { $RecoveryVus = $BaselineVus }; if (-not $RecoveryDuration) { $RecoveryDuration = '30s' }
+        if ($VuMin -eq 0) { $VuMin = $BaselineVus }; if ($VuMax -eq 0) { $VuMax = $SpikeVus }
+    }
+}
+if ($VuMin -lt 0 -or $VuMax -le 0 -or $VuMin -gt $VuMax) { throw 'VU bounds must satisfy 0 <= vu_min <= vu_max and vu_max > 0.' }
+if ($Profile -eq 'spike' -and ($BaselineVus -le 0 -or $SpikeVus -le 0 -or $RecoveryVus -le 0)) { throw 'Spike VU controls must be positive.' }
+
+$resultsRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot 'performance\results')).TrimEnd('\') + '\'
+if ($OutputPath) {
+    $candidate = if ([IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $repoRoot $OutputPath }
+    $rawPath = [IO.Path]::GetFullPath($candidate)
+    if (-not $rawPath.StartsWith($resultsRoot, [StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($rawPath) -notmatch '^[A-Za-z0-9._-]+\.json$') { throw 'Output path must be a sanitized JSON file inside performance/results.' }
+} else {
+    $rawPath = Join-Path $resultsRoot ("endpoint-{0}-{1}-{2}-{3}.json" -f $EndpointId, $effectiveProfile, ([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')), ([guid]::NewGuid().ToString('N')))
+}
+if ((Test-Path -LiteralPath $rawPath) -and -not $Force) { throw "Output already exists; pass -Force to overwrite: $rawPath" }
+
+$arguments = @('run', $scriptPath, '--env', "ENDPOINT_ID=$EndpointId", '--env', "PROFILE=$effectiveProfile", '--env', "STAGE=$stageName", '--env', "VU_MIN=$VuMin", '--env', "VU_MAX=$VuMax")
 if ($BaseUrl) { $arguments += @('--env', "BASE_URL=$BaseUrl") }
-if ($RecoveryVus -gt 0) { $arguments += @('--env', "RECOVERY_VUS=$RecoveryVus") }
-if ($RecoveryDuration) { $arguments += @('--env', "RECOVERY_DURATION=$RecoveryDuration") }
+if ($Profile -eq 'spike') { $arguments += @('--env', "BASELINE_VUS=$BaselineVus", '--env', "SPIKE_VUS=$SpikeVus", '--env', "RECOVERY_VUS=$RecoveryVus", '--env', "RECOVERY_DURATION=$RecoveryDuration") }
 $arguments += @('--summary-export', $rawPath)
 
 if ($WhatIf) {
@@ -42,7 +80,7 @@ $metadata = [ordered]@{
     vu_min = $VuMin
     vu_max = $VuMax
 }
-if ($RecoveryVus -gt 0 -or $RecoveryDuration) {
+if ($Profile -eq 'spike') {
     $metadata.recovery = [ordered]@{ target = $RecoveryVus; duration = $RecoveryDuration }
 }
 $envelope = [ordered]@{}

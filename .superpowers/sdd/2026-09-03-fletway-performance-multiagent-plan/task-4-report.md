@@ -24,4 +24,53 @@ No live load, stress, spike, or endpoint run was executed. The manifest, coverag
 
 ## Concern
 
-The existing k6 script does not currently consume `ENDPOINT_ID` to filter its endpoint distribution. The new runner forwards that value and records it in raw metadata; endpoint filtering remains dependent on the k6 script being extended in a later scoped task.
+The endpoint runner and k6 script now enforce manifest endpoint selection. No live k6 execution was performed, so runtime connectivity/authentication remains unverified by design.
+
+## Review fix round
+
+Addressed all six review findings:
+
+- Stress stages now require and map to one individual profile per invocation (`stress_20` or `stress_p0_40`), so k6 cannot launch the complete stress family from the endpoint runner.
+- `ENDPOINT_ID` is validated against the manifest, validated again at k6 module initialization, and selects exactly one manifest endpoint without weighted fallback.
+- Runner VU bounds derive from canonical smoke/load/stress values when omitted.
+- Runner exposes baseline/spike controls; spike defaults are baseline 1 VU, spike 20 VU, recovery baseline VU, and 30 seconds, and recovery metadata is always recorded.
+- Output paths are restricted to sanitized `.json` files under `performance/results`; existing files require `-Force`.
+
+### Exact verification commands and outputs
+
+`node --experimental-default-type=module --test performance/tests/profiles.test.mjs performance/tests/run-endpoint.test.mjs performance/tests/endpoint-selection.test.mjs`
+
+```text
+1..14
+# tests 14
+# pass 14
+# fail 0
+```
+
+`node --test performance/tests/resource-ledger.test.js`
+
+```text
+1..6
+# tests 6
+# pass 6
+# fail 0
+```
+
+`python -m unittest discover -s performance/tests -p 'test_*.py'`
+
+```text
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 0.018s
+
+OK
+```
+
+`Invoke-Pester -Path performance/tests/cleanup-created-data.test.ps1`
+
+```text
+Tests completed in 648ms
+Passed: 4 Failed: 0 Skipped: 0 Pending: 0 Inconclusive: 0
+```
+
+PowerShell parser validation returned no errors, and `git diff --check` returned clean. No live k6 load was run.

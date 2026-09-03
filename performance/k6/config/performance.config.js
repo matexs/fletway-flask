@@ -3,13 +3,13 @@ export { softLimits, hardLimits, metricName, buildThresholds } from '../../confi
 export { profileLabels, profileIdsFor, buildScenarios } from '../../config/profiles.js';
 
 export const endpoints = [
-  { key: 'health', label: 'Health check', role: 'public', path: '/', weight: 5 },
-  { key: 'localidades', label: 'Localidades', role: 'client', path: '/api/localidades', weight: 10 },
-  { key: 'buscar_localidades', label: 'Buscar localidades', role: 'client', path: '/api/localidades/buscar', weight: 10 },
-  { key: 'mis_pedidos', label: 'Pedidos del cliente', role: 'client', path: '/api/solicitudes/mis-pedidos', weight: 20 },
-  { key: 'mis_pedidos_optimizado', label: 'Pedidos optimizados', role: 'client', path: '/solicitudes/mis-pedidos-optimizado', weight: 15 },
-  { key: 'dashboard_transportista', label: 'Dashboard del fletero', role: 'driver', path: '/api/transportista/dashboard', weight: 15 },
-  { key: 'historial_transportista', label: 'Historial del fletero', role: 'driver', path: '/api/transportista/historial', weight: 10 },
-  { key: 'mis_presupuestos', label: 'Presupuestos del fletero', role: 'driver', path: '/api/presupuestos/mis-presupuestos', weight: 10 },
-  { key: 'presupuestos_batch', label: 'Presupuestos batch del cliente', role: 'client', path: '/api/presupuestos/completo-batch', weight: 5 },
+  { key: 'health', manifestId: 'health', label: 'Health check', role: 'public', path: '/', weight: 5 },
+  { key: 'localidades', manifestId: 'localidades', label: 'Localidades', role: 'client', path: '/api/localidades', weight: 10 },
+  { key: 'buscar_localidades', manifestId: 'buscar-localidades', label: 'Buscar localidades', role: 'client', path: '/api/localidades/buscar', weight: 10 },
+  { key: 'mis_pedidos', manifestId: 'mis-pedidos', label: 'Pedidos del cliente', role: 'client', path: '/api/solicitudes/mis-pedidos', weight: 20 },
+  { key: 'mis_pedidos_optimizado', manifestId: 'mis-pedidos-optimizado', label: 'Pedidos optimizados', role: 'client', path: '/solicitudes/mis-pedidos-optimizado', weight: 15 },
+  { key: 'dashboard_transportista', manifestId: 'dashboard-transportista', label: 'Dashboard del fletero', role: 'driver', path: '/api/transportista/dashboard', weight: 15 },
+  { key: 'historial_transportista', manifestId: 'historial-transportista', label: 'Historial del fletero', role: 'driver', path: '/api/transportista/historial', weight: 10 },
+  { key: 'mis_presupuestos', manifestId: 'mis-presupuestos', label: 'Presupuestos del fletero', role: 'driver', path: '/api/presupuestos/mis-presupuestos', weight: 10 },
+  { key: 'presupuestos_batch', manifestId: 'presupuestos-completo-batch', label: 'Presupuestos batch del cliente', role: 'client', path: '/api/presupuestos/completo-batch', weight: 5 },
 ];

@@ -19,6 +19,7 @@ import {
   requireEnvironment,
 } from '../../templates/endpoint.template.js';
 import { evaluateSummary, renderConsole, renderHtml, renderMarkdown } from '../lib/report.js';
+import { endpointForIteration as selectEndpointForIteration } from '../lib/endpoint-selection.js';
 
 const PROFILE = __ENV.PROFILE || 'smoke';
 const BASE_URL = normalizeUrl(__ENV.BASE_URL);
@@ -30,6 +31,8 @@ const SETUP_RETRY_DELAY_SECONDS = Math.max(0, Number(__ENV.SETUP_RETRY_DELAY_SEC
 const THINK_TIME_SECONDS = Number(__ENV.THINK_TIME_SECONDS || '1');
 const RUN_ID = __ENV.RUN_ID || new Date().toISOString().replace(/[:.]/g, '-');
 const PROFILE_IDS = profileIdsFor(PROFILE);
+const ENDPOINT_ID = __ENV.ENDPOINT_ID || '';
+const selectedEndpoint = selectEndpointForIteration(endpoints, ENDPOINT_ID);
 
 function buildMetrics() {
   const result = {};
@@ -63,6 +66,8 @@ export const options = {
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'count'],
   userAgent: 'Fletway-k6-performance/1.0',
 };
+
+const selectedEndpoint = selectEndpointForIteration(endpoints, ENDPOINT_ID);
 
 function validateRole(role, path, token) {
   const response = http.get(`${BASE_URL}${path}`, {
@@ -112,15 +117,7 @@ export function setup() {
 }
 
 function endpointForIteration(iteration) {
-  // 37 es coprimo con 100: dispersa las primeras iteraciones por toda la
-  // distribución ponderada y evita que un smoke corto pruebe solo el inicio.
-  const bucket = (iteration * 37) % 100;
-  let upperBound = 0;
-  for (const endpoint of endpoints) {
-    upperBound += endpoint.weight;
-    if (bucket < upperBound) return endpoint;
-  }
-  return endpoints[endpoints.length - 1];
+  return selectedEndpoint || selectEndpointForIteration(endpoints, ENDPOINT_ID, iteration);
 }
 
 function requestUrl(endpoint) {
@@ -140,7 +137,7 @@ export function runFlow(data) {
   const profileId = execution.scenario.name;
   const endpoint = endpointForIteration(execution.scenario.iterationInTest);
   const token = tokenFor(endpoint, data);
-  const tags = requestTags({ endpointId: endpoint.key, profile: profileId, stage: 'measure', role: endpoint.role });
+  const tags = requestTags({ endpointId: endpoint.manifestId, profile: profileId, stage: 'measure', role: endpoint.role });
   const response = http.get(requestUrl(endpoint), {
     headers: token ? authHeaders(token) : { Accept: 'application/json' },
     tags,
