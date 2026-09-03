@@ -6,6 +6,7 @@ export function normalizeUrl(value) {
 
 export function requiredEnvironment(requiredRole = null) {
   const common = ['BASE_URL', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+  if (requiredRole === 'public') return common;
   if (requiredRole === 'client') return [...common, 'CLIENT_EMAIL', 'CLIENT_PASSWORD'];
   if (requiredRole === 'driver') return [...common, 'DRIVER_EMAIL', 'DRIVER_PASSWORD'];
   return [...common, 'CLIENT_EMAIL', 'CLIENT_PASSWORD', 'DRIVER_EMAIL', 'DRIVER_PASSWORD'];
@@ -41,8 +42,8 @@ export function setupAuth(requiredRole = null) {
   requireEnvironment(__ENV, requiredRole);
   const options = { supabaseUrl: __ENV.SUPABASE_URL, anonKey: __ENV.SUPABASE_ANON_KEY, timeout: __ENV.SETUP_REQUEST_TIMEOUT || '60s' };
   return {
-    clientToken: requiredRole === 'driver' ? null : login('client', __ENV.CLIENT_EMAIL, __ENV.CLIENT_PASSWORD, options),
-    driverToken: requiredRole === 'client' ? null : login('driver', __ENV.DRIVER_EMAIL, __ENV.DRIVER_PASSWORD, options),
+    clientToken: requiredRole === 'driver' || requiredRole === 'public' ? null : login('client', __ENV.CLIENT_EMAIL, __ENV.CLIENT_PASSWORD, options),
+    driverToken: requiredRole === 'client' || requiredRole === 'public' ? null : login('driver', __ENV.DRIVER_EMAIL, __ENV.DRIVER_PASSWORD, options),
   };
 }
 
