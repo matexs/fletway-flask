@@ -122,3 +122,41 @@ exit=0
 `Invoke-Pester -Path performance/tests/cleanup-created-data.test.ps1` → `Passed: 4 Failed: 0 Skipped: 0 Pending: 0 Inconclusive: 0`.
 
 PowerShell parser validation and `git diff --check` both returned clean. No live k6 load was run.
+
+## Follow-up fix round 2
+
+Wired `BASELINE_VUS`, `SPIKE_VUS`, `RECOVERY_VUS`, and `RECOVERY_DURATION` from `__ENV` into `buildScenarios(PROFILE, scenarioOptions)` in `fletway-api.js`. Canonical defaults remain baseline 3 VUs and spike 30 VUs, while custom runner values are now reflected by k6 itself.
+
+### Exact verification commands and outputs
+
+`node --experimental-default-type=module --test performance/tests/profiles.test.mjs performance/tests/run-endpoint.test.mjs performance/tests/endpoint-selection.test.mjs`
+
+```text
+1..16
+# tests 16
+# pass 16
+# fail 0
+```
+
+`node --check performance/config/profiles.js; node --check performance/k6/lib/endpoint-selection.js; node --check performance/k6/config/performance.config.js; node --check performance/k6/scripts/fletway-api.js`
+
+```text
+exit=0
+```
+
+`k6 inspect performance/k6/scripts/fletway-api.js` → default smoke inspection succeeded (`exit=0`).
+
+`k6 inspect --env PROFILE=spike --env BASELINE_VUS=7 --env SPIKE_VUS=50 --env RECOVERY_VUS=7 --env RECOVERY_DURATION=45s performance/k6/scripts/fletway-api.js`
+
+```text
+spike stages: target 7, target 50, duration 45s target 7, target 0
+exit=0
+```
+
+`node --test performance/tests/resource-ledger.test.js` → `1..6`, `# pass 6`, `# fail 0`.
+
+`python -m unittest discover -s performance/tests -p 'test_*.py'` → `Ran 10 tests`, `OK`.
+
+`Invoke-Pester -Path performance/tests/cleanup-created-data.test.ps1` → `Passed: 4 Failed: 0 Skipped: 0 Pending: 0 Inconclusive: 0`.
+
+PowerShell parser validation and `git diff --check` returned clean. No live k6 load was run.

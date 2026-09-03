@@ -34,6 +34,20 @@ const PROFILE_IDS = profileIdsFor(PROFILE);
 const ENDPOINT_ID = __ENV.ENDPOINT_ID || '';
 const selectedEndpoint = selectEndpointForIteration(endpoints, ENDPOINT_ID);
 
+function optionalNumber(name) {
+  if (__ENV[name] === undefined || __ENV[name] === '') return undefined;
+  const value = Number(__ENV[name]);
+  if (!Number.isFinite(value) || value < 0) throw new Error(`Invalid ${name}: ${__ENV[name]}.`);
+  return value;
+}
+
+const scenarioOptions = {
+  baselineVus: optionalNumber('BASELINE_VUS'),
+  spikeVus: optionalNumber('SPIKE_VUS'),
+  recoveryVus: optionalNumber('RECOVERY_VUS'),
+  recoveryDuration: __ENV.RECOVERY_DURATION || undefined,
+};
+
 function buildMetrics() {
   const result = {};
   for (const profileId of PROFILE_IDS) {
@@ -59,7 +73,7 @@ function buildMetrics() {
 const metrics = buildMetrics();
 
 export const options = {
-  scenarios: buildScenarios(PROFILE),
+  scenarios: buildScenarios(PROFILE, scenarioOptions),
   thresholds: buildThresholds(PROFILE_IDS, endpoints),
   setupTimeout: '4m',
   discardResponseBodies: true,

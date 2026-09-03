@@ -54,6 +54,13 @@ test('uses the plan spike defaults when controls are omitted', () => {
   assert.match(output, /RECOVERY_DURATION=30s/);
 });
 
+test('k6 inspect consumes custom spike controls forwarded by the runner', () => {
+  const inspect = execFileSync('k6', ['inspect', '--env', 'PROFILE=spike', '--env', 'BASELINE_VUS=7', '--env', 'SPIKE_VUS=50', '--env', 'RECOVERY_VUS=7', '--env', 'RECOVERY_DURATION=45s', 'performance/k6/scripts/fletway-api.js'], { encoding: 'utf8' });
+  const scenario = JSON.parse(inspect).scenarios.spike;
+  assert.deepEqual(scenario.stages.map(({ target }) => target), [7, 50, 7, 0]);
+  assert.equal(scenario.stages[2].duration, '45s');
+});
+
 test('rejects output traversal and existing output without explicit overwrite', () => {
   assert.throws(() => execFileSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', runner,
     '-EndpointId', 'health', '-OutputPath', '..\\escaped.json', '-WhatIf'], { encoding: 'utf8', stdio: 'pipe' }), /results|path|ruta/i);
