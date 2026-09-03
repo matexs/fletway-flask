@@ -9,13 +9,16 @@ export function metricName(profileId, kind, endpointKey = '') {
   return `fletway_${profileId}${endpointKey ? `_${endpointKey}` : ''}_${kind}`;
 }
 
-export function buildThresholds(profileIds) {
+export function buildThresholds(profileIds, endpoints = []) {
   const thresholds = {};
   for (const profileId of profileIds) {
-    thresholds[metricName(profileId, 'duration_ms')] = [`p(95)<${hardLimits.p95Ms}`];
-    thresholds[metricName(profileId, 'success_rate')] = [`rate>${hardLimits.successRate}`];
-    thresholds[metricName(profileId, 'error_rate')] = [`rate<${hardLimits.errorRate}`];
-    thresholds[metricName(profileId, 'timeout_rate')] = [`rate<${hardLimits.timeoutRate}`];
+    const metricScopes = [{ endpointKey: '' }, ...endpoints.map(({ key }) => ({ endpointKey: key }))];
+    for (const { endpointKey } of metricScopes) {
+      thresholds[metricName(profileId, 'duration_ms', endpointKey)] = [`p(95)<${hardLimits.p95Ms}`];
+      thresholds[metricName(profileId, 'success_rate', endpointKey)] = [`rate>${hardLimits.successRate}`];
+      thresholds[metricName(profileId, 'error_rate', endpointKey)] = [`rate<${hardLimits.errorRate}`];
+      thresholds[metricName(profileId, 'timeout_rate', endpointKey)] = [`rate<${hardLimits.timeoutRate}`];
+    }
   }
   return thresholds;
 }

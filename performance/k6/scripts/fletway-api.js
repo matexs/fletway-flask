@@ -57,7 +57,7 @@ const metrics = buildMetrics();
 
 export const options = {
   scenarios: buildScenarios(PROFILE),
-  thresholds: buildThresholds(PROFILE_IDS),
+  thresholds: buildThresholds(PROFILE_IDS, endpoints),
   setupTimeout: '4m',
   discardResponseBodies: true,
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'count'],
