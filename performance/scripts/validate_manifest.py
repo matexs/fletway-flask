@@ -53,7 +53,19 @@ def build_coverage_plan(manifest, selected_ids=None):
             if selected_weight / total_weight >= target:
                 break
     else:
-        selected_weight = sum(endpoint["traffic_weight"] for endpoint in ordered if endpoint["id"] in selected_ids)
+        if len(selected_ids) != len(set(selected_ids)):
+            raise ValueError("duplicate selected endpoint id")
+        known_ids = {endpoint["id"] for endpoint in endpoints}
+        unknown_ids = set(selected_ids) - known_ids
+        if unknown_ids:
+            raise ValueError(f"unknown selected endpoint id: {sorted(unknown_ids)[0]}")
+        p0_ids = {endpoint["id"] for endpoint in ordered}
+        non_p0_ids = set(selected_ids) - p0_ids
+        if non_p0_ids:
+            raise ValueError(f"selected endpoint must be P0: {sorted(non_p0_ids)[0]}")
+        selected = [endpoint for endpoint in ordered if endpoint["id"] in selected_ids]
+        selected_ids = [endpoint["id"] for endpoint in selected]
+        selected_weight = sum(endpoint["traffic_weight"] for endpoint in selected)
     coverage = selected_weight / total_weight
     if coverage < target:
         raise ValueError(f"selected P0 coverage {coverage:.4%} is below 80% target")

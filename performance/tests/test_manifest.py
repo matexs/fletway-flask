@@ -69,6 +69,27 @@ class ManifestTests(unittest.TestCase):
         self.assertGreaterEqual(plan["normalized_prioritized_traffic_coverage"], manifest["coverage_target"])
         self.assertEqual(plan["selected_endpoint_ids"], build_coverage_plan(manifest)["selected_endpoint_ids"])
 
+    def test_explicit_unknown_id_is_rejected(self):
+        manifest = {"coverage_target": 0.8, "endpoints": [{"id": "p0", "priority": "P0", "traffic_weight": 80}, {"id": "p1", "priority": "P1", "traffic_weight": 20}]}
+        with self.assertRaisesRegex(ValueError, "unknown selected endpoint id"):
+            build_coverage_plan(manifest, selected_ids=["p0", "missing"])
+
+    def test_explicit_duplicate_id_is_rejected(self):
+        manifest = {"coverage_target": 0.8, "endpoints": [{"id": "p0", "priority": "P0", "traffic_weight": 80}, {"id": "p1", "priority": "P1", "traffic_weight": 20}]}
+        with self.assertRaisesRegex(ValueError, "duplicate selected endpoint id"):
+            build_coverage_plan(manifest, selected_ids=["p0", "p0"])
+
+    def test_explicit_non_p0_id_is_rejected(self):
+        manifest = {"coverage_target": 0.8, "endpoints": [{"id": "p0", "priority": "P0", "traffic_weight": 80}, {"id": "p1", "priority": "P1", "traffic_weight": 20}]}
+        with self.assertRaisesRegex(ValueError, "selected endpoint must be P0"):
+            build_coverage_plan(manifest, selected_ids=["p0", "p1"])
+
+    def test_explicit_plan_ids_and_records_are_consistent(self):
+        manifest = {"coverage_target": 0.8, "endpoints": [{"id": "p0", "priority": "P0", "traffic_weight": 80}, {"id": "p1", "priority": "P1", "traffic_weight": 20}]}
+        plan = build_coverage_plan(manifest, selected_ids=["p0"])
+        self.assertEqual(plan["selected_endpoint_ids"], [endpoint["id"] for endpoint in plan["selected_endpoints"]])
+        self.assertEqual(plan["selected_endpoint_ids"], ["p0"])
+
 
 if __name__ == "__main__":
     unittest.main()
