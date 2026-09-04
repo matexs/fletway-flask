@@ -15,7 +15,6 @@ export function solicitationBody(context = {}) {
     detalles_carga: `Carga de prueba k6 ${suffix}`,
     medidas: '1x1x1',
     peso: 10,
-    hora_recogida: new Date(Date.now() + 86400000).toISOString(),
   };
 }
 

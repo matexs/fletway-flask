@@ -88,7 +88,6 @@ export function createSolicitation(auth, context, endpointId = 'fixture') {
     detalles_carga: `Fixture k6 ${suffix}`,
     medidas: '1x1x1',
     peso: 10,
-    hora_recogida: new Date(Date.now() + 86400000).toISOString(),
   };
   const response = http.post(`${BASE_URL}/api/solicitudes`, JSON.stringify(body), setupRequestOptions(auth.clientToken, { kind: 'fixture', endpoint_id: endpointId, role: 'client' }));
   if (response.status !== 201) throw new Error(`No se pudo crear fixture de solicitud: HTTP ${response.status}`);
