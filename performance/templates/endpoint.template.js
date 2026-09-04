@@ -123,7 +123,8 @@ export function setupEndpoint(endpoint) {
   for (let index = pool.length; seedFromScratch && index < requiredPoolSize; index += 1) {
     pool.push(createSolicitation(auth, { runId: __ENV.RUN_ID, seed: `${endpoint.id}-${index}` }, endpoint.id));
   }
-  return { auth, pool };
+  const localities = endpoint.id === 'crear-solicitud' ? localityIds(auth.clientToken) : null;
+  return { auth, pool, localities };
 }
 
 export function solicitationFor(pool) {

@@ -58,6 +58,8 @@ test('endpoint scripts retain response bodies for auth and mutation IDs', () => 
   assert.match(source, /setupTimeout:\s*__ENV\.K6_SETUP_TIMEOUT/);
   assert.match(template, /requiredPoolSize = !requiresSolicitation \? 0/);
   assert.match(template, /seedFromScratch = requiresSolicitation && pool\.length === 0/);
+  assert.match(template, /endpoint\.id === 'crear-solicitud' \? localityIds/);
+  assert.match(source, /data\.localities && data\.localities\.origin/);
   assert.match(source, /FLETWAY_RESULT/);
 });
 

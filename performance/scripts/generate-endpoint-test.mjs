@@ -30,7 +30,7 @@ export function setup() { return setupEndpoint(endpoint); }
 
 export function runFlow(data) {
   const fixture = solicitationFor(data.pool);
-  const context = { runId: __ENV.RUN_ID, vu: __VU, iteration: __ITER, solicitudId: fixture && fixture.solicitudId, localidadOrigenId: fixture && fixture.localidadOrigenId, localidadDestinoId: fixture && fixture.localidadDestinoId };
+  const context = { runId: __ENV.RUN_ID, vu: __VU, iteration: __ITER, solicitudId: fixture && fixture.solicitudId, localidadOrigenId: (fixture && fixture.localidadOrigenId) || (data.localities && data.localities.origin), localidadDestinoId: (fixture && fixture.localidadDestinoId) || (data.localities && data.localities.destination) };
   const body = buildRequestBody(adapter, context);
   const scenario = execution.scenario.name;
   const tags = requestTags({ endpointId: endpoint.id, profile: PROFILE, stage: scenario, role: endpoint.role });
