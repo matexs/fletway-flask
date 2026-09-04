@@ -142,6 +142,8 @@ function Read-Matrix([string]$Path, $Entry) {
             if (-not (Has-Property $row $field) -or [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix row requires non-empty $field" }
         }
         if ($row.test -notin $Profiles) { Fail "matrix row has unsupported test: $($row.test)" }
+        if ([string]$row.resultado -notin @('APROBADA','ADVERTENCIA','FALLIDA','NO_EJECUTADA')) { Fail "matrix row has invalid resultado: $($row.resultado)" }
+        if ([string]$row.objetivo -cne [string]$Entry.objective) { Fail "matrix row objetivo does not match manifest objective" }
         $notExecuted = [string]$row.resultado -eq 'NO_EJECUTADA'
         foreach ($field in @('carga_vu_min','carga_vu_max')) {
             if (-not $notExecuted -or -not [string]::IsNullOrWhiteSpace([string]$row.$field)) {
@@ -153,8 +155,12 @@ function Read-Matrix([string]$Path, $Entry) {
         foreach ($field in @('p95_ms','error_pct','capacidad_rps')) {
             if (-not $notExecuted -or -not [string]::IsNullOrWhiteSpace([string]$row.$field)) {
                 if (-not (Has-Property $row $field) -or [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix row requires numeric $field" }
-                [void](Number $row.$field $field 'matrix row')
+                $errorPct = Number $row.$field $field 'matrix row'
+                if ($field -eq 'error_pct' -and ($errorPct -lt 0 -or $errorPct -gt 100)) { Fail 'matrix row error_pct must be between 0 and 100' }
             }
+        }
+        if ((Has-Property $row 'carga_vu_min') -and (Has-Property $row 'carga_vu_max') -and -not [string]::IsNullOrWhiteSpace([string]$row.carga_vu_min) -and -not [string]::IsNullOrWhiteSpace([string]$row.carga_vu_max)) {
+            if (([double]$row.carga_vu_min) -gt ([double]$row.carga_vu_max)) { Fail 'matrix row carga_vu_min must be less than or equal to carga_vu_max' }
         }
     }
     return @($selected | Sort-Object @{Expression={ $Profiles.IndexOf($_.test) }})

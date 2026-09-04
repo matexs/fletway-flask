@@ -32,6 +32,7 @@ The review hardening adds strict validation at the report-controller boundary:
 - All free-form Markdown values (manifest endpoint/objective and matrix endpoint/objective/result/users, plus raw profile results) use the comprehensive `Escape-Md` helper. It normalizes line breaks and escapes pipes, links, emphasis, backticks, and raw HTML/script punctuation; structural labels remain literal.
 - Raw objects containing both `profile` and `requestedProfile` are rejected as ambiguous.
 - Canonical matrix rows are validated before rendering: required free-form fields are non-empty, tests are supported, and executed rows have numeric VU bounds, p95, error percentage, and RPS values.
+- Matrix semantics are enforced before rendering: `resultado` must be `APROBADA`, `ADVERTENCIA`, `FALLIDA`, or `NO_EJECUTADA`; `error_pct` must be within 0–100; VU minimum cannot exceed VU maximum; and each row’s raw `objetivo` must exactly match the manifest objective before Markdown/HTML escaping.
 
 Absent Smoke/Load/Spike raw profiles are rendered as `NO_EJECUTADA`. Stress detail is required when the matrix claims a stress maximum, because the required per-VU table cannot be fabricated.
 
@@ -57,6 +58,7 @@ Added `performance/tests/generate-endpoint-report.tests.ps1` with hand-built fix
 - Hostile manifest/matrix endpoint, objective, result, and users values with pipes, line breaks, links, emphasis, and script-like HTML are escaped in Markdown while structural labels remain unchanged.
 - Ambiguous raw `profile` plus `requestedProfile` rejection.
 - Malformed canonical matrix numeric and required free-form field rejection.
+- Invalid canonical `resultado`, out-of-range `error_pct`, reversed VU bounds, and manifest-objective mismatch rejection.
 
 TDD evidence:
 
@@ -65,7 +67,8 @@ TDD evidence:
 3. Review fixtures then failed on the missing score contract and VU mismatch, driving the strict validation/model-rendering fixes.
 4. The focused P1 fixture failed against the unescaped result renderer, then passed after adding a scoped Markdown-free-form helper at result interpolation sites.
 5. The latest review fixtures failed on incomplete escaping and permissive input handling, then passed after making `Escape-Md` comprehensive and adding dual-profile/matrix validation.
-6. The final fixture test passed.
+6. The canonical matrix semantic fixtures failed on invalid status/range/order/objective cases, then passed after enforcing those checks before rendering.
+7. The final fixture test passed.
 
 Verification commands and results:
 

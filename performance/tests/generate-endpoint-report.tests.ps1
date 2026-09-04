@@ -92,17 +92,17 @@ try {
 
     $unsafeManifest = @{ endpoints = @(@{ id='orders'; method='GET'; path='/api/orders|<script>'; objective="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; priority='P0'; enabled_profiles=@('smoke','load','stress','spike') }) }
     $unsafeRows = @(
-        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='smoke'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='1'; carga_vu_max='3'; p95_ms='900'; error_pct='0.5'; capacidad_rps='10'; resultado='<script>[bad](x) *bold* |'; usuarios="1→3 VUs | [users]`n<script>" },
-        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='load'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='0'; carga_vu_max='10'; p95_ms='1800'; error_pct='2'; capacidad_rps='12'; resultado='<script>[bad](x) *bold* |'; usuarios="0→10 VUs | [users]`n<script>" },
-        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='stress'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='10'; carga_vu_max='30'; p95_ms='3200'; error_pct='11'; capacidad_rps='14'; resultado='<script>[bad](x) *bold* |'; usuarios="10→30 VUs | [users]`n<script>" },
-        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='spike'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='3'; carga_vu_max='30'; p95_ms='4100'; error_pct='8'; capacidad_rps='15'; resultado='<script>[bad](x) *bold* |'; usuarios="3→30 VUs | [users]`n<script>" }
+        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='smoke'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='1'; carga_vu_max='3'; p95_ms='900'; error_pct='0.5'; capacidad_rps='10'; resultado='ADVERTENCIA'; usuarios="1→3 VUs | [users]`n<script>" },
+        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='load'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='0'; carga_vu_max='10'; p95_ms='1800'; error_pct='2'; capacidad_rps='12'; resultado='ADVERTENCIA'; usuarios="0→10 VUs | [users]`n<script>" },
+        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='stress'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='10'; carga_vu_max='30'; p95_ms='3200'; error_pct='11'; capacidad_rps='14'; resultado='ADVERTENCIA'; usuarios="10→30 VUs | [users]`n<script>" },
+        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='spike'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='3'; carga_vu_max='30'; p95_ms='4100'; error_pct='8'; capacidad_rps='15'; resultado='ADVERTENCIA'; usuarios="3→30 VUs | [users]`n<script>" }
     )
     $unsafeMatrix = ($unsafeRows | ConvertTo-Csv -NoTypeInformation) -join "`n"
     $unsafeReport = Invoke-Report $unsafeMatrix $raw $unsafeManifest 'unsafe-free-form'
     Assert-True ($unsafeReport.ExitCode -eq 0) "free-form manifest/matrix fixture should generate: $($unsafeReport.Stdout)"
     $unsafeMd = Get-Content -Raw (Join-Path $unsafeReport.Output 'endpoint-report.md')
-    foreach ($escaped in @('\|','\<script\>','\[link\]\(x\)','\*\*bold\*\*','\[bad\]\(x\)','\*bold\*','\[users\]')) { Assert-True ($unsafeMd.Contains($escaped)) "Markdown free-form value should escape $escaped" }
-    Assert-True ($unsafeMd -notmatch '(?<!\\)<script>|(?<!\\)\[bad\]\(x\)|(?<!\\)\*bold\*') 'Markdown must not retain active HTML, link, or emphasis syntax'
+    foreach ($escaped in @('\|','\<script\>','\[link\]\(x\)','\*\*bold\*\*','\*bold\*','\[users\]')) { Assert-True ($unsafeMd.Contains($escaped)) "Markdown free-form value should escape $escaped" }
+    Assert-True ($unsafeMd -notmatch '(?<!\\)<script>|(?<!\\)\*bold\*') 'Markdown must not retain active HTML or emphasis syntax'
     Assert-True ($unsafeMd -notmatch 'line\r?\n') 'Markdown line breaks must not be emitted as raw free-form newlines'
     Assert-True ($unsafeMd.Contains('## Smoke') -and $unsafeMd.Contains('**Resultado:**')) 'trusted structural labels must remain unescaped'
 
@@ -113,16 +113,26 @@ try {
     Assert-ReportRejected $badNumericMatrix $raw $manifest 'bad-matrix-p95' 'matrix|p95|numeric'
     $missingMatrixField = $matrix.Replace('GET /api/orders,smoke',' ,smoke')
     Assert-ReportRejected $missingMatrixField $raw $manifest 'missing-matrix-endpoint' 'matrix|endpoint|required'
+    $invalidResultMatrix = $matrix.Replace('APROBADA','INVALID_RESULT')
+    Assert-ReportRejected $invalidResultMatrix $raw $manifest 'invalid-matrix-result' 'matrix|resultado|result'
+    $negativeErrorMatrix = $matrix.Replace('900,0.5,10','900,-0.1,10')
+    Assert-ReportRejected $negativeErrorMatrix $raw $manifest 'negative-matrix-error' 'matrix|error|range|numeric'
+    $overLimitErrorMatrix = $matrix.Replace('1800,2,12','1800,100.1,12')
+    Assert-ReportRejected $overLimitErrorMatrix $raw $manifest 'over-limit-matrix-error' 'matrix|error|range|numeric'
+    $reversedVuMatrix = $matrix.Replace('1,3,900','4,3,900')
+    Assert-ReportRejected $reversedVuMatrix $raw $manifest 'reversed-matrix-vu' 'matrix|vu|carga|order'
+    $objectiveMismatchMatrix = $matrix.Replace('Validate orders under representative traffic','Different manifest objective')
+    Assert-ReportRejected $objectiveMismatchMatrix $raw $manifest 'matrix-objective-mismatch' 'matrix|objetivo|objective|manifest'
     Assert-True ($md -match '\| GET /api/orders \| smoke \|' -and $md -match '\| GET /api/orders \| load \|' -and $md -match '\| GET /api/orders \| stress \|' -and $md -match '\| GET /api/orders \| spike \|') 'matrix must include all four canonical rows'
     Assert-True ($md -match 'Hecho:' -and $md -match 'Hipótesis:' -and $md -match 'no hay telemetría') 'conclusion must distinguish evidence from hypothesis'
     Assert-True ($md -notmatch '(?i)(causad[oa]|debido|provocad[oa]).{0,30}(sql|memoria)|(sql|memoria).{0,30}(causad[oa]|debido|provocad[oa])|password|bearer|eyJ[A-Za-z0-9_-]+') 'report must not claim unsupported causes or leak secrets'
     Assert-True ($html -match 'carga máxima observada de 30 VU' -and $html -match 'no hay telemetría de SQL') 'HTML conclusion must use the same model-derived facts and hypothesis as Markdown'
 
-    $escapedMatrix = $matrix.Replace('APROBADA','<script>alert(1)</script>')
+    $escapedMatrix = $matrix.Replace('APROBADA','ADVERTENCIA')
     $escaped = Invoke-Report $escapedMatrix $raw $manifest 'escaped-matrix'
     Assert-True ($escaped.ExitCode -eq 0) "matrix values should be escaped, not rejected: $($escaped.Stdout)"
     $escapedHtml = Get-Content -Raw (Join-Path $escaped.Output 'endpoint-report.html')
-    Assert-True ($escapedHtml.Contains('&lt;script&gt;alert(1)&lt;/script&gt;') -and $escapedHtml -notmatch '<script>') 'HTML must escape matrix resultado'
+    Assert-True ($escapedHtml.Contains('ADVERTENCIA') -and $escapedHtml -notmatch '<script>') 'HTML must render canonical matrix resultado'
 
     $duplicateStress = $raw.Clone(); $duplicateStress['stress-20-copy'] = Clone-Value $raw['stress-20']
     Assert-ReportRejected $matrix $duplicateStress $manifest 'duplicate-stress' 'duplicate|stress'
