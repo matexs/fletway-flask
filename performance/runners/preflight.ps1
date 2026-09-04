@@ -24,7 +24,7 @@ $health = Invoke-WebRequest -UseBasicParsing -Uri "$baseUrl/" -Method Get -Timeo
 if ($health.StatusCode -ne 200) { throw "Health preflight returned HTTP $($health.StatusCode)" }
 $token = if ($endpoint.auth_role -eq 'driver') { Get-Token $env:DRIVER_EMAIL $env:DRIVER_PASSWORD 'driver' } else { Get-Token $env:CLIENT_EMAIL $env:CLIENT_PASSWORD 'client' }
 $targetPath = [string]$endpoint.path
-if ($targetPath -notmatch '<[^>]+>') {
+if ($endpoint.method -eq 'GET' -and $targetPath -notmatch '<[^>]+>') {
     $target = Invoke-WebRequest -UseBasicParsing -Uri "$baseUrl$targetPath" -Headers @{ Authorization = "Bearer $token"; Accept = 'application/json' } -Method Get -TimeoutSec 60
     if ($target.StatusCode -ne 200) { throw "Endpoint preflight returned HTTP $($target.StatusCode)" }
 }

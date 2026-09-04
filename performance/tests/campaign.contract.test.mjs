@@ -39,3 +39,8 @@ test('mutating endpoints are explicitly marked', () => {
 test('metric names normalize endpoint ids for k6', () => {
   assert.equal(metricName('smoke', 'duration_ms', 'crear-solicitud'), 'fletway_smoke_crear_solicitud_duration_ms');
 });
+
+test('preflight does not probe mutating routes with GET', () => {
+  const source = fs.readFileSync(path.join(performanceRoot, 'runners', 'preflight.ps1'), 'utf8');
+  assert.match(source, /endpoint\.method\s+-eq\s*['"]GET['"]/i);
+});
