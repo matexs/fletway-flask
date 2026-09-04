@@ -33,6 +33,14 @@ function Number($Value, [string]$Name, [string]$Context) {
     return $parsed
 }
 function Format-Number([double]$Value) { return $Value.ToString('0.###', [Globalization.CultureInfo]::InvariantCulture) }
+function Get-ObservedOutcome([string]$Profile, [double]$P95, [double]$ErrorPct) {
+    if ($P95 -ge 5000 -or $ErrorPct -ge 20) { return 'FALLIDA' }
+    $softProfile = if ($Profile -like 'stress_*') { 'stress' } else { $Profile }
+    $p95Limit = if ($softProfile -eq 'smoke') { 1000 } elseif ($softProfile -eq 'load') { 2000 } elseif ($softProfile -eq 'stress') { 3000 } else { 5000 }
+    $errorLimit = if ($softProfile -eq 'smoke') { 1 } elseif ($softProfile -eq 'load') { 5 } elseif ($softProfile -eq 'stress') { 10 } else { 20 }
+    if ($P95 -ge $p95Limit -or $ErrorPct -ge $errorLimit) { return 'ADVERTENCIA' }
+    return 'APROBADA'
+}
 function Escape-Md([string]$Value) {
     $punctuation = @('\','`','*','_','{','}','[',']','<','>','(',')','#','+','-','.','!','|','~','&')
     $text = ([string]$Value).Replace("`r",' ').Replace("`n",' ')
@@ -116,7 +124,9 @@ function New-ProfileModel($Raw, [string]$Profile, [string]$Path) {
     $durationSeconds = Number $Raw.measured_duration_seconds 'measured_duration_seconds' $Path
     if ($durationSeconds -le 0) { Fail "$Path measured_duration_seconds must be greater than zero" }
     $rps = $values.count / $durationSeconds
-    return [pscustomobject]@{ profile=$Profile; vu_min=$vuMin; vu_max=$vuMax; p95=$values.p95; error_pct=$values.error_pct; rps=$rps; result=$result; values=$values; raw=$Raw }
+    $outcome = Get-ObservedOutcome $Profile $values.p95 $values.error_pct
+    if ($result -in @('APROBADA','ADVERTENCIA','FALLIDA','NO_EJECUTADA') -and $result -cne $outcome) { Fail "$Path result contradicts raw metrics outcome" }
+    return [pscustomobject]@{ profile=$Profile; vu_min=$vuMin; vu_max=$vuMax; p95=$values.p95; error_pct=$values.error_pct; rps=$rps; duration_seconds=$durationSeconds; outcome=$outcome; result=$result; values=$values; raw=$Raw }
 }
 function Read-Models($Entry) {
     $models = @{}; $stress = @{}
@@ -172,6 +182,45 @@ function Read-Matrix([string]$Path, $Entry) {
         }
     }
     return @($selected | Sort-Object @{Expression={ $Profiles.IndexOf($_.test) }})
+}
+function Assert-NumericMatch([double]$Actual, [double]$Expected, [string]$Field, [string]$Context) {
+    $tolerance = [math]::Max(0.001, ([math]::Max([math]::Abs($Actual), [math]::Abs($Expected)) * 0.000001))
+    if ([math]::Abs($Actual - $Expected) -gt $tolerance) { Fail "cross-source $Context $Field mismatch: matrix=$Actual raw=$Expected" }
+}
+function Assert-NumericRange([double]$Value, [double]$Minimum, [double]$Maximum, [string]$Field, [string]$Context) {
+    $tolerance = [math]::Max(0.001, ([math]::Max([math]::Abs($Minimum), [math]::Abs($Maximum)) * 0.000001))
+    if ($Value -lt ($Minimum - $tolerance) -or $Value -gt ($Maximum + $tolerance)) { Fail "cross-source $Context $Field is outside raw range: matrix=$Value raw=$Minimum..$Maximum" }
+}
+function Validate-CrossSource($Rows, $RawModels) {
+    foreach ($row in $Rows) {
+        if ($row.test -eq 'stress') {
+            $stressModels = @($RawModels.stress.Keys | ForEach-Object { $RawModels.stress[$_] })
+            if ($stressModels.Count -eq 0) { continue }
+            if ([string]$row.resultado -eq 'NO_EJECUTADA') { Fail 'cross-source stress row is NO_EJECUTADA but raw stress metrics exist' }
+            $minVu = (@($stressModels | ForEach-Object { $_.vu_min } | Measure-Object -Minimum).Minimum)
+            $maxVu = (@($stressModels | ForEach-Object { $_.vu_max } | Measure-Object -Maximum).Maximum)
+            Assert-NumericMatch (Number $row.carga_vu_min 'carga_vu_min' 'matrix stress row') $minVu 'carga_vu_min' 'stress'
+            Assert-NumericMatch (Number $row.carga_vu_max 'carga_vu_max' 'matrix stress row') $maxVu 'carga_vu_max' 'stress'
+            foreach ($field in @('p95_ms','error_pct','capacidad_rps')) {
+                $rawValues = @($stressModels | ForEach-Object { if ($field -eq 'p95_ms') { $_.p95 } elseif ($field -eq 'error_pct') { $_.error_pct } else { $_.rps } })
+                $minimum = (@($rawValues | Measure-Object -Minimum).Minimum)
+                $maximum = (@($rawValues | Measure-Object -Maximum).Maximum)
+                Assert-NumericRange (Number $row.$field $field 'matrix stress row') $minimum $maximum $field 'stress'
+            }
+            $rawOutcome = Get-WorstResult (@($stressModels | ForEach-Object { [pscustomobject]@{ resultado=$_.outcome } }))
+            if ([string]$row.resultado -cne $rawOutcome) { Fail "cross-source stress resultado mismatch: matrix=$($row.resultado) raw=$rawOutcome" }
+            continue
+        }
+        $profile = $RawModels.profiles[[string]$row.test]
+        if ($null -eq $profile) { continue }
+        if ([string]$row.resultado -eq 'NO_EJECUTADA') { Fail "cross-source $($row.test) row is NO_EJECUTADA but raw metrics exist" }
+        Assert-NumericMatch (Number $row.carga_vu_min 'carga_vu_min' "matrix $($row.test) row") $profile.vu_min 'carga_vu_min' $row.test
+        Assert-NumericMatch (Number $row.carga_vu_max 'carga_vu_max' "matrix $($row.test) row") $profile.vu_max 'carga_vu_max' $row.test
+        Assert-NumericMatch (Number $row.p95_ms 'p95_ms' "matrix $($row.test) row") $profile.p95 'p95_ms' $row.test
+        Assert-NumericMatch (Number $row.error_pct 'error_pct' "matrix $($row.test) row") $profile.error_pct 'error_pct' $row.test
+        Assert-NumericMatch (Number $row.capacidad_rps 'capacidad_rps' "matrix $($row.test) row") $profile.rps 'capacidad_rps' "$($row.test) duration/RPS"
+        if ([string]$row.resultado -cne $profile.outcome) { Fail "cross-source $($row.test) resultado mismatch: matrix=$($row.resultado) raw=$($profile.outcome)" }
+    }
 }
 function Value-Or-NA($Value) { if ($null -eq $Value -or $Value -eq '') { return 'N/D' }; return (Format-Number ([double]$Value)) }
 function State($Row) { if ([string]::IsNullOrWhiteSpace($Row.resultado)) { return 'NO_EJECUTADA' }; return [string]$Row.resultado }
@@ -250,6 +299,7 @@ $stressMatrixRow = @($rows | Where-Object test -eq 'stress')[0]
 $stressMaxVu = [int]$stressMatrixRow.carga_vu_max
 if (-not $rawModels.stress.ContainsKey($stressMaxVu)) { Fail "stress raw profiles are missing the matrix maximum VU: $stressMaxVu" }
 $model = [pscustomobject]@{ entry=$entry; profiles=$rawModels.profiles; stress=$rawModels.stress; rows=$rows }
+Validate-CrossSource $rows $rawModels
 $summary = "- **Score endpoint:** N/D (no calculado hasta Task 10)`n- **Resultado:** $(Get-WorstResult $rows)`n- **Carga máxima:** $((@($rows | ForEach-Object {[int]$_.carga_vu_max} | Measure-Object -Maximum).Maximum)) VU`n- **Capacidad máxima:** $((@($rows | ForEach-Object {[double]$_.capacidad_rps} | Measure-Object -Maximum).Maximum)) RPS"
 $template = Read-Utf8NoBom $TemplatePath
 foreach ($token in @('{{ENDPOINT}}','{{OBJECTIVE}}','{{SUMMARY}}','{{SMOKE}}','{{LOAD}}','{{STRESS}}','{{SPIKE}}','{{MATRIX}}','{{CONCLUSION}}')) { if (-not $template.Contains($token)) { Fail "template missing token: $token" } }

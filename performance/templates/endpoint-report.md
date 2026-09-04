@@ -1,6 +1,6 @@
 # {{ENDPOINT}}
 
-**Método/ruta:** `{{ENDPOINT}}`<br>
+**Método/ruta:** {{ENDPOINT}}<br>
 **Objetivo:** {{OBJECTIVE}}
 
 ## Resumen

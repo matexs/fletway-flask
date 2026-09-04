@@ -34,6 +34,8 @@ The review hardening adds strict validation at the report-controller boundary:
 - Canonical matrix rows are validated before rendering: required free-form fields are non-empty, tests are supported, and executed rows have numeric VU bounds, p95, error percentage, and RPS values.
 - Matrix semantics are enforced before rendering: `resultado` must be `APROBADA`, `ADVERTENCIA`, `FALLIDA`, or `NO_EJECUTADA`; `error_pct` must be within 0–100; VU minimum cannot exceed VU maximum; and each row’s raw `objetivo` must exactly match the manifest objective before Markdown/HTML escaping.
 - UTF-8 input and output use .NET `UTF8Encoding($false)` with `File.ReadAllText`/`File.WriteAllText`, avoiding the PowerShell 7-only `utf8NoBOM` encoding name while preserving UTF-8 without BOM on PowerShell 5.1 and 7.
+- Before rendering, canonical rows are reconciled with the raw-derived model: smoke/load/spike p95, VU bounds, error, derived RPS/duration, and metric-derived outcome must match; the stress row must match the observed VU range, remain within raw p95/error/RPS ranges, and match the worst raw stress outcome. Differences are rejected with a cross-source error.
+- Endpoint method/path is rendered as escaped Markdown text rather than wrapped in a code span, so backticks in a manifest path cannot terminate Markdown formatting. The fixture harness uses its existing edition-selected PowerShell executable for the unsafe-path check.
 
 Absent Smoke/Load/Spike raw profiles are rendered as `NO_EJECUTADA`. Stress detail is required when the matrix claims a stress maximum, because the required per-VU table cannot be fabricated.
 
@@ -60,6 +62,8 @@ Added `performance/tests/generate-endpoint-report.tests.ps1` with hand-built fix
 - Ambiguous raw `profile` plus `requestedProfile` rejection.
 - Malformed canonical matrix numeric and required free-form field rejection.
 - Invalid canonical `resultado`, out-of-range `error_pct`, reversed VU bounds, and manifest-objective mismatch rejection.
+- Cross-source p95, VU, RPS/duration, error, stress-range/metric, and outcome mismatch rejection; a valid canonical matrix still renders.
+- Backtick-containing endpoint rendering and edition-selected unsafe-path subprocess compatibility.
 
 TDD evidence:
 
@@ -71,15 +75,16 @@ TDD evidence:
 6. The canonical matrix semantic fixtures failed on invalid status/range/order/objective cases, then passed after enforcing those checks before rendering.
 7. The first Windows PowerShell 5.1 compatibility run failed on the unsupported `utf8NoBOM` encoding and source/output decoding; the harness and generator were then switched to the cross-version .NET UTF-8 helpers and the compatibility run passed.
 8. The final fixture tests passed under both PowerShell 7 and Windows PowerShell 5.1.
+9. Cross-source mismatch fixtures initially rendered successfully, proving the missing reconciliation; after adding raw-derived semantic checks, all mismatch cases were rejected and the valid fixture continued to render.
 
 Verification commands and results:
 
 ```text
-pwsh -NoProfile -File performance/tests/generate-endpoint-report.tests.ps1                              PASS
+pwsh -NoProfile -File performance/tests/generate-endpoint-report.tests.ps1                                  PASS
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File performance/tests/generate-endpoint-report.tests.ps1 PASS
-pwsh -NoProfile -File performance/tests/aggregate-results.tests.ps1                                    PASS
-pwsh -NoProfile -File performance/tests/run-queue.tests.ps1                                            PASS
-git diff --check                                                                                       PASS
+pwsh -NoProfile -File performance/tests/aggregate-results.tests.ps1                                        PASS
+pwsh -NoProfile -File performance/tests/run-queue.tests.ps1                                                PASS
+git diff --check                                                                                           PASS
 ```
 
 ## Controller-branch validation and worktree status
