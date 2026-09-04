@@ -29,8 +29,7 @@ function Number($Value, [string]$Name, [string]$Context) {
     return $parsed
 }
 function Format-Number([double]$Value) { return $Value.ToString('0.###', [Globalization.CultureInfo]::InvariantCulture) }
-function Escape-Md([string]$Value) { return ([string]$Value).Replace('|','\|').Replace("`r",' ').Replace("`n",' ') }
-function Escape-Md-FreeForm([string]$Value) {
+function Escape-Md([string]$Value) {
     $punctuation = @('\','`','*','_','{','}','[',']','<','>','(',')','#','+','-','.','!','|','~','&')
     $text = ([string]$Value).Replace("`r",' ').Replace("`n",' ')
     $builder = [Text.StringBuilder]::new()
@@ -66,7 +65,9 @@ function Get-RawFiles([string]$Path) {
     return $files
 }
 function Get-Profile($Raw, [string]$Path) {
-    $property = if (Has-Property $Raw 'profile') { 'profile' } elseif (Has-Property $Raw 'requestedProfile') { 'requestedProfile' } else { Fail "$Path requires profile" }
+    $hasProfile = Has-Property $Raw 'profile'; $hasRequestedProfile = Has-Property $Raw 'requestedProfile'
+    if ($hasProfile -and $hasRequestedProfile) { Fail "$Path cannot contain both profile and requestedProfile" }
+    $property = if ($hasProfile) { 'profile' } elseif ($hasRequestedProfile) { 'requestedProfile' } else { Fail "$Path requires profile" }
     $profile = [string]$Raw.$property
     if ($profile -match '^stress_(\d+)$') { return $profile }
     if ($profile -notin $Profiles) { Fail "$Path has unsupported profile: $profile" }
@@ -136,6 +137,26 @@ function Read-Matrix([string]$Path, $Entry) {
     $selected = @($rows | Where-Object { $_.endpoint -eq $Entry.endpoint })
     if ($selected.Count -ne 4) { Fail "matrix must contain exactly four rows for $($Entry.endpoint)" }
     foreach ($profile in $Profiles) { if (@($selected | Where-Object test -eq $profile).Count -ne 1) { Fail "matrix missing profile: $profile" } }
+    foreach ($row in $selected) {
+        foreach ($field in @('endpoint','test','objetivo','resultado','usuarios')) {
+            if (-not (Has-Property $row $field) -or [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix row requires non-empty $field" }
+        }
+        if ($row.test -notin $Profiles) { Fail "matrix row has unsupported test: $($row.test)" }
+        $notExecuted = [string]$row.resultado -eq 'NO_EJECUTADA'
+        foreach ($field in @('carga_vu_min','carga_vu_max')) {
+            if (-not $notExecuted -or -not [string]::IsNullOrWhiteSpace([string]$row.$field)) {
+                if (-not (Has-Property $row $field) -or [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix row requires numeric $field" }
+                $vu = Number $row.$field $field 'matrix row'
+                if ([math]::Floor($vu) -ne $vu) { Fail "matrix row requires integer $field" }
+            }
+        }
+        foreach ($field in @('p95_ms','error_pct','capacidad_rps')) {
+            if (-not $notExecuted -or -not [string]::IsNullOrWhiteSpace([string]$row.$field)) {
+                if (-not (Has-Property $row $field) -or [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix row requires numeric $field" }
+                [void](Number $row.$field $field 'matrix row')
+            }
+        }
+    }
     return @($selected | Sort-Object @{Expression={ $Profiles.IndexOf($_.test) }})
 }
 function Value-Or-NA($Value) { if ($null -eq $Value -or $Value -eq '') { return 'N/D' }; return (Format-Number ([double]$Value)) }
@@ -150,7 +171,7 @@ function Get-WorstResult($Rows) {
 function Report-Text($Model, [string]$Name) {
     $p = $Model.profiles[$Name]
     if ($null -eq $p) { return "**Configuración:** no ejecutada o sin raw JSON.  `n**Resultado:** NO_EJECUTADA" }
-    $resultText = if ($p.result) { Escape-Md-FreeForm $p.result } else { 'observado' }
+    $resultText = if ($p.result) { Escape-Md $p.result } else { 'observado' }
     return "**Configuración:** $($p.vu_min)→$($p.vu_max) VUs  `n**p95:** $(Value-Or-NA $p.p95) ms  `n**Error:** $(Value-Or-NA $p.error_pct)%  `n**RPS:** $(Value-Or-NA $p.rps)  `n**Resultado:** $resultText"
 }
 function Render-Stress($Model) {
@@ -174,7 +195,7 @@ function Render-Spike($Model) {
         $spikeParts[$name] = [pscustomobject]@{ vus=$vus; p95_ms=(Number $part.p95_ms 'p95_ms' "spike $name"); error_pct=(Number $part.error_pct 'error_pct' "spike $name"); rps=(Number $part.rps 'rps' "spike $name") }
     }
     $recoverySeconds = if (Has-Property $raw.recovery 'seconds') { Number $raw.recovery.seconds 'recovery seconds' 'spike' } elseif (Has-Property $raw 'recovery_seconds') { Number $raw.recovery_seconds 'recovery seconds' 'spike' } else { Fail 'spike requires recovery seconds' }
-    $resultText = if ($p.result) { Escape-Md-FreeForm $p.result } else { 'observado' }
+    $resultText = if ($p.result) { Escape-Md $p.result } else { 'observado' }
     return "**Baseline:** $($spikeParts.baseline.vus) VU, p95 $(Value-Or-NA $spikeParts.baseline.p95_ms) ms, error $(Value-Or-NA $spikeParts.baseline.error_pct)%, RPS $(Value-Or-NA $spikeParts.baseline.rps)`n`n**Peak:** $($spikeParts.peak.vus) VU, p95 $(Value-Or-NA $spikeParts.peak.p95_ms) ms, error $(Value-Or-NA $spikeParts.peak.error_pct)%, RPS $(Value-Or-NA $spikeParts.peak.rps)`n`n**Recovery:** $($spikeParts.recovery.vus) VU, p95 $(Value-Or-NA $spikeParts.recovery.p95_ms) ms, error $(Value-Or-NA $spikeParts.recovery.error_pct)%, RPS $(Value-Or-NA $spikeParts.recovery.rps), $recoverySeconds s.`n`n**Resultado:** $resultText"
 }
 function Render-Matrix($Rows) {

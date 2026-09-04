@@ -89,6 +89,30 @@ try {
     $freeFormMd = Get-Content -Raw (Join-Path $freeFormResult.Output 'endpoint-report.md')
     Assert-True ($freeFormMd.Contains('\[FAILED\]\(https://evil\.example\) \<b\>\*boom\*\</b\> \| \`code\`')) 'free-form profile results must be Markdown-escaped in Report-Text and Render-Spike'
     Assert-True ($freeFormMd -notmatch '\[FAILED\]\(https://evil\.example\)' -and $freeFormMd -notmatch '<b>\*boom\*') 'raw Markdown/HTML result syntax must not remain active'
+
+    $unsafeManifest = @{ endpoints = @(@{ id='orders'; method='GET'; path='/api/orders|<script>'; objective="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; priority='P0'; enabled_profiles=@('smoke','load','stress','spike') }) }
+    $unsafeRows = @(
+        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='smoke'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='1'; carga_vu_max='3'; p95_ms='900'; error_pct='0.5'; capacidad_rps='10'; resultado='<script>[bad](x) *bold* |'; usuarios="1→3 VUs | [users]`n<script>" },
+        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='load'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='0'; carga_vu_max='10'; p95_ms='1800'; error_pct='2'; capacidad_rps='12'; resultado='<script>[bad](x) *bold* |'; usuarios="0→10 VUs | [users]`n<script>" },
+        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='stress'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='10'; carga_vu_max='30'; p95_ms='3200'; error_pct='11'; capacidad_rps='14'; resultado='<script>[bad](x) *bold* |'; usuarios="10→30 VUs | [users]`n<script>" },
+        [pscustomobject]@{ endpoint='GET /api/orders|<script>'; test='spike'; objetivo="Objective | line`n**bold** [link](x) <script>alert(1)</script>"; carga_vu_min='3'; carga_vu_max='30'; p95_ms='4100'; error_pct='8'; capacidad_rps='15'; resultado='<script>[bad](x) *bold* |'; usuarios="3→30 VUs | [users]`n<script>" }
+    )
+    $unsafeMatrix = ($unsafeRows | ConvertTo-Csv -NoTypeInformation) -join "`n"
+    $unsafeReport = Invoke-Report $unsafeMatrix $raw $unsafeManifest 'unsafe-free-form'
+    Assert-True ($unsafeReport.ExitCode -eq 0) "free-form manifest/matrix fixture should generate: $($unsafeReport.Stdout)"
+    $unsafeMd = Get-Content -Raw (Join-Path $unsafeReport.Output 'endpoint-report.md')
+    foreach ($escaped in @('\|','\<script\>','\[link\]\(x\)','\*\*bold\*\*','\[bad\]\(x\)','\*bold\*','\[users\]')) { Assert-True ($unsafeMd.Contains($escaped)) "Markdown free-form value should escape $escaped" }
+    Assert-True ($unsafeMd -notmatch '(?<!\\)<script>|(?<!\\)\[bad\]\(x\)|(?<!\\)\*bold\*') 'Markdown must not retain active HTML, link, or emphasis syntax'
+    Assert-True ($unsafeMd -notmatch 'line\r?\n') 'Markdown line breaks must not be emitted as raw free-form newlines'
+    Assert-True ($unsafeMd.Contains('## Smoke') -and $unsafeMd.Contains('**Resultado:**')) 'trusted structural labels must remain unescaped'
+
+    $bothProfiles = $raw.Clone(); $bothProfiles['smoke'] = Clone-Value $raw['smoke']; [void]$bothProfiles['smoke'].PSObject.Properties.Add([PSNoteProperty]::new('requestedProfile','smoke'))
+    Assert-ReportRejected $matrix $bothProfiles $manifest 'both-profile-fields' 'profile|requestedProfile|both'
+
+    $badNumericMatrix = $matrix.Replace('1800,2,12','not-a-number,2,12')
+    Assert-ReportRejected $badNumericMatrix $raw $manifest 'bad-matrix-p95' 'matrix|p95|numeric'
+    $missingMatrixField = $matrix.Replace('GET /api/orders,smoke',' ,smoke')
+    Assert-ReportRejected $missingMatrixField $raw $manifest 'missing-matrix-endpoint' 'matrix|endpoint|required'
     Assert-True ($md -match '\| GET /api/orders \| smoke \|' -and $md -match '\| GET /api/orders \| load \|' -and $md -match '\| GET /api/orders \| stress \|' -and $md -match '\| GET /api/orders \| spike \|') 'matrix must include all four canonical rows'
     Assert-True ($md -match 'Hecho:' -and $md -match 'Hipótesis:' -and $md -match 'no hay telemetría') 'conclusion must distinguish evidence from hypothesis'
     Assert-True ($md -notmatch '(?i)(causad[oa]|debido|provocad[oa]).{0,30}(sql|memoria)|(sql|memoria).{0,30}(causad[oa]|debido|provocad[oa])|password|bearer|eyJ[A-Za-z0-9_-]+') 'report must not claim unsupported causes or leak secrets'

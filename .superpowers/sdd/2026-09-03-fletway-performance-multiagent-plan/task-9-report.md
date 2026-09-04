@@ -29,7 +29,9 @@ The review hardening adds strict validation at the report-controller boundary:
 - Spike baseline, peak, and recovery each require numeric integer VUs, p95, error percentage, and RPS. Recovery also requires a numeric duration in seconds.
 - The score field is present as `N/D (no calculado hasta Task 10)` in both formats; no score value is inferred by Task 9.
 - Markdown and HTML consume the same conclusion model facts and hypothesis. Every HTML matrix cell, including `resultado`, is escaped before interpolation.
-- Free-form raw profile results are escaped with a Markdown-specific helper in both `Report-Text` and `Render-Spike`; trusted structural labels are not passed through that helper.
+- All free-form Markdown values (manifest endpoint/objective and matrix endpoint/objective/result/users, plus raw profile results) use the comprehensive `Escape-Md` helper. It normalizes line breaks and escapes pipes, links, emphasis, backticks, and raw HTML/script punctuation; structural labels remain literal.
+- Raw objects containing both `profile` and `requestedProfile` are rejected as ambiguous.
+- Canonical matrix rows are validated before rendering: required free-form fields are non-empty, tests are supported, and executed rows have numeric VU bounds, p95, error percentage, and RPS values.
 
 Absent Smoke/Load/Spike raw profiles are rendered as `NO_EJECUTADA`. Stress detail is required when the matrix claims a stress maximum, because the required per-VU table cannot be fabricated.
 
@@ -52,14 +54,18 @@ Added `performance/tests/generate-endpoint-report.tests.ps1` with hand-built fix
 - Markdown/HTML-metacharacter result fixture proving free-form result escaping in Smoke and Spike output.
 - Evidence/hypothesis wording and rejection of unsupported cause claims.
 - Unsafe output path rejection.
+- Hostile manifest/matrix endpoint, objective, result, and users values with pipes, line breaks, links, emphasis, and script-like HTML are escaped in Markdown while structural labels remain unchanged.
+- Ambiguous raw `profile` plus `requestedProfile` rejection.
+- Malformed canonical matrix numeric and required free-form field rejection.
 
 TDD evidence:
 
 1. The new test was run before the generator existed and failed because the script file was missing.
 2. After implementation, it failed on the Task 8 metric shape; the parser was corrected to read request count from `http_reqs` and duration statistics from `http_req_duration`.
 3. Review fixtures then failed on the missing score contract and VU mismatch, driving the strict validation/model-rendering fixes.
-4. The focused P1 fixture failed against the unescaped result renderer, then passed after adding `Escape-Md-FreeForm` only at free-form result interpolation sites.
-5. The final fixture test passed.
+4. The focused P1 fixture failed against the unescaped result renderer, then passed after adding a scoped Markdown-free-form helper at result interpolation sites.
+5. The latest review fixtures failed on incomplete escaping and permissive input handling, then passed after making `Escape-Md` comprehensive and adding dual-profile/matrix validation.
+6. The final fixture test passed.
 
 Verification commands and results:
 
