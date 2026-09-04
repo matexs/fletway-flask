@@ -59,6 +59,15 @@ try {
     Assert-True ($lines[3] -like 'GET /fast,load,*APROBADA*') 'P0 should sort before NO_EJECUTADA within stable severity ordering'
     Assert-True ($lines[4] -like 'GET /fast,smoke,*NO_EJECUTADA*') 'NO_EJECUTADA should sort last'
 
+    # The public health endpoint uses the valid root path "GET /".
+    $rootEndpointRoot = Join-Path $testRoot 'root-endpoint'
+    $rootEndpointManifest = Join-Path $testRoot 'root-endpoint-manifest.json'
+    Write-Matrix (Join-Path $rootEndpointRoot 'runs\run\endpoints\health\matrix.csv') ($schema + "`nGET /,smoke,Health objective,0,3,100,0,1,APROBADA,0→3 VUs")
+    [IO.File]::WriteAllText($rootEndpointManifest, (@{ endpoints = @(
+        @{ id = 'health'; method = 'GET'; path = '/'; objective = 'Health objective'; priority = 'P0' }
+    ) } | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
+    Assert-True ((Invoke-Builder $rootEndpointRoot (Join-Path $rootEndpointRoot 'matrix_general.csv') $rootEndpointManifest) -eq 0) 'root endpoint should be accepted'
+
     # Same test in distinct enclosing runs is valid and must not be deduplicated.
     $duplicateRoot = Join-Path $testRoot 'duplicate-runs'
     $row = 'GET /same,load,Objective,1,10,500,0,8,APROBADA,1→10 VUs'

@@ -37,7 +37,7 @@ function Assert-SafeIdentifier([string]$value, [string]$label) {
 }
 
 function Assert-SafeEndpoint([string]$endpoint) {
-    if ([string]::IsNullOrWhiteSpace($endpoint) -or $endpoint -match '[\x00-\x1F\\]' -or $endpoint -match '\.\.' -or $endpoint -notmatch '^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD) /[^\s]+$') {
+    if ([string]::IsNullOrWhiteSpace($endpoint) -or $endpoint -match '[\x00-\x1F\\]' -or $endpoint -match '\.\.' -or $endpoint -notmatch '^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD) /[^\s]*$') {
         Fail "unsafe endpoint '$endpoint'"
     }
 }

@@ -8,7 +8,7 @@
 
 Se completó y revisó la base técnica del plan de rendimiento multiagente: configuración, perfiles, contratos, generación de scripts, selección de endpoints, cola de ejecución, agregación, reportes por endpoint, cálculo ponderado y matriz general.
 
-La matriz canónica incluida en la rama contiene únicamente el encabezado porque no se ejecutó una campaña nueva de tráfico contra la API durante este plan. Por lo tanto, no se inventan valores de p95, errores, RPS ni una clasificación general. La cobertura del manifiesto es de **39 endpoints**, con **13 P0**, pero la cobertura de ejecución medida es **0%**.
+La matriz canónica incluida en la rama ahora contiene **52 filas**: 9 mediciones reales del smoke registrado el 3 de septiembre y 43 combinaciones marcadas explícitamente como `NO_EJECUTADA` por no existir una corrida segura de load, stress o spike. No se inventan valores de p95, errores, RPS ni una clasificación general para las filas no ejecutadas. La cobertura del manifiesto es de **39 endpoints**, con **13 P0**; la cobertura de ejecución observada es **9/52 combinaciones (17,3%)**.
 
 La Tarea 12 no se publicó porque su validación detectó inconsistencias reales en el generador del informe general. El fallo inmediato fue que el manifiesto guarda la prioridad como texto (`"P0"`) y una ruta de cálculo la comparaba como número (`0`); eso hacía que la puntuación recalculada no coincidiera con la puntuación suministrada por el fixture. Además, la revisión encontró problemas pendientes en la validación de fuentes, el renderizado de stress/spike, el filtrado de secretos, la exigencia de identidades de matriz y el parseo CSV. Es un fallo del reporte y sus controles, no evidencia de que la API esté caída.
 
@@ -25,14 +25,16 @@ Estado de la matriz:
 | Indicador | Resultado |
 |---|---:|
 | Endpoints en el manifiesto canónico | 39 |
-| Endpoints P0 | 13 |
-| Filas de ejecución con métricas | 0 |
+| Endpoints P0 incluidos en el plan | 13 |
+| Filas canónicas en la matriz | 52 |
+| Filas de ejecución con métricas | 9 |
+| Filas `NO_EJECUTADA` | 43 |
 | Cobertura estática planificada | 80% |
-| Cobertura de ejecución observada en esta rama | 0% |
+| Cobertura de ejecución observada en esta rama | 17,3% (9/52) |
 | Puntuación general representativa | No calculable |
 | Clasificación general representativa | No calculable |
 
-La ausencia de filas significa **NO EJECUTADA**, no aprobación. Los scripts y contratos quedaron preparados para poblar la matriz cuando exista una ejecución autorizada y reproducible.
+Las filas `NO_EJECUTADA` significan que la combinación fue declarada en el plan pero no tuvo una corrida válida; no significan aprobación. Las 9 filas medidas corresponden al smoke, con 39 requests totales y 100% de éxito. Los scripts y contratos quedaron preparados para reemplazar las filas no ejecutadas cuando exista una campaña autorizada y reproducible.
 
 ## Tareas terminadas
 
@@ -67,6 +69,7 @@ Se verificaron, según la tarea correspondiente:
 - generación de reportes por endpoint para resultados vacíos y con resultados;
 - cálculo de score: **7/7 casos de la suite de scoring aprobados**;
 - construcción y validación de la matriz general, incluyendo encabezado y orden canónico.
+- aceptación del endpoint público raíz `GET /`, con una regresión específica para evitar que el validador lo descarte.
 
 Comandos representativos verificados:
 
@@ -77,7 +80,7 @@ node --test performance/tests/scoring.test.mjs
 pwsh -NoProfile -File performance/tests/build-general-matrix.tests.ps1
 ```
 
-No se ejecutaron k6, smoke, load, stress o spike nuevos como parte de esta consolidación. Tampoco se ejecutaron mutaciones contra datos reales.
+No se ejecutaron perfiles k6 nuevos durante esta consolidación. Se reutilizó exclusivamente el resumen de smoke registrado el 3 de septiembre para poblar las 9 filas medidas; load, stress y spike permanecen `NO_EJECUTADA`. Tampoco se ejecutaron mutaciones contra datos reales.
 
 ## Campaña k6 histórica ya disponible
 
@@ -103,6 +106,6 @@ Estos números son evidencia histórica separada: no deben mezclarse con la matr
 
 ## Conclusión
 
-El trabajo terminado deja una suite reproducible y con controles para producir la matriz y el informe general. Las Tareas 1–11 están terminadas y sus cambios están en la rama remota. La Tarea 12 queda correctamente pendiente porque sus pruebas descubrieron inconsistencias que deben corregirse antes de presentar un informe consolidado como válido.
+El trabajo terminado deja una suite reproducible y con controles para producir la matriz y el informe general. Las Tareas 1–11 están terminadas y sus cambios están en la rama remota. La matriz ya no está vacía: contiene las 52 combinaciones P0 previstas, separando las 9 mediciones disponibles de las 43 no ejecutadas. La Tarea 12 queda correctamente pendiente porque sus pruebas descubrieron inconsistencias que deben corregirse antes de presentar una puntuación o clasificación general como válida.
 
 La siguiente acción técnica es corregir el contrato de prioridad (`P0`), completar las validaciones pendientes y volver a ejecutar las pruebas de regresión de la Tarea 12. Luego se podrá generar una matriz con métricas reales, siempre que se autorice una campaña segura de ejecución.

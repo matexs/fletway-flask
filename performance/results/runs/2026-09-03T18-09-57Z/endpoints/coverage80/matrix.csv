@@ -1,0 +1,53 @@
+endpoint,test,objetivo,carga_vu_min,carga_vu_max,p95_ms,error_pct,capacidad_rps,resultado,usuarios
+GET /,smoke,Confirm service availability,0,3,173.074,0,0.033,APROBADA,0→3 VUs
+GET /api/localidades,smoke,Read locality catalog,0,3,1144.08,0,0.083,ADVERTENCIA,0→3 VUs
+GET /api/localidades/buscar,smoke,Search localities,0,3,210.706,0,0.05,APROBADA,0→3 VUs
+GET /api/solicitudes/mis-pedidos,smoke,List authenticated client requests,0,3,210.591,0,0.133,APROBADA,0→3 VUs
+GET /solicitudes/mis-pedidos-optimizado,smoke,List optimized client requests,0,3,698.866,0,0.1,APROBADA,0→3 VUs
+GET /api/transportista/dashboard,smoke,Read driver dashboard,0,3,213.661,0,0.1,APROBADA,0→3 VUs
+GET /api/transportista/historial,smoke,Read driver trip history,0,3,508.449,0,0.05,APROBADA,0→3 VUs
+GET /api/presupuestos/mis-presupuestos,smoke,List driver quotes,0,3,212.536,0,0.05,APROBADA,0→3 VUs
+GET /api/presupuestos/completo-batch,smoke,Read grouped client quotes,0,3,482.157,0,0.05,APROBADA,0→3 VUs
+PATCH /api/solicitudes/<id>,smoke,Update transport request,,,,,,NO_EJECUTADA,No se ejecuto: no hay evidencia de mutacion segura
+POST /api/solicitudes,smoke,Create transport request,,,,,,NO_EJECUTADA,No se ejecuto: no hay evidencia de mutacion segura
+GET /api/solicitudes/<id>,smoke,Read request details,,,,,,NO_EJECUTADA,No se ejecuto: falta request id seguro
+GET /api/presupuestos/solicitud/<solicitud_id>,smoke,List quotes for request,,,,,,NO_EJECUTADA,No se ejecuto: falta request id seguro
+GET /api/solicitudes/mis-pedidos,load,List authenticated client requests,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida load
+GET /api/transportista/dashboard,load,Read driver dashboard,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida load
+GET /solicitudes/mis-pedidos-optimizado,load,List optimized client requests,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida load
+GET /api/localidades/buscar,load,Search localities,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida load
+GET /api/transportista/historial,load,Read driver trip history,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida load
+GET /api/localidades,load,Read locality catalog,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida load
+GET /api/presupuestos/mis-presupuestos,load,List driver quotes,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida load
+GET /,load,Confirm service availability,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida load
+GET /api/presupuestos/completo-batch,load,Read grouped client quotes,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida load
+PATCH /api/solicitudes/<id>,load,Update transport request,,,,,,NO_EJECUTADA,No se ejecuto: no hay evidencia de mutacion segura
+POST /api/solicitudes,load,Create transport request,,,,,,NO_EJECUTADA,No se ejecuto: no hay evidencia de mutacion segura
+GET /api/solicitudes/<id>,load,Read request details,,,,,,NO_EJECUTADA,No se ejecuto: falta request id seguro
+GET /api/presupuestos/solicitud/<solicitud_id>,load,List quotes for request,,,,,,NO_EJECUTADA,No se ejecuto: falta request id seguro
+GET /api/solicitudes/mis-pedidos,stress,List authenticated client requests,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida stress
+GET /api/transportista/dashboard,stress,Read driver dashboard,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida stress
+GET /solicitudes/mis-pedidos-optimizado,stress,List optimized client requests,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida stress
+GET /api/localidades/buscar,stress,Search localities,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida stress
+GET /api/transportista/historial,stress,Read driver trip history,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida stress
+GET /api/localidades,stress,Read locality catalog,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida stress
+GET /api/presupuestos/mis-presupuestos,stress,List driver quotes,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida stress
+GET /,stress,Confirm service availability,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida stress
+GET /api/presupuestos/completo-batch,stress,Read grouped client quotes,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida stress
+PATCH /api/solicitudes/<id>,stress,Update transport request,,,,,,NO_EJECUTADA,No se ejecuto: no hay evidencia de mutacion segura
+POST /api/solicitudes,stress,Create transport request,,,,,,NO_EJECUTADA,No se ejecuto: no hay evidencia de mutacion segura
+GET /api/solicitudes/<id>,stress,Read request details,,,,,,NO_EJECUTADA,No se ejecuto: falta request id seguro
+GET /api/presupuestos/solicitud/<solicitud_id>,stress,List quotes for request,,,,,,NO_EJECUTADA,No se ejecuto: falta request id seguro
+GET /api/solicitudes/mis-pedidos,spike,List authenticated client requests,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida spike
+GET /api/transportista/dashboard,spike,Read driver dashboard,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida spike
+GET /solicitudes/mis-pedidos-optimizado,spike,List optimized client requests,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida spike
+GET /api/localidades/buscar,spike,Search localities,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida spike
+GET /api/transportista/historial,spike,Read driver trip history,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida spike
+GET /api/localidades,spike,Read locality catalog,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida spike
+GET /api/presupuestos/mis-presupuestos,spike,List driver quotes,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida spike
+GET /,spike,Confirm service availability,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida spike
+GET /api/presupuestos/completo-batch,spike,Read grouped client quotes,,,,,,NO_EJECUTADA,No se ejecuto: no hay corrida spike
+PATCH /api/solicitudes/<id>,spike,Update transport request,,,,,,NO_EJECUTADA,No se ejecuto: no hay evidencia de mutacion segura
+POST /api/solicitudes,spike,Create transport request,,,,,,NO_EJECUTADA,No se ejecuto: no hay evidencia de mutacion segura
+GET /api/solicitudes/<id>,spike,Read request details,,,,,,NO_EJECUTADA,No se ejecuto: falta request id seguro
+GET /api/presupuestos/solicitud/<solicitud_id>,spike,List quotes for request,,,,,,NO_EJECUTADA,No se ejecuto: falta request id seguro
