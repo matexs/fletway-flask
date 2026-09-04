@@ -55,3 +55,9 @@ test('endpoint scripts retain response bodies for auth and mutation IDs', () => 
   const source = fs.readFileSync(path.join(performanceRoot, 'endpoints', 'solicitudes', 'crear-solicitud.js'), 'utf8');
   assert.doesNotMatch(source, /discardResponseBodies:\s*true/);
 });
+
+test('runner removes k6 setup data before saving raw summaries', () => {
+  const source = fs.readFileSync(path.join(performanceRoot, 'runners', 'run-endpoint.ps1'), 'utf8');
+  assert.match(source, /setup_data/);
+  assert.match(source, /Remove\(/);
+});

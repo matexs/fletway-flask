@@ -98,17 +98,31 @@ export function createSolicitation(auth, context, endpointId = 'fixture') {
   return { solicitudId, localidadOrigenId: ids.origin, localidadDestinoId: ids.destination };
 }
 
+function discoverSolicitations(token, editableOnly) {
+  const response = http.get(`${BASE_URL}/api/solicitudes/mis-pedidos`, setupRequestOptions(token, { kind: 'fixture-discovery', role: 'client' }));
+  if (response.status !== 200) return [];
+  try {
+    const rows = response.json();
+    const values = Array.isArray(rows) ? rows : (rows.solicitudes || rows.data || []);
+    return values
+      .filter((row) => row && row.solicitud_id && (!editableOnly || row.estado === 'sin transportista'))
+      .map((row) => ({ solicitudId: Number(row.solicitud_id), localidadOrigenId: Number(row.localidad_origen_id), localidadDestinoId: Number(row.localidad_destino_id) }));
+  } catch (_) {
+    return [];
+  }
+}
+
 export function setupEndpoint(endpoint) {
   if (!__ENV.SUPABASE_URL || !__ENV.SUPABASE_ANON_KEY || !__ENV.CLIENT_EMAIL || !__ENV.CLIENT_PASSWORD) throw new Error('Faltan credenciales de cliente');
   if (endpoint.role === 'driver' && (!__ENV.DRIVER_EMAIL || !__ENV.DRIVER_PASSWORD)) throw new Error('Faltan credenciales de driver');
   const auth = setupAuth(endpoint.role);
-  const requiresSolicitation = ['presupuestos-solicitud', 'detalle-solicitud'].includes(endpoint.id);
-  const poolSize = endpoint.id === 'actualizar-solicitud' ? Math.max(30, Number(__ENV.MAX_SETUP_VUS || 30)) : (requiresSolicitation ? 1 : 0);
-  const pool = [];
-  for (let index = 0; index < poolSize; index += 1) {
+  const requiresSolicitation = ['presupuestos-solicitud', 'detalle-solicitud', 'actualizar-solicitud'].includes(endpoint.id);
+  const requiredPoolSize = endpoint.id === 'actualizar-solicitud' ? Math.max(30, Number(__ENV.MAX_SETUP_VUS || 30)) : 1;
+  const pool = requiresSolicitation ? discoverSolicitations(auth.clientToken, endpoint.id === 'actualizar-solicitud') : [];
+  if (__ENV.SOLICITUD_ID) pool.unshift({ solicitudId: Number(__ENV.SOLICITUD_ID) });
+  for (let index = pool.length; index < requiredPoolSize; index += 1) {
     pool.push(createSolicitation(auth, { runId: __ENV.RUN_ID, seed: `${endpoint.id}-${index}` }, endpoint.id));
   }
-  if (__ENV.SOLICITUD_ID) pool.unshift({ solicitudId: Number(__ENV.SOLICITUD_ID) });
   return { auth, pool };
 }
 

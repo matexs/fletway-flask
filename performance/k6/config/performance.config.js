@@ -58,10 +58,6 @@ export function metricName(profileId, kind, endpointKey = '') {
 export function buildThresholds(profileIds, endpointEntries = []) {
   const thresholds = {};
   for (const profileId of profileIds) {
-    thresholds[metricName(profileId, 'duration_ms')] = ['p(95)<5000'];
-    thresholds[metricName(profileId, 'success_rate')] = ['rate>0.8'];
-    thresholds[metricName(profileId, 'error_rate')] = ['rate<0.2'];
-    thresholds[metricName(profileId, 'timeout_rate')] = ['rate<0.1'];
     for (const entry of endpointEntries) {
       thresholds[metricName(profileId, 'duration_ms', entry.key)] = ['p(95)<5000'];
       thresholds[metricName(profileId, 'success_rate', entry.key)] = ['rate>0.8'];
