@@ -117,7 +117,7 @@ export function setupEndpoint(endpoint) {
   if (endpoint.role === 'driver' && (!__ENV.DRIVER_EMAIL || !__ENV.DRIVER_PASSWORD)) throw new Error('Faltan credenciales de driver');
   const auth = setupAuth(endpoint.role);
   const requiresSolicitation = ['presupuestos-solicitud', 'detalle-solicitud', 'actualizar-solicitud'].includes(endpoint.id);
-  const requiredPoolSize = endpoint.id === 'actualizar-solicitud' ? Math.max(30, Number(__ENV.MAX_SETUP_VUS || 30)) : 1;
+  const requiredPoolSize = !requiresSolicitation ? 0 : (endpoint.id === 'actualizar-solicitud' ? Math.max(30, Number(__ENV.MAX_SETUP_VUS || 30)) : 1);
   const pool = requiresSolicitation ? discoverSolicitations(auth.clientToken, endpoint.id === 'actualizar-solicitud') : [];
   if (__ENV.SOLICITUD_ID) pool.unshift({ solicitudId: Number(__ENV.SOLICITUD_ID) });
   for (let index = pool.length; index < requiredPoolSize; index += 1) {
