@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { metricName } from '../k6/config/performance.config.js';
 
 const performanceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const manifestPath = path.join(performanceRoot, 'config', 'endpoints.manifest.json');
@@ -33,4 +34,8 @@ test('mutating endpoints are explicitly marked', () => {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const mutations = manifest.endpoints.filter((e) => e.mutates_data);
   assert.deepEqual(mutations.map((e) => e.method), ['PATCH', 'POST']);
+});
+
+test('metric names normalize endpoint ids for k6', () => {
+  assert.equal(metricName('smoke', 'duration_ms', 'crear-solicitud'), 'fletway_smoke_crear_solicitud_duration_ms');
 });

@@ -51,7 +51,8 @@ export function buildScenarios(profile) {
 }
 
 export function metricName(profileId, kind, endpointKey = '') {
-  return `fletway_${profileId}${endpointKey ? `_${endpointKey}` : ''}_${kind}`;
+  const safe = (value) => String(value).replace(/[^A-Za-z0-9_]/g, '_');
+  return `fletway_${safe(profileId)}${endpointKey ? `_${safe(endpointKey)}` : ''}_${safe(kind)}`;
 }
 
 export function buildThresholds(profileIds, endpointEntries = []) {
