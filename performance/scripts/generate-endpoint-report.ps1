@@ -151,7 +151,9 @@ function Get-MetricValues($Raw, [string]$Path, [bool]$RequireStressDetail = $fal
         $timeoutPct = Number $Raw.timeout_pct 'timeout_pct' $Path
         if ($timeoutPct -gt 100) { Fail "$Path timeout_pct must be between 0 and 100" }
     }
-    return [pscustomobject]@{ p50=$p50; p90=$p90; p95=(Number $duration.'p(95)' 'p(95)' $Path); max=$max; count=(Number $requestValues.count 'count' $Path); error_pct=(Number $failed.rate 'error rate' $Path) * 100; timeout_pct=$timeoutPct }
+    $errorRate = Number $failed.rate 'error rate' $Path
+    if ($errorRate -gt 1) { Fail "$Path error rate must be a ratio from 0 to 1" }
+    return [pscustomobject]@{ p50=$p50; p90=$p90; p95=(Number $duration.'p(95)' 'p(95)' $Path); max=$max; count=(Number $requestValues.count 'count' $Path); error_pct=$errorRate * 100; timeout_pct=$timeoutPct }
 }
 function Get-Vu([object]$Raw, [string]$Name, [string]$Path) {
     if (-not (Has-Property $Raw $Name)) { Fail "$Path requires $Name" }
@@ -364,10 +366,15 @@ $safeOutput = Assert-SafeOutput $OutputDirectory
 $entry = Get-ManifestEntry $ManifestPath $EndpointId
 $rows = Read-Matrix $MatrixPath $entry
 $rawModels = Read-Models $entry
-if ($rawModels.stress.Count -eq 0) { Fail 'stress report requires at least one stress_<VU> raw profile' }
 $stressMatrixRow = @($rows | Where-Object test -eq 'stress')[0]
-$stressMaxVu = [int]$stressMatrixRow.carga_vu_max
-if (-not $rawModels.stress.ContainsKey($stressMaxVu)) { Fail "stress raw profiles are missing the matrix maximum VU: $stressMaxVu" }
+$stressNotExecuted = [string]$stressMatrixRow.resultado -eq 'NO_EJECUTADA'
+if ($rawModels.stress.Count -eq 0) {
+    if (-not $stressNotExecuted) { Fail 'stress report requires raw stress profiles when stress was executed' }
+} else {
+    if ($stressNotExecuted) { Fail 'stress NO_EJECUTADA row cannot have raw stress profiles' }
+    $stressMaxVu = [int](Number $stressMatrixRow.carga_vu_max 'carga_vu_max' 'matrix stress row')
+    if (-not $rawModels.stress.ContainsKey($stressMaxVu)) { Fail "stress raw profiles are missing the matrix maximum VU: $stressMaxVu" }
+}
 $model = [pscustomobject]@{ entry=$entry; profiles=$rawModels.profiles; stress=$rawModels.stress; rows=$rows }
 Validate-CrossSource $rows $rawModels
 $summary = "- **Score endpoint:** N/D (no calculado hasta Task 10)`n- **Resultado:** $(Get-WorstResult $rows)`n- **Carga máxima:** $((@($rows | ForEach-Object {[int]$_.carga_vu_max} | Measure-Object -Maximum).Maximum)) VU`n- **Capacidad máxima:** $((@($rows | ForEach-Object {[double]$_.capacidad_rps} | Measure-Object -Maximum).Maximum)) RPS"

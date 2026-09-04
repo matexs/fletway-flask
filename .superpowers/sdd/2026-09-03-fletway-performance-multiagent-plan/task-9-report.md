@@ -40,7 +40,7 @@ The review hardening adds strict validation at the report-controller boundary:
 - Missing raw `result` values use metric-derived outcomes in Smoke, Load, Stress, and Spike sections; Stress emits its worst observed outcome explicitly. Spike peak values are reconciled with the raw summary, baseline/recovery VUs with raw bounds, and duplicate recovery durations are rejected when they disagree.
 - `NO_EJECUTADA` matrix rows require every numeric field to be blank; fabricated VU, p95, error, or RPS values are rejected before rendering. Credential detection targets assignment-shaped API keys/tokens/secrets and recognizable provider prefixes while allowing ordinary words such as “token budget” or “provider status.”
 
-Absent Smoke/Load/Spike raw profiles are rendered as `NO_EJECUTADA`. Stress detail is required when the matrix claims a stress maximum, because the required per-VU table cannot be fabricated.
+Absent Smoke/Load/Spike raw profiles are rendered as `NO_EJECUTADA`. A stress row with `NO_EJECUTADA` and blank numeric fields is valid without stress raw profiles; when stress is executed or the matrix claims a stress maximum, validated `stress_<VU>` detail is required because the per-VU table cannot be fabricated. Raw `http_req_failed.values.rate` must be a ratio in `[0,1]` before conversion to `error_pct`.
 
 ## Tests
 
@@ -81,6 +81,7 @@ TDD evidence:
 8. The final fixture tests passed under both PowerShell 7 and Windows PowerShell 5.1.
 9. Cross-source mismatch fixtures initially rendered successfully, proving the missing reconciliation; after adding raw-derived semantic checks, all mismatch cases were rejected and the valid fixture continued to render.
 10. The latest fixtures failed on absent-result `observado`, ignored timeout classification, un-reconciled spike submetrics, fabricated `NO_EJECUTADA` numerics, and incomplete credential coverage; the focused fixes made those cases pass while preserving ordinary free-form words.
+11. The focused edge-case fixtures cover valid stress `NO_EJECUTADA` rendering without stress raw files, rejection of executed stress without raw detail, fabricated stress `NO_EJECUTADA` numerics, and rejection of an out-of-range raw `http_req_failed.values.rate`.
 
 Verification commands and results:
 
@@ -92,6 +93,8 @@ pwsh -NoProfile -File performance/tests/run-queue.tests.ps1                     
 git diff --check                                                                                           PASS
 ```
 
+The current focused edge-case attempt intentionally did not rerun the long Windows PowerShell 5.1 harness after it was interrupted; its result is therefore recorded as **INTERRUPTED / incomplete**, not as a pass. The focused PS7 endpoint run produced the expected fixture report but did not terminate promptly and was stopped with exit code 1; it is likewise **INTERRUPTED / incomplete**, not a pass. `git diff --check` passed; aggregate and queue tests were not rerun.
+
 ## Controller-branch validation and worktree status
 
 The controller branch was checked with `git branch --show-current` and is `main`. The Task 9 fix is kept as one coherent commit, and after commit verification the tracked worktree is clean (`git diff --check` passes with no tracked diff). Pre-existing untracked files remain intentionally preserved and unstaged: `performance/env.performance`, `performance/endpoints/solicitudes/`, and `performance/2026-09-03-fletway-performance-multiagent-plan.md`. The real environment file was not read into or committed by this task.
@@ -100,5 +103,5 @@ The controller branch was checked with `git branch --show-current` and is `main`
 
 - Task 10 scoring is not yet available, so the report intentionally labels the endpoint score as not calculated.
 - Stress degradation thresholds are aligned with the Task 8/plan soft stress thresholds; changing central thresholds later should be wired into this generator rather than duplicated.
-- The generator requires a raw `stress_<VU>` file for the matrix maximum VU. A future aggregator contract could make those detail files explicit and schema-validated centrally.
+- The generator requires a raw `stress_<VU>` file for the matrix maximum VU when stress was executed; a valid `NO_EJECUTADA` stress row may omit stress detail. A future aggregator contract could make those detail files explicit and schema-validated centrally.
 - The working directory contained pre-existing untracked files (`performance/env.performance`, `performance/endpoints/solicitudes/`, and the plan file). They were preserved and not staged; only Task 9 files are included in the commit.

@@ -121,6 +121,8 @@ try {
     Assert-True ($timeoutMd -match '## Smoke[\s\S]*\*\*Resultado:\*\* FALLIDA') 'hard timeout rate must influence the metric-derived outcome'
     $invalidTimeoutRaw = $raw.Clone(); $invalidTimeoutRaw['smoke'] = Clone-Value $raw['smoke']; [void]$invalidTimeoutRaw['smoke'].metrics.PSObject.Properties.Add([PSNoteProperty]::new('http_req_timeout',@{ type='rate'; values=@{ rate=1.1 } }))
     Assert-ReportRejected $matrix $invalidTimeoutRaw $manifest 'invalid-timeout-rate' 'timeout|rate|ratio|invalid'
+    $invalidErrorRateRaw = $raw.Clone(); $invalidErrorRateRaw['smoke'] = Clone-Value $raw['smoke']; $invalidErrorRateRaw['smoke'].metrics.http_req_failed.values.rate = 1.1
+    Assert-ReportRejected $matrix $invalidErrorRateRaw $manifest 'invalid-error-rate' 'error|rate|ratio|invalid'
     $ordinaryWordsRaw = $raw.Clone(); $ordinaryWordsRaw['smoke'] = Clone-Value $raw['smoke']; [void]$ordinaryWordsRaw['smoke'].PSObject.Properties.Add([PSNoteProperty]::new('result','token budget and provider status observed'))
     $ordinaryWordsReport = Invoke-Report $matrix $ordinaryWordsRaw $manifest 'ordinary-secret-words'
     Assert-True ($ordinaryWordsReport.ExitCode -eq 0) 'ordinary token/provider words must not be treated as credentials'
@@ -179,6 +181,16 @@ try {
     $noExecutedNumericMatrix = $matrix.Replace('GET /api/orders,smoke,Validate orders under representative traffic,1,3,900,0.5,10,APROBADA','GET /api/orders,smoke,Validate orders under representative traffic,1,3,900,0.5,10,NO_EJECUTADA')
     $noExecutedRaw = $raw.Clone(); $noExecutedRaw.Remove('smoke')
     Assert-ReportRejected $noExecutedNumericMatrix $noExecutedRaw $manifest 'no-executed-fabricated-numerics' 'NO_EJECUTADA|blank|numeric|carga'
+    $stressNoExecutedMatrix = $matrix.Replace('10,30,3200,11,14,ADVERTENCIA,10',',,,,,NO_EJECUTADA,NO_EJECUTADA: no raw result for stress')
+    $noStressRaw = $raw.Clone(); $noStressRaw.Remove('stress-10'); $noStressRaw.Remove('stress-20'); $noStressRaw.Remove('stress-30')
+    $stressNoExecutedReport = Invoke-Report $stressNoExecutedMatrix $noStressRaw $manifest 'stress-no-executed'
+    Assert-True ($stressNoExecutedReport.ExitCode -eq 0) "stress NO_EJECUTADA fixture should generate: $($stressNoExecutedReport.Stdout)"
+    $stressNoExecutedMd = Read-Utf8NoBom (Join-Path $stressNoExecutedReport.Output 'endpoint-report.md')
+    Assert-True ($stressNoExecutedMd -match '## Stress[\s\S]*NO_EJECUTADA') 'stress without raw files must render NO_EJECUTADA'
+    $stressExecutedWithoutRaw = $matrix
+    Assert-ReportRejected $stressExecutedWithoutRaw $noStressRaw $manifest 'stress-executed-without-raw' 'stress|raw|profile|missing'
+    $stressFabricatedNoExecuted = $matrix.Replace('GET /api/orders,stress,Validate orders under representative traffic,10,30,3200,11,14,ADVERTENCIA','GET /api/orders,stress,Validate orders under representative traffic,10,30,3200,11,14,NO_EJECUTADA')
+    Assert-ReportRejected $stressFabricatedNoExecuted $noStressRaw $manifest 'stress-no-executed-fabricated' 'NO_EJECUTADA|blank|numeric|carga'
     $stressRangeMismatch = $matrix.Replace('GET /api/orders,stress,Validate orders under representative traffic,10,30,3200','GET /api/orders,stress,Validate orders under representative traffic,10,31,3200')
     Assert-ReportRejected $stressRangeMismatch $raw $manifest 'cross-source-stress-vu-range-mismatch' 'cross-source|stress|vu|mismatch'
     $stressMetricMismatch = $matrix.Replace('GET /api/orders,stress,Validate orders under representative traffic,10,30,3200,11,14','GET /api/orders,stress,Validate orders under representative traffic,10,30,3900,11,14')
