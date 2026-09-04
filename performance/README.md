@@ -1,6 +1,9 @@
-# Pruebas de rendimiento de Fletway
+# Fletway k6 performance campaign
 
-Suite k6 de solo lectura para validar la API con perfiles sencillos y reportes HTML, Markdown y JSON.
+The canonical campaign exercises exactly the ten requested endpoints, including
+the `POST /api/solicitudes` and `PATCH /api/solicitudes/<id>` mutation tests.
+Mutation notifications remain enabled and generated test records are retained;
+cleanup is deliberately a separate, explicit operation.
 
 ## Perfiles
 
@@ -9,40 +12,44 @@ Suite k6 de solo lectura para validar la API con perfiles sencillos y reportes H
 | `smoke` | 1 → 3 VU | 40 s | Validar login, endpoints y configuración |
 | `load` | 0 → 10 VU, sostenidos | 90 s | Representar carga normal conservadora |
 | `stress` | 10, 20 y 30 VU | 105 s | Observar el primer escalón con degradación |
-| `all` | Ejecuta los tres anteriores | 4 min | Generar el conjunto completo de reportes |
+| `spike` | 3 → 30 VU + recuperación | 60 s | Medir pico y recuperación |
 
 El estrés mide escalones independientes y no pretende encontrar un breakpoint definitivo.
 
 ## Configuración
 
-1. Instale k6 en Windows:
+1. Install k6 on Windows:
 
    ```powershell
    winget install k6 --source winget
    ```
 
-2. Copie `.env.performance.example` como `.env.performance` y complete las credenciales de prueba. El archivo real está ignorado por Git.
+2. Copy `.env.performance.example` to `performance/env.performance` and fill in
+   authorized test credentials. The real file is ignored by Git.
 
-3. Ejecute primero el smoke:
-
-   ```powershell
-   .\performance\run.ps1 -Profile smoke
-   ```
-
-4. Si el smoke funciona, ejecute los demás perfiles:
+3. Run the serialized campaign from `main`:
 
    ```powershell
-   .\performance\run.ps1 -Profile load
-   .\performance\run.ps1 -Profile stress
-   # o todos en secuencia
-   .\performance\run.ps1 -Profile all
+   pwsh -NoProfile -File performance/runners/run-campaign.ps1 -RunId 20260904-final
    ```
 
-Puede cambiar el destino sin editar archivos:
+   Optional overrides are available without changing the environment file:
 
-```powershell
-.\performance\run.ps1 -Profile smoke -BaseUrl http://127.0.0.1:5000
-```
+   ```powershell
+   pwsh -NoProfile -File performance/runners/run-campaign.ps1 `
+     -BaseUrl http://127.0.0.1:5000 -RunId local-campaign
+   ```
+
+The runner preflights all ten endpoints, gates profiles deterministically, runs
+endpoints serially in manifest order, continues after failures, and writes the
+campaign bundle to `performance/campaigns/<run_id>/`.
+
+The bundle includes raw sanitized k6 JSON, logs, JSONL ledgers, Markdown/HTML
+reports, and the exact 34-row `matrix_general.csv` with this schema:
+
+`endpoint,test,objetivo,carga_vu_min,carga_vu_max,p95_ms,error_pct,capacidad_rps,resultado,usuarios`
+
+Do not commit `performance/env.performance`, passwords, JWTs, or tokens.
 
 ## Semáforo
 

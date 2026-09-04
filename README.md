@@ -47,9 +47,10 @@ Para obtener una contraseña de aplicación de Gmail:
 
 ## Entorno de pruebas de rendimiento
 
-El directorio `performance/` contiene una suite de rendimiento de solo lectura
-para la API, construida con Grafana k6. Incluye perfiles smoke, carga y estrés,
-autenticación de los roles cliente/fletero y reportes Markdown, HTML y JSON.
+El directorio `performance/` contiene la campaña canónica de rendimiento de la
+API, construida con Grafana k6. Ejecuta exactamente los diez endpoints
+solicitados, incluye perfiles smoke, carga, estrés y spike, autentica los roles
+cliente/fletero, y genera matriz y reportes Markdown, HTML y JSON.
 
 ### 1. Instalar k6
 
@@ -98,29 +99,18 @@ contraseñas, JWT ni claves privadas al README, scripts o reportes.
 
 ### 4. Ejecutar las pruebas
 
-Ejecutar siempre smoke antes de aplicar carga adicional:
+La campaña serializada se ejecuta desde `main` y conserva los registros creados
+por POST/PATCH para inspección posterior:
 
 ```powershell
-.\performance\run.ps1 -Profile smoke
+pwsh -NoProfile -File performance/runners/run-campaign.ps1 -RunId 20260904-final
 ```
 
-Si smoke finaliza correctamente:
+También acepta `-BaseUrl` y `-ManifestPath`. El runner realiza el preflight,
+aplica el gating de perfiles, continúa después de fallas y guarda todos los
+artefactos en `performance/campaigns/<run_id>/`.
 
-```powershell
-.\performance\run.ps1 -Profile load
-.\performance\run.ps1 -Profile stress
-
-# Ejecutar todos los perfiles en secuencia
-.\performance\run.ps1 -Profile all
-```
-
-Para probar otro backend sin modificar el archivo de entorno:
-
-```powershell
-.\performance\run.ps1 -Profile smoke -BaseUrl http://127.0.0.1:5000
-```
-
-No ejecutar `load`, `stress` o `all` contra un entorno remoto sin autorización
+No ejecutar la campaña contra un entorno remoto sin autorización.
 del responsable del servicio.
 
 ### 5. Resultados y estados
