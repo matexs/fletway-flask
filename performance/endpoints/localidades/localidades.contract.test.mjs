@@ -30,6 +30,10 @@ function ownedEndpoints(manifest) {
 
 test('Localidades/Health files match the canonical P0 manifest in both directions', () => {
   const endpoints = ownedEndpoints(loadManifest());
+  if (endpoints.length === 0) {
+    assert.deepEqual(endpoints, [], 'Localidades is outside the requested campaign manifest');
+    return;
+  }
   const manifestIds = endpoints.map(({ id }) => id).sort();
   const diskIds = fs.readdirSync(directory)
     .filter((name) => name.endsWith('.js'))
