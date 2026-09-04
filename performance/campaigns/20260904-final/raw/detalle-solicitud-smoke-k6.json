@@ -1,0 +1,179 @@
+{
+  "root_group": {
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": {},
+    "checks": {
+      "detalle-solicitud expected status": {
+        "name": "detalle-solicitud expected status",
+        "path": "::detalle-solicitud expected status",
+        "id": "14a7fa60996277d3850bae93b61fa646",
+        "passes": 42,
+        "fails": 0
+      },
+      "detalle-solicitud no timeout": {
+        "name": "detalle-solicitud no timeout",
+        "path": "::detalle-solicitud no timeout",
+        "id": "86451fba17ef346ad3bfb5802a1293aa",
+        "passes": 42,
+        "fails": 0
+      }
+    },
+    "name": ""
+  },
+  "metrics": {
+    "http_reqs": {
+      "rate": 1.057343958608406,
+      "count": 44
+    },
+    "http_req_blocked": {
+      "avg": 3.9977159090909096,
+      "min": 0,
+      "med": 0,
+      "max": 94.549,
+      "p(90)": 12.415060000000052,
+      "p(95)": 21.26558,
+      "count": 44
+    },
+    "iteration_duration": {
+      "p(90)": 1255.46056,
+      "p(95)": 1265.4371649999998,
+      "count": 42,
+      "avg": 1224.9568761904764,
+      "min": 1180.989,
+      "med": 1223.3674,
+      "max": 1283.6549
+    },
+    "iterations": {
+      "count": 42,
+      "rate": 1.0092828695807512
+    },
+    "checks": {
+      "passes": 84,
+      "fails": 0,
+      "value": 1
+    },
+    "http_req_tls_handshaking": {
+      "max": 69.7337,
+      "p(90)": 7.8767500000000314,
+      "p(95)": 15.580710000000003,
+      "count": 44,
+      "avg": 2.902206818181818,
+      "min": 0,
+      "med": 0
+    },
+    "fletway_smoke_detalle_solicitud_error_rate": {
+      "passes": 0,
+      "fails": 42,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "http_req_connecting": {
+      "avg": 0.6359068181818182,
+      "min": 0,
+      "med": 0,
+      "max": 6.7386,
+      "p(90)": 2.4227000000000096,
+      "p(95)": 5.69169,
+      "count": 44
+    },
+    "data_sent": {
+      "count": 14400,
+      "rate": 346.0398409991147
+    },
+    "fletway_smoke_detalle_solicitud_duration_ms": {
+      "avg": 222.98584761904763,
+      "min": 180.4026,
+      "med": 219.51330000000002,
+      "max": 282.5358,
+      "p(90)": 251.82187,
+      "p(95)": 256.575045,
+      "count": 42,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "med": 222.18785,
+      "max": 530.4259,
+      "p(90)": 254.35644000000002,
+      "p(95)": 277.142105,
+      "count": 44,
+      "avg": 230.00087045454546,
+      "min": 180.4026
+    },
+    "http_req_duration": {
+      "count": 44,
+      "avg": 230.00087045454546,
+      "min": 180.4026,
+      "med": 222.18785,
+      "max": 530.4259,
+      "p(90)": 254.35644000000002,
+      "p(95)": 277.142105
+    },
+    "fletway_smoke_detalle_solicitud_success_rate": {
+      "fails": 0,
+      "passes": 42,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "http_req_sending": {
+      "p(90)": 0.49278000000000005,
+      "p(95)": 0.531165,
+      "count": 44,
+      "avg": 0.3154272727272728,
+      "min": 0,
+      "med": 0.35929999999999995,
+      "max": 0.7136
+    },
+    "vus": {
+      "max": 3,
+      "value": 1,
+      "min": 0
+    },
+    "http_req_receiving": {
+      "max": 13.436,
+      "p(90)": 0.9451300000000001,
+      "p(95)": 1.2512800000000004,
+      "count": 44,
+      "avg": 0.6687204545454546,
+      "min": 0,
+      "med": 0
+    },
+    "data_received": {
+      "count": 115244,
+      "rate": 2769.376071951526
+    },
+    "http_req_waiting": {
+      "p(90)": 254.11228,
+      "p(95)": 277.076585,
+      "count": 44,
+      "avg": 229.01672272727276,
+      "min": 180.0723,
+      "med": 221.0984,
+      "max": 529.2018
+    },
+    "vus_max": {
+      "value": 3,
+      "min": 3,
+      "max": 3
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 44,
+      "value": 0
+    },
+    "fletway_smoke_detalle_solicitud_timeout_rate": {
+      "passes": 0,
+      "fails": 42,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    }
+  }
+}

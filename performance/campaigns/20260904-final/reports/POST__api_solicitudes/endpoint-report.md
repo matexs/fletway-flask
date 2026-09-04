@@ -1,0 +1,8 @@
+# POST /api/solicitudes
+
+| test | p95_ms | error_pct | capacidad_rps | resultado |
+|---|---:|---:|---:|---|
+| smoke | 10000.422 | 0 | 0.125 | FALLIDA |
+| load |  |  |  | NO_EJECUTADA |
+| stress |  |  |  | NO_EJECUTADA |
+| spike |  |  |  | NO_EJECUTADA |

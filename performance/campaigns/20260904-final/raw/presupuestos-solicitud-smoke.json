@@ -1,0 +1,341 @@
+{
+  "endpoint_id": "presupuestos-solicitud",
+  "profile": "smoke",
+  "run_id": "20260904-final",
+  "result": "EJECUTADA",
+  "exit_code": 0,
+  "metrics": {
+    "data_sent": {
+      "count": 14142,
+      "rate": 336.55071405414316
+    },
+    "iterations": {
+      "rate": 1.0233121697304595,
+      "count": 43
+    },
+    "http_req_tls_handshaking": {
+      "avg": 3.0047066666666664,
+      "min": 0,
+      "med": 0,
+      "max": 83.9516,
+      "p(90)": 5.6875200000000135,
+      "p(95)": 13.710899999999992,
+      "count": 45
+    },
+    "vus": {
+      "value": 1,
+      "min": 0,
+      "max": 3
+    },
+    "iteration_duration": {
+      "count": 43,
+      "avg": 1201.6949581395347,
+      "min": 1185.2331,
+      "med": 1198.0293,
+      "max": 1236.249,
+      "p(90)": 1217.04146,
+      "p(95)": 1228.85717
+    },
+    "fletway_smoke_presupuestos_solicitud_duration_ms": {
+      "avg": 199.7442255813953,
+      "min": 184.2277,
+      "med": 197.0489,
+      "max": 236.0784,
+      "p(90)": 210.91660000000002,
+      "p(95)": 215.04746,
+      "count": 43,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "http_req_waiting": {
+      "max": 442.5816,
+      "p(90)": 211.96044,
+      "p(95)": 216.45358,
+      "count": 45,
+      "avg": 204.61412444444449,
+      "min": 183.8905,
+      "med": 196.5568
+    },
+    "vus_max": {
+      "value": 3,
+      "min": 3,
+      "max": 3
+    },
+    "http_req_receiving": {
+      "avg": 1.4287488888888888,
+      "min": 0,
+      "med": 0,
+      "max": 45.0692,
+      "p(90)": 0.8460000000000002,
+      "p(95)": 1.7945999999999973,
+      "count": 45
+    },
+    "data_received": {
+      "count": 63007,
+      "rate": 1499.4379041443501
+    },
+    "fletway_smoke_presupuestos_solicitud_success_rate": {
+      "passes": 43,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "fletway_smoke_presupuestos_solicitud_timeout_rate": {
+      "passes": 0,
+      "fails": 43,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "http_reqs": {
+      "count": 45,
+      "rate": 1.0709080846016434
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 45,
+      "value": 0
+    },
+    "http_req_blocked": {
+      "avg": 4.615788888888888,
+      "min": 0,
+      "med": 0,
+      "max": 132.7287,
+      "p(90)": 8.45070000000002,
+      "p(95)": 20.487639999999985,
+      "count": 45
+    },
+    "fletway_smoke_presupuestos_solicitud_error_rate": {
+      "fails": 43,
+      "passes": 0,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "checks": {
+      "passes": 86,
+      "fails": 0,
+      "value": 1
+    },
+    "http_req_duration{expected_response:true}": {
+      "min": 184.2277,
+      "med": 197.5667,
+      "max": 443.1081,
+      "p(90)": 214.62524,
+      "p(95)": 232.23325999999994,
+      "count": 45,
+      "avg": 206.2779333333333
+    },
+    "http_req_duration": {
+      "count": 45,
+      "avg": 206.2779333333333,
+      "min": 184.2277,
+      "med": 197.5667,
+      "max": 443.1081,
+      "p(90)": 214.62524,
+      "p(95)": 232.23325999999994
+    },
+    "http_req_connecting": {
+      "avg": 1.1479555555555554,
+      "min": 0,
+      "med": 0,
+      "max": 29.5274,
+      "p(90)": 2.131800000000005,
+      "p(95)": 6.345779999999996,
+      "count": 45
+    },
+    "http_req_sending": {
+      "avg": 0.23505999999999996,
+      "min": 0,
+      "med": 0.3457,
+      "max": 0.5643,
+      "p(90)": 0.42950000000000005,
+      "p(95)": 0.5253599999999999,
+      "count": 45
+    }
+  },
+  "k6": {
+    "metrics": {
+      "data_sent": {
+        "count": 14142,
+        "rate": 336.55071405414316
+      },
+      "iterations": {
+        "rate": 1.0233121697304595,
+        "count": 43
+      },
+      "http_req_tls_handshaking": {
+        "avg": 3.0047066666666664,
+        "min": 0,
+        "med": 0,
+        "max": 83.9516,
+        "p(90)": 5.6875200000000135,
+        "p(95)": 13.710899999999992,
+        "count": 45
+      },
+      "vus": {
+        "value": 1,
+        "min": 0,
+        "max": 3
+      },
+      "iteration_duration": {
+        "count": 43,
+        "avg": 1201.6949581395347,
+        "min": 1185.2331,
+        "med": 1198.0293,
+        "max": 1236.249,
+        "p(90)": 1217.04146,
+        "p(95)": 1228.85717
+      },
+      "fletway_smoke_presupuestos_solicitud_duration_ms": {
+        "avg": 199.7442255813953,
+        "min": 184.2277,
+        "med": 197.0489,
+        "max": 236.0784,
+        "p(90)": 210.91660000000002,
+        "p(95)": 215.04746,
+        "count": 43,
+        "thresholds": {
+          "p(95)<5000": false
+        }
+      },
+      "http_req_waiting": {
+        "max": 442.5816,
+        "p(90)": 211.96044,
+        "p(95)": 216.45358,
+        "count": 45,
+        "avg": 204.61412444444449,
+        "min": 183.8905,
+        "med": 196.5568
+      },
+      "vus_max": {
+        "value": 3,
+        "min": 3,
+        "max": 3
+      },
+      "http_req_receiving": {
+        "avg": 1.4287488888888888,
+        "min": 0,
+        "med": 0,
+        "max": 45.0692,
+        "p(90)": 0.8460000000000002,
+        "p(95)": 1.7945999999999973,
+        "count": 45
+      },
+      "data_received": {
+        "count": 63007,
+        "rate": 1499.4379041443501
+      },
+      "fletway_smoke_presupuestos_solicitud_success_rate": {
+        "passes": 43,
+        "fails": 0,
+        "thresholds": {
+          "rate>0.8": false
+        },
+        "value": 1
+      },
+      "fletway_smoke_presupuestos_solicitud_timeout_rate": {
+        "passes": 0,
+        "fails": 43,
+        "thresholds": {
+          "rate<0.1": false
+        },
+        "value": 0
+      },
+      "http_reqs": {
+        "count": 45,
+        "rate": 1.0709080846016434
+      },
+      "http_req_failed": {
+        "passes": 0,
+        "fails": 45,
+        "value": 0
+      },
+      "http_req_blocked": {
+        "avg": 4.615788888888888,
+        "min": 0,
+        "med": 0,
+        "max": 132.7287,
+        "p(90)": 8.45070000000002,
+        "p(95)": 20.487639999999985,
+        "count": 45
+      },
+      "fletway_smoke_presupuestos_solicitud_error_rate": {
+        "fails": 43,
+        "passes": 0,
+        "thresholds": {
+          "rate<0.2": false
+        },
+        "value": 0
+      },
+      "checks": {
+        "passes": 86,
+        "fails": 0,
+        "value": 1
+      },
+      "http_req_duration{expected_response:true}": {
+        "min": 184.2277,
+        "med": 197.5667,
+        "max": 443.1081,
+        "p(90)": 214.62524,
+        "p(95)": 232.23325999999994,
+        "count": 45,
+        "avg": 206.2779333333333
+      },
+      "http_req_duration": {
+        "count": 45,
+        "avg": 206.2779333333333,
+        "min": 184.2277,
+        "med": 197.5667,
+        "max": 443.1081,
+        "p(90)": 214.62524,
+        "p(95)": 232.23325999999994
+      },
+      "http_req_connecting": {
+        "avg": 1.1479555555555554,
+        "min": 0,
+        "med": 0,
+        "max": 29.5274,
+        "p(90)": 2.131800000000005,
+        "p(95)": 6.345779999999996,
+        "count": 45
+      },
+      "http_req_sending": {
+        "avg": 0.23505999999999996,
+        "min": 0,
+        "med": 0.3457,
+        "max": 0.5643,
+        "p(90)": 0.42950000000000005,
+        "p(95)": 0.5253599999999999,
+        "count": 45
+      }
+    },
+    "root_group": {
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "groups": {},
+      "checks": {
+        "presupuestos-solicitud expected status": {
+          "fails": 0,
+          "name": "presupuestos-solicitud expected status",
+          "path": "::presupuestos-solicitud expected status",
+          "id": "67e1dfdbaceb2d2074f3c6fa9a6b2908",
+          "passes": 43
+        },
+        "presupuestos-solicitud no timeout": {
+          "name": "presupuestos-solicitud no timeout",
+          "path": "::presupuestos-solicitud no timeout",
+          "id": "b0aa23809d2f866688f96aaa72f8bc5b",
+          "passes": 43,
+          "fails": 0
+        }
+      },
+      "name": "",
+      "path": ""
+    }
+  }
+}

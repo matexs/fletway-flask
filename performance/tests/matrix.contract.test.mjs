@@ -43,3 +43,22 @@ test('matrix builder reads k6 summary metrics at the exported top level', () => 
   assert.equal(row.capacidad_rps, '1');
   assert.equal(row.resultado, 'ADVERTENCIA');
 });
+
+test('matrix builder does not classify setup-only summaries as executed', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'fletway-matrix-empty-'));
+  fs.mkdirSync(path.join(directory, 'raw'));
+  fs.writeFileSync(path.join(directory, 'raw', 'presupuestos-completo-batch-load.json'), JSON.stringify({
+    result: 'EJECUTADA',
+    metrics: {
+      fletway_load_presupuestos_completo_batch_duration_ms: { 'p(95)': 0, count: 0 },
+      fletway_load_presupuestos_completo_batch_error_rate: { rate: 0 },
+      fletway_load_presupuestos_completo_batch_timeout_rate: { rate: 0 },
+    },
+  }));
+  const result = spawnSync('pwsh', ['-NoProfile', '-File', matrixScript, '-CampaignDirectory', directory, '-ManifestPath', manifest], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const rows = JSON.parse(fs.readFileSync(path.join(directory, 'matrix_general.json'), 'utf8'));
+  const row = rows.find((candidate) => candidate.endpoint === 'GET /api/presupuestos/completo-batch' && candidate.test === 'load');
+  assert.equal(row.resultado, 'NO_EJECUTADA');
+  assert.equal(row.usuarios, 'no measured samples');
+});

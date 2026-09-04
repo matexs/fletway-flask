@@ -1,0 +1,348 @@
+{
+  "endpoint_id": "mis-pedidos",
+  "profile": "spike",
+  "run_id": "20260904-final",
+  "result": "EJECUTADA",
+  "exit_code": 0,
+  "metrics": {
+    "http_reqs": {
+      "count": 325,
+      "rate": 5.238516025636795
+    },
+    "http_req_tls_handshaking": {
+      "avg": 1.434664923076923,
+      "min": 0,
+      "med": 0,
+      "max": 85.6579,
+      "p(90)": 0,
+      "p(95)": 11.074520000000001,
+      "count": 325
+    },
+    "iteration_duration": {
+      "avg": 3091.1803944444455,
+      "min": 1194.5687,
+      "med": 3303.6059,
+      "max": 5701.4296,
+      "p(90)": 4321.233499999999,
+      "p(95)": 4775.728799999997,
+      "count": 324
+    },
+    "http_req_waiting": {
+      "max": 4699.2727,
+      "p(90)": 3307.57126,
+      "p(95)": 3769.845800000001,
+      "count": 325,
+      "avg": 2083.9298698461535,
+      "min": 193.2678,
+      "med": 2301.8645
+    },
+    "fletway_spike_mis_pedidos_timeout_rate": {
+      "passes": 0,
+      "fails": 324,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "fletway_spike_mis_pedidos_duration_ms": {
+      "max": 4700.7059,
+      "p(90)": 3309.1769,
+      "p(95)": 3775.263089999997,
+      "count": 324,
+      "avg": 2088.916982098766,
+      "min": 194.402,
+      "med": 2302.73745,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "vus_max": {
+      "min": 30,
+      "max": 30,
+      "value": 30
+    },
+    "fletway_spike_mis_pedidos_error_rate": {
+      "fails": 324,
+      "passes": 0,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "vus": {
+      "min": 0,
+      "max": 30,
+      "value": 1
+    },
+    "http_req_duration": {
+      "count": 325,
+      "avg": 2084.8488455384622,
+      "min": 194.402,
+      "med": 2302.4915,
+      "max": 4700.7059,
+      "p(90)": 3308.0899000000004,
+      "p(95)": 3771.204820000001
+    },
+    "http_req_blocked": {
+      "min": 0,
+      "med": 0,
+      "max": 132.1634,
+      "p(90)": 0,
+      "p(95)": 17.491480000000006,
+      "count": 325,
+      "avg": 2.1063753846153848
+    },
+    "http_req_receiving": {
+      "p(90)": 1.3259800000000002,
+      "p(95)": 1.49402,
+      "count": 325,
+      "avg": 0.7351458461538461,
+      "min": 0,
+      "med": 0.5539,
+      "max": 2.2419
+    },
+    "fletway_spike_mis_pedidos_success_rate": {
+      "passes": 324,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "http_req_duration{expected_response:true}": {
+      "max": 4700.7059,
+      "p(90)": 3308.0899000000004,
+      "p(95)": 3771.204820000001,
+      "count": 325,
+      "avg": 2084.8488455384622,
+      "min": 194.402,
+      "med": 2302.4915
+    },
+    "http_req_connecting": {
+      "min": 0,
+      "med": 0,
+      "max": 27.5733,
+      "p(90)": 0,
+      "p(95)": 5.93114,
+      "count": 325,
+      "avg": 0.5897556923076923
+    },
+    "http_req_sending": {
+      "min": 0,
+      "med": 0,
+      "max": 1.014,
+      "p(90)": 0.49192000000000013,
+      "p(95)": 0.53206,
+      "count": 325,
+      "avg": 0.1838298461538461
+    },
+    "checks": {
+      "passes": 648,
+      "fails": 0,
+      "value": 1
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 325,
+      "value": 0
+    },
+    "data_sent": {
+      "count": 126535,
+      "rate": 2039.5557701660055
+    },
+    "data_received": {
+      "count": 11964864,
+      "rate": 192855.79018019926
+    },
+    "iterations": {
+      "count": 324,
+      "rate": 5.222397514788681
+    }
+  },
+  "k6": {
+    "metrics": {
+      "http_reqs": {
+        "count": 325,
+        "rate": 5.238516025636795
+      },
+      "http_req_tls_handshaking": {
+        "avg": 1.434664923076923,
+        "min": 0,
+        "med": 0,
+        "max": 85.6579,
+        "p(90)": 0,
+        "p(95)": 11.074520000000001,
+        "count": 325
+      },
+      "iteration_duration": {
+        "avg": 3091.1803944444455,
+        "min": 1194.5687,
+        "med": 3303.6059,
+        "max": 5701.4296,
+        "p(90)": 4321.233499999999,
+        "p(95)": 4775.728799999997,
+        "count": 324
+      },
+      "http_req_waiting": {
+        "max": 4699.2727,
+        "p(90)": 3307.57126,
+        "p(95)": 3769.845800000001,
+        "count": 325,
+        "avg": 2083.9298698461535,
+        "min": 193.2678,
+        "med": 2301.8645
+      },
+      "fletway_spike_mis_pedidos_timeout_rate": {
+        "passes": 0,
+        "fails": 324,
+        "thresholds": {
+          "rate<0.1": false
+        },
+        "value": 0
+      },
+      "fletway_spike_mis_pedidos_duration_ms": {
+        "max": 4700.7059,
+        "p(90)": 3309.1769,
+        "p(95)": 3775.263089999997,
+        "count": 324,
+        "avg": 2088.916982098766,
+        "min": 194.402,
+        "med": 2302.73745,
+        "thresholds": {
+          "p(95)<5000": false
+        }
+      },
+      "vus_max": {
+        "min": 30,
+        "max": 30,
+        "value": 30
+      },
+      "fletway_spike_mis_pedidos_error_rate": {
+        "fails": 324,
+        "passes": 0,
+        "thresholds": {
+          "rate<0.2": false
+        },
+        "value": 0
+      },
+      "vus": {
+        "min": 0,
+        "max": 30,
+        "value": 1
+      },
+      "http_req_duration": {
+        "count": 325,
+        "avg": 2084.8488455384622,
+        "min": 194.402,
+        "med": 2302.4915,
+        "max": 4700.7059,
+        "p(90)": 3308.0899000000004,
+        "p(95)": 3771.204820000001
+      },
+      "http_req_blocked": {
+        "min": 0,
+        "med": 0,
+        "max": 132.1634,
+        "p(90)": 0,
+        "p(95)": 17.491480000000006,
+        "count": 325,
+        "avg": 2.1063753846153848
+      },
+      "http_req_receiving": {
+        "p(90)": 1.3259800000000002,
+        "p(95)": 1.49402,
+        "count": 325,
+        "avg": 0.7351458461538461,
+        "min": 0,
+        "med": 0.5539,
+        "max": 2.2419
+      },
+      "fletway_spike_mis_pedidos_success_rate": {
+        "passes": 324,
+        "fails": 0,
+        "thresholds": {
+          "rate>0.8": false
+        },
+        "value": 1
+      },
+      "http_req_duration{expected_response:true}": {
+        "max": 4700.7059,
+        "p(90)": 3308.0899000000004,
+        "p(95)": 3771.204820000001,
+        "count": 325,
+        "avg": 2084.8488455384622,
+        "min": 194.402,
+        "med": 2302.4915
+      },
+      "http_req_connecting": {
+        "min": 0,
+        "med": 0,
+        "max": 27.5733,
+        "p(90)": 0,
+        "p(95)": 5.93114,
+        "count": 325,
+        "avg": 0.5897556923076923
+      },
+      "http_req_sending": {
+        "min": 0,
+        "med": 0,
+        "max": 1.014,
+        "p(90)": 0.49192000000000013,
+        "p(95)": 0.53206,
+        "count": 325,
+        "avg": 0.1838298461538461
+      },
+      "checks": {
+        "passes": 648,
+        "fails": 0,
+        "value": 1
+      },
+      "http_req_failed": {
+        "passes": 0,
+        "fails": 325,
+        "value": 0
+      },
+      "data_sent": {
+        "count": 126535,
+        "rate": 2039.5557701660055
+      },
+      "data_received": {
+        "count": 11964864,
+        "rate": 192855.79018019926
+      },
+      "iterations": {
+        "count": 324,
+        "rate": 5.222397514788681
+      }
+    },
+    "root_group": {
+      "checks": {
+        "mis-pedidos expected status": {
+          "name": "mis-pedidos expected status",
+          "path": "::mis-pedidos expected status",
+          "id": "d40ff2309b7b0f073780c0f5c7ac8df4",
+          "passes": 324,
+          "fails": 0
+        },
+        "mis-pedidos no timeout": {
+          "passes": 324,
+          "fails": 0,
+          "name": "mis-pedidos no timeout",
+          "path": "::mis-pedidos no timeout",
+          "id": "5742e7ab4c20642071183b2a1fea7263"
+        }
+      },
+      "name": "",
+      "path": "",
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "groups": {}
+    }
+  },
+  "spike_recovery": {
+    "baseline_seconds": 10,
+    "peak_start_seconds": 10,
+    "peak_end_seconds": 40,
+    "recovery_seconds": 20,
+    "total_seconds": 60
+  }
+}

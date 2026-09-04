@@ -36,8 +36,10 @@ function BuildRow($endpoint, [string]$profile) {
             $errors = Metric $raw.metrics "fletway_${stage}_$(Safe $endpoint.id)_error_rate"
             $timeouts = Metric $raw.metrics "fletway_${stage}_$(Safe $endpoint.id)_timeout_rate"
             if ($null -eq $duration -or $null -eq $errors) { continue }
+            $stageCount = Value $duration 'count'
+            if ($null -eq $stageCount -or $stageCount -le 0) { continue }
             $p95Values += (Value $duration 'p(95)'); $errorValues += ((Value $errors 'rate') * 100); if ($null -ne $timeouts) { $timeoutValues += ((Value $timeouts 'rate') * 100) }
-            $stageCount = Value $duration 'count'; $count += $stageCount; $rpsValues += ($stageCount / 30.0)
+            $count += $stageCount; $rpsValues += ($stageCount / 30.0)
         }
         if ($p95Values.Count -eq 0) { return NoRow $endpoint $profile 'stress metrics unavailable' }
     } else {
@@ -46,7 +48,9 @@ function BuildRow($endpoint, [string]$profile) {
         $errors = Metric $raw.metrics "fletway_${profile}_$(Safe $endpoint.id)_error_rate"
         $timeouts = Metric $raw.metrics "fletway_${profile}_$(Safe $endpoint.id)_timeout_rate"
         if ($null -eq $duration -or $null -eq $errors) { return NoRow $endpoint $profile 'required metrics unavailable' }
-        $p95Values += (Value $duration 'p(95)'); $errorValues += ((Value $errors 'rate') * 100); if ($null -ne $timeouts) { $timeoutValues += ((Value $timeouts 'rate') * 100) }; $count = Value $duration 'count'; $rpsValues += ($count / $durations[$profile])
+        $count = Value $duration 'count'
+        if ($null -eq $count -or $count -le 0) { return NoRow $endpoint $profile 'no measured samples' }
+        $p95Values += (Value $duration 'p(95)'); $errorValues += ((Value $errors 'rate') * 100); if ($null -ne $timeouts) { $timeoutValues += ((Value $timeouts 'rate') * 100) }; $rpsValues += ($count / $durations[$profile])
     }
     $p95 = ($p95Values | Measure-Object -Maximum).Maximum; $error = ($errorValues | Measure-Object -Maximum).Maximum; $timeout = if ($timeoutValues.Count) { ($timeoutValues | Measure-Object -Maximum).Maximum } else { 0 }; $rps = ($rpsValues | Measure-Object -Maximum).Maximum
     $result = if ($p95 -ge 5000 -or $error -ge 20 -or $timeout -ge 10) { 'FALLIDA' } elseif ($p95 -lt $soft[$profile].p95 -and $error -lt $soft[$profile].error -and $timeout -le $soft[$profile].timeout) { 'APROBADA' } else { 'ADVERTENCIA' }

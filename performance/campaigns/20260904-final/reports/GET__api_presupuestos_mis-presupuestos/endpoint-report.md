@@ -1,0 +1,7 @@
+# GET /api/presupuestos/mis-presupuestos
+
+| test | p95_ms | error_pct | capacidad_rps | resultado |
+|---|---:|---:|---:|---|
+| load |  |  |  | NO_EJECUTADA |
+| stress | 2401.467 | 0 | 14.133 | APROBADA |
+| spike | 2198.5 | 0 | 8.367 | APROBADA |

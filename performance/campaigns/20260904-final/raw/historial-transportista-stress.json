@@ -1,0 +1,485 @@
+{
+  "endpoint_id": "historial-transportista",
+  "profile": "stress",
+  "run_id": "20260904-final",
+  "result": "FALLIDA",
+  "exit_code": 99,
+  "metrics": {
+    "http_req_sending": {
+      "min": 0,
+      "med": 0,
+      "max": 0.9989,
+      "p(90)": 0.42421000000000003,
+      "p(95)": 0.5099,
+      "count": 508,
+      "avg": 0.1476070866141733
+    },
+    "fletway_stress_10_historial_transportista_success_rate": {
+      "passes": 157,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "data_sent": {
+      "count": 145384,
+      "rate": 1383.4308091388618
+    },
+    "http_req_waiting": {
+      "avg": 2785.2171480314964,
+      "min": 295.3001,
+      "med": 2694.80105,
+      "max": 7932.2824,
+      "p(90)": 4705.56252,
+      "p(95)": 5402.401425,
+      "count": 508
+    },
+    "fletway_stress_20_historial_transportista_timeout_rate": {
+      "passes": 0,
+      "fails": 165,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "vus": {
+      "value": 4,
+      "min": 0,
+      "max": 30
+    },
+    "fletway_stress_20_historial_transportista_error_rate": {
+      "passes": 0,
+      "fails": 165,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "http_req_connecting": {
+      "avg": 0.27729842519685044,
+      "min": 0,
+      "med": 0,
+      "max": 6.7556,
+      "p(90)": 0,
+      "p(95)": 3.723804999999995,
+      "count": 508
+    },
+    "fletway_stress_30_historial_transportista_timeout_rate": {
+      "fails": 184,
+      "passes": 0,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "iterations": {
+      "rate": 4.814945175702031,
+      "count": 506
+    },
+    "vus_max": {
+      "value": 30,
+      "min": 30,
+      "max": 30
+    },
+    "http_req_receiving": {
+      "count": 508,
+      "avg": 0.6431216535433075,
+      "min": 0,
+      "med": 0.5351,
+      "max": 11.7418,
+      "p(90)": 1.1660899999999998,
+      "p(95)": 1.4498099999999996
+    },
+    "http_req_tls_handshaking": {
+      "min": 0,
+      "med": 0,
+      "max": 64.652,
+      "p(90)": 0,
+      "p(95)": 19.232944999999987,
+      "count": 508,
+      "avg": 1.6287059055118107
+    },
+    "fletway_stress_10_historial_transportista_timeout_rate": {
+      "fails": 157,
+      "passes": 0,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 508,
+      "value": 0
+    },
+    "data_received": {
+      "rate": 140459.75365080943,
+      "count": 14760840
+    },
+    "http_req_duration": {
+      "max": 7933.3709,
+      "p(90)": 4706.22764,
+      "p(95)": 5403.08854,
+      "count": 508,
+      "avg": 2786.0078767716536,
+      "min": 295.8065,
+      "med": 2695.58025
+    },
+    "fletway_stress_30_historial_transportista_error_rate": {
+      "passes": 0,
+      "fails": 184,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "fletway_stress_10_historial_transportista_duration_ms": {
+      "p(90)": 1689.84966,
+      "p(95)": 1810.9609999999998,
+      "count": 157,
+      "avg": 954.0370101910826,
+      "min": 295.8065,
+      "med": 805.1833,
+      "max": 2514.9756,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "avg": 2786.0078767716536,
+      "min": 295.8065,
+      "med": 2695.58025,
+      "max": 7933.3709,
+      "p(90)": 4706.22764,
+      "p(95)": 5403.08854,
+      "count": 508
+    },
+    "fletway_stress_10_historial_transportista_error_rate": {
+      "passes": 0,
+      "fails": 157,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "checks": {
+      "passes": 1012,
+      "fails": 0,
+      "value": 1
+    },
+    "fletway_stress_30_historial_transportista_duration_ms": {
+      "avg": 4300.400857065219,
+      "min": 2489.2898,
+      "med": 4202.541300000001,
+      "max": 7933.3709,
+      "p(90)": 5701.953350000001,
+      "p(95)": 6621.575139999999,
+      "count": 184,
+      "thresholds": {
+        "p(95)<5000": true
+      }
+    },
+    "http_req_blocked": {
+      "med": 0,
+      "max": 91.1154,
+      "p(90)": 0,
+      "p(95)": 24.19544499999999,
+      "count": 508,
+      "avg": 1.9784377952755912,
+      "min": 0
+    },
+    "fletway_stress_20_historial_transportista_duration_ms": {
+      "min": 1898.1848,
+      "med": 2695.5011,
+      "max": 5108.2148,
+      "p(90)": 4018.73942,
+      "p(95)": 4104.68466,
+      "count": 165,
+      "avg": 2867.7830599999993,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "http_reqs": {
+      "count": 508,
+      "rate": 4.833976579558561
+    },
+    "fletway_stress_30_historial_transportista_success_rate": {
+      "fails": 0,
+      "passes": 184,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "iteration_duration": {
+      "avg": 3797.373016600794,
+      "min": 1296.7296,
+      "med": 3696.8694,
+      "max": 8933.9217,
+      "p(90)": 5707.16125,
+      "p(95)": 6404.95305,
+      "count": 506
+    },
+    "fletway_stress_20_historial_transportista_success_rate": {
+      "fails": 0,
+      "passes": 165,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    }
+  },
+  "k6": {
+    "metrics": {
+      "http_req_sending": {
+        "min": 0,
+        "med": 0,
+        "max": 0.9989,
+        "p(90)": 0.42421000000000003,
+        "p(95)": 0.5099,
+        "count": 508,
+        "avg": 0.1476070866141733
+      },
+      "fletway_stress_10_historial_transportista_success_rate": {
+        "passes": 157,
+        "fails": 0,
+        "thresholds": {
+          "rate>0.8": false
+        },
+        "value": 1
+      },
+      "data_sent": {
+        "count": 145384,
+        "rate": 1383.4308091388618
+      },
+      "http_req_waiting": {
+        "avg": 2785.2171480314964,
+        "min": 295.3001,
+        "med": 2694.80105,
+        "max": 7932.2824,
+        "p(90)": 4705.56252,
+        "p(95)": 5402.401425,
+        "count": 508
+      },
+      "fletway_stress_20_historial_transportista_timeout_rate": {
+        "passes": 0,
+        "fails": 165,
+        "thresholds": {
+          "rate<0.1": false
+        },
+        "value": 0
+      },
+      "vus": {
+        "value": 4,
+        "min": 0,
+        "max": 30
+      },
+      "fletway_stress_20_historial_transportista_error_rate": {
+        "passes": 0,
+        "fails": 165,
+        "thresholds": {
+          "rate<0.2": false
+        },
+        "value": 0
+      },
+      "http_req_connecting": {
+        "avg": 0.27729842519685044,
+        "min": 0,
+        "med": 0,
+        "max": 6.7556,
+        "p(90)": 0,
+        "p(95)": 3.723804999999995,
+        "count": 508
+      },
+      "fletway_stress_30_historial_transportista_timeout_rate": {
+        "fails": 184,
+        "passes": 0,
+        "thresholds": {
+          "rate<0.1": false
+        },
+        "value": 0
+      },
+      "iterations": {
+        "rate": 4.814945175702031,
+        "count": 506
+      },
+      "vus_max": {
+        "value": 30,
+        "min": 30,
+        "max": 30
+      },
+      "http_req_receiving": {
+        "count": 508,
+        "avg": 0.6431216535433075,
+        "min": 0,
+        "med": 0.5351,
+        "max": 11.7418,
+        "p(90)": 1.1660899999999998,
+        "p(95)": 1.4498099999999996
+      },
+      "http_req_tls_handshaking": {
+        "min": 0,
+        "med": 0,
+        "max": 64.652,
+        "p(90)": 0,
+        "p(95)": 19.232944999999987,
+        "count": 508,
+        "avg": 1.6287059055118107
+      },
+      "fletway_stress_10_historial_transportista_timeout_rate": {
+        "fails": 157,
+        "passes": 0,
+        "thresholds": {
+          "rate<0.1": false
+        },
+        "value": 0
+      },
+      "http_req_failed": {
+        "passes": 0,
+        "fails": 508,
+        "value": 0
+      },
+      "data_received": {
+        "rate": 140459.75365080943,
+        "count": 14760840
+      },
+      "http_req_duration": {
+        "max": 7933.3709,
+        "p(90)": 4706.22764,
+        "p(95)": 5403.08854,
+        "count": 508,
+        "avg": 2786.0078767716536,
+        "min": 295.8065,
+        "med": 2695.58025
+      },
+      "fletway_stress_30_historial_transportista_error_rate": {
+        "passes": 0,
+        "fails": 184,
+        "thresholds": {
+          "rate<0.2": false
+        },
+        "value": 0
+      },
+      "fletway_stress_10_historial_transportista_duration_ms": {
+        "p(90)": 1689.84966,
+        "p(95)": 1810.9609999999998,
+        "count": 157,
+        "avg": 954.0370101910826,
+        "min": 295.8065,
+        "med": 805.1833,
+        "max": 2514.9756,
+        "thresholds": {
+          "p(95)<5000": false
+        }
+      },
+      "http_req_duration{expected_response:true}": {
+        "avg": 2786.0078767716536,
+        "min": 295.8065,
+        "med": 2695.58025,
+        "max": 7933.3709,
+        "p(90)": 4706.22764,
+        "p(95)": 5403.08854,
+        "count": 508
+      },
+      "fletway_stress_10_historial_transportista_error_rate": {
+        "passes": 0,
+        "fails": 157,
+        "thresholds": {
+          "rate<0.2": false
+        },
+        "value": 0
+      },
+      "checks": {
+        "passes": 1012,
+        "fails": 0,
+        "value": 1
+      },
+      "fletway_stress_30_historial_transportista_duration_ms": {
+        "avg": 4300.400857065219,
+        "min": 2489.2898,
+        "med": 4202.541300000001,
+        "max": 7933.3709,
+        "p(90)": 5701.953350000001,
+        "p(95)": 6621.575139999999,
+        "count": 184,
+        "thresholds": {
+          "p(95)<5000": true
+        }
+      },
+      "http_req_blocked": {
+        "med": 0,
+        "max": 91.1154,
+        "p(90)": 0,
+        "p(95)": 24.19544499999999,
+        "count": 508,
+        "avg": 1.9784377952755912,
+        "min": 0
+      },
+      "fletway_stress_20_historial_transportista_duration_ms": {
+        "min": 1898.1848,
+        "med": 2695.5011,
+        "max": 5108.2148,
+        "p(90)": 4018.73942,
+        "p(95)": 4104.68466,
+        "count": 165,
+        "avg": 2867.7830599999993,
+        "thresholds": {
+          "p(95)<5000": false
+        }
+      },
+      "http_reqs": {
+        "count": 508,
+        "rate": 4.833976579558561
+      },
+      "fletway_stress_30_historial_transportista_success_rate": {
+        "fails": 0,
+        "passes": 184,
+        "thresholds": {
+          "rate>0.8": false
+        },
+        "value": 1
+      },
+      "iteration_duration": {
+        "avg": 3797.373016600794,
+        "min": 1296.7296,
+        "med": 3696.8694,
+        "max": 8933.9217,
+        "p(90)": 5707.16125,
+        "p(95)": 6404.95305,
+        "count": 506
+      },
+      "fletway_stress_20_historial_transportista_success_rate": {
+        "fails": 0,
+        "passes": 165,
+        "thresholds": {
+          "rate>0.8": false
+        },
+        "value": 1
+      }
+    },
+    "root_group": {
+      "name": "",
+      "path": "",
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "groups": {},
+      "checks": {
+        "historial-transportista expected status": {
+          "path": "::historial-transportista expected status",
+          "id": "b2fcdc2721f2bd21785a4f8c22223eef",
+          "passes": 506,
+          "fails": 0,
+          "name": "historial-transportista expected status"
+        },
+        "historial-transportista no timeout": {
+          "name": "historial-transportista no timeout",
+          "path": "::historial-transportista no timeout",
+          "id": "5c2e2546977492965a4ed2abd48b34ff",
+          "passes": 506,
+          "fails": 0
+        }
+      }
+    }
+  }
+}

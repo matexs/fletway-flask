@@ -68,3 +68,11 @@ test('runner removes k6 setup data before saving raw summaries', () => {
   assert.match(source, /setup_data/);
   assert.match(source, /Remove\(/);
 });
+
+test('runner and general report preserve stress and spike detail metadata', () => {
+  const runner = fs.readFileSync(path.join(performanceRoot, 'runners', 'run-endpoint.ps1'), 'utf8');
+  const report = fs.readFileSync(path.join(performanceRoot, 'scripts', 'generate-general-report.ps1'), 'utf8');
+  assert.match(runner, /spike_recovery/);
+  assert.match(report, /Stress stage details/);
+  assert.match(report, /Spike recovery details/);
+});

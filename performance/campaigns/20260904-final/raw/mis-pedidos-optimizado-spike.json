@@ -1,0 +1,348 @@
+{
+  "endpoint_id": "mis-pedidos-optimizado",
+  "profile": "spike",
+  "run_id": "20260904-final",
+  "result": "EJECUTADA",
+  "exit_code": 0,
+  "metrics": {
+    "http_req_duration": {
+      "p(90)": 3891.7686600000006,
+      "p(95)": 4098.219,
+      "count": 293,
+      "avg": 2464.000978839591,
+      "min": 200.0292,
+      "med": 2698.3436,
+      "max": 5517.3284
+    },
+    "http_req_receiving": {
+      "med": 0.5595,
+      "max": 2.5899,
+      "p(90)": 1.32306,
+      "p(95)": 1.6727599999999958,
+      "count": 293,
+      "avg": 0.7463126279863478,
+      "min": 0
+    },
+    "vus_max": {
+      "value": 30,
+      "min": 30,
+      "max": 30
+    },
+    "fletway_spike_mis_pedidos_optimizado_duration_ms": {
+      "avg": 2469.4650842465758,
+      "min": 200.0292,
+      "med": 2699.4531500000003,
+      "max": 5517.3284,
+      "p(90)": 3894.8767300000013,
+      "p(95)": 4098.906625,
+      "count": 292,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "http_req_sending": {
+      "p(95)": 0.52974,
+      "count": 293,
+      "avg": 0.17704368600682582,
+      "min": 0,
+      "med": 0,
+      "max": 0.6937,
+      "p(90)": 0.453
+    },
+    "http_reqs": {
+      "count": 293,
+      "rate": 4.713632605900078
+    },
+    "http_req_duration{expected_response:true}": {
+      "min": 200.0292,
+      "med": 2698.3436,
+      "max": 5517.3284,
+      "p(90)": 3891.7686600000006,
+      "p(95)": 4098.219,
+      "count": 293,
+      "avg": 2464.000978839591
+    },
+    "data_received": {
+      "rate": 169828.65963173786,
+      "count": 10556571
+    },
+    "http_req_tls_handshaking": {
+      "avg": 1.5810645051194538,
+      "min": 0,
+      "med": 0,
+      "max": 67.6235,
+      "p(90)": 9.546320000000007,
+      "p(95)": 11.975459999999993,
+      "count": 293
+    },
+    "iteration_duration": {
+      "avg": 3472.0011818493176,
+      "min": 1201.072,
+      "med": 3699.8163999999997,
+      "max": 6518.4726,
+      "p(90)": 4898.83762,
+      "p(95)": 5099.412420000001,
+      "count": 292
+    },
+    "http_req_blocked": {
+      "count": 293,
+      "avg": 2.2701569965870307,
+      "min": 0,
+      "med": 0,
+      "max": 94.9171,
+      "p(90)": 14.401640000000006,
+      "p(95)": 18.044359999999998
+    },
+    "data_sent": {
+      "count": 122225,
+      "rate": 1966.2926459253822
+    },
+    "vus": {
+      "max": 30,
+      "value": 3,
+      "min": 0
+    },
+    "fletway_spike_mis_pedidos_optimizado_error_rate": {
+      "passes": 0,
+      "fails": 292,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "fletway_spike_mis_pedidos_optimizado_success_rate": {
+      "passes": 292,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "http_req_connecting": {
+      "count": 293,
+      "avg": 0.5939453924914675,
+      "min": 0,
+      "med": 0,
+      "max": 6.9392,
+      "p(90)": 3.911600000000001,
+      "p(95)": 6.027899999999999
+    },
+    "http_req_waiting": {
+      "avg": 2463.0776225255977,
+      "min": 199.2364,
+      "med": 2697.3354,
+      "max": 5514.7385,
+      "p(90)": 3890.37006,
+      "p(95)": 4097.38128,
+      "count": 293
+    },
+    "checks": {
+      "passes": 584,
+      "fails": 0,
+      "value": 1
+    },
+    "iterations": {
+      "count": 292,
+      "rate": 4.697545122603491
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 293,
+      "value": 0
+    },
+    "fletway_spike_mis_pedidos_optimizado_timeout_rate": {
+      "passes": 0,
+      "fails": 292,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    }
+  },
+  "k6": {
+    "metrics": {
+      "http_req_duration": {
+        "p(90)": 3891.7686600000006,
+        "p(95)": 4098.219,
+        "count": 293,
+        "avg": 2464.000978839591,
+        "min": 200.0292,
+        "med": 2698.3436,
+        "max": 5517.3284
+      },
+      "http_req_receiving": {
+        "med": 0.5595,
+        "max": 2.5899,
+        "p(90)": 1.32306,
+        "p(95)": 1.6727599999999958,
+        "count": 293,
+        "avg": 0.7463126279863478,
+        "min": 0
+      },
+      "vus_max": {
+        "value": 30,
+        "min": 30,
+        "max": 30
+      },
+      "fletway_spike_mis_pedidos_optimizado_duration_ms": {
+        "avg": 2469.4650842465758,
+        "min": 200.0292,
+        "med": 2699.4531500000003,
+        "max": 5517.3284,
+        "p(90)": 3894.8767300000013,
+        "p(95)": 4098.906625,
+        "count": 292,
+        "thresholds": {
+          "p(95)<5000": false
+        }
+      },
+      "http_req_sending": {
+        "p(95)": 0.52974,
+        "count": 293,
+        "avg": 0.17704368600682582,
+        "min": 0,
+        "med": 0,
+        "max": 0.6937,
+        "p(90)": 0.453
+      },
+      "http_reqs": {
+        "count": 293,
+        "rate": 4.713632605900078
+      },
+      "http_req_duration{expected_response:true}": {
+        "min": 200.0292,
+        "med": 2698.3436,
+        "max": 5517.3284,
+        "p(90)": 3891.7686600000006,
+        "p(95)": 4098.219,
+        "count": 293,
+        "avg": 2464.000978839591
+      },
+      "data_received": {
+        "rate": 169828.65963173786,
+        "count": 10556571
+      },
+      "http_req_tls_handshaking": {
+        "avg": 1.5810645051194538,
+        "min": 0,
+        "med": 0,
+        "max": 67.6235,
+        "p(90)": 9.546320000000007,
+        "p(95)": 11.975459999999993,
+        "count": 293
+      },
+      "iteration_duration": {
+        "avg": 3472.0011818493176,
+        "min": 1201.072,
+        "med": 3699.8163999999997,
+        "max": 6518.4726,
+        "p(90)": 4898.83762,
+        "p(95)": 5099.412420000001,
+        "count": 292
+      },
+      "http_req_blocked": {
+        "count": 293,
+        "avg": 2.2701569965870307,
+        "min": 0,
+        "med": 0,
+        "max": 94.9171,
+        "p(90)": 14.401640000000006,
+        "p(95)": 18.044359999999998
+      },
+      "data_sent": {
+        "count": 122225,
+        "rate": 1966.2926459253822
+      },
+      "vus": {
+        "max": 30,
+        "value": 3,
+        "min": 0
+      },
+      "fletway_spike_mis_pedidos_optimizado_error_rate": {
+        "passes": 0,
+        "fails": 292,
+        "thresholds": {
+          "rate<0.2": false
+        },
+        "value": 0
+      },
+      "fletway_spike_mis_pedidos_optimizado_success_rate": {
+        "passes": 292,
+        "fails": 0,
+        "thresholds": {
+          "rate>0.8": false
+        },
+        "value": 1
+      },
+      "http_req_connecting": {
+        "count": 293,
+        "avg": 0.5939453924914675,
+        "min": 0,
+        "med": 0,
+        "max": 6.9392,
+        "p(90)": 3.911600000000001,
+        "p(95)": 6.027899999999999
+      },
+      "http_req_waiting": {
+        "avg": 2463.0776225255977,
+        "min": 199.2364,
+        "med": 2697.3354,
+        "max": 5514.7385,
+        "p(90)": 3890.37006,
+        "p(95)": 4097.38128,
+        "count": 293
+      },
+      "checks": {
+        "passes": 584,
+        "fails": 0,
+        "value": 1
+      },
+      "iterations": {
+        "count": 292,
+        "rate": 4.697545122603491
+      },
+      "http_req_failed": {
+        "passes": 0,
+        "fails": 293,
+        "value": 0
+      },
+      "fletway_spike_mis_pedidos_optimizado_timeout_rate": {
+        "passes": 0,
+        "fails": 292,
+        "thresholds": {
+          "rate<0.1": false
+        },
+        "value": 0
+      }
+    },
+    "root_group": {
+      "name": "",
+      "path": "",
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "groups": {},
+      "checks": {
+        "mis-pedidos-optimizado expected status": {
+          "name": "mis-pedidos-optimizado expected status",
+          "path": "::mis-pedidos-optimizado expected status",
+          "id": "42bc18ddfdeabc26bc60e85f9e540556",
+          "passes": 292,
+          "fails": 0
+        },
+        "mis-pedidos-optimizado no timeout": {
+          "name": "mis-pedidos-optimizado no timeout",
+          "path": "::mis-pedidos-optimizado no timeout",
+          "id": "e358b2d1a8548064e05b4415078716e6",
+          "passes": 292,
+          "fails": 0
+        }
+      }
+    }
+  },
+  "spike_recovery": {
+    "baseline_seconds": 10,
+    "peak_start_seconds": 10,
+    "peak_end_seconds": 40,
+    "recovery_seconds": 20,
+    "total_seconds": 60
+  }
+}

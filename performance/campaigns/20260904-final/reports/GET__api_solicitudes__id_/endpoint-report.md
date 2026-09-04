@@ -1,0 +1,8 @@
+# GET /api/solicitudes/<id>
+
+| test | p95_ms | error_pct | capacidad_rps | resultado |
+|---|---:|---:|---:|---|
+| smoke | 256.575 | 0 | 1.05 | APROBADA |
+| load | 252.18 | 0 | 6.922 | APROBADA |
+| stress | 1609.563 | 0 | 20.767 | APROBADA |
+| spike | 1186.562 | 0 | 12.117 | APROBADA |

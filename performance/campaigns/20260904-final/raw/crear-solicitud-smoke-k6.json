@@ -1,0 +1,179 @@
+{
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": {},
+    "checks": {
+      "crear-solicitud expected status": {
+        "id": "ceb5c2e9b2c517e785a4d09c41781f73",
+        "passes": 0,
+        "fails": 5,
+        "name": "crear-solicitud expected status",
+        "path": "::crear-solicitud expected status"
+      },
+      "crear-solicitud no timeout": {
+        "fails": 5,
+        "name": "crear-solicitud no timeout",
+        "path": "::crear-solicitud no timeout",
+        "id": "16bea0bd85458fb4ed96d5f5e5cd1fc3",
+        "passes": 0
+      }
+    }
+  },
+  "metrics": {
+    "http_req_failed": {
+      "passes": 5,
+      "fails": 2,
+      "value": 0.7142857142857143
+    },
+    "http_reqs": {
+      "rate": 0.154753910353863,
+      "count": 7
+    },
+    "http_req_sending": {
+      "max": 0.5445,
+      "p(90)": 0.5314800000000001,
+      "p(95)": 0.53799,
+      "count": 7,
+      "avg": 0.28091428571428567,
+      "min": 0,
+      "med": 0.3941
+    },
+    "iterations": {
+      "count": 4,
+      "rate": 0.08843080591649315
+    },
+    "fletway_smoke_crear_solicitud_error_rate": {
+      "passes": 5,
+      "fails": 0,
+      "thresholds": {
+        "rate<0.2": true
+      },
+      "value": 1
+    },
+    "fletway_smoke_crear_solicitud_success_rate": {
+      "passes": 0,
+      "fails": 5,
+      "thresholds": {
+        "rate>0.8": true
+      },
+      "value": 0
+    },
+    "vus_max": {
+      "value": 3,
+      "min": 3,
+      "max": 3
+    },
+    "iteration_duration": {
+      "p(95)": 11002.15725,
+      "count": 4,
+      "avg": 11001.338625,
+      "min": 11000.7009,
+      "med": 11001.1626,
+      "max": 11002.3284,
+      "p(90)": 11001.9861
+    },
+    "http_req_receiving": {
+      "med": 0,
+      "max": 25.8578,
+      "p(90)": 10.34312000000001,
+      "p(95)": 18.100459999999984,
+      "count": 7,
+      "avg": 3.693971428571429,
+      "min": 0
+    },
+    "fletway_smoke_crear_solicitud_timeout_rate": {
+      "passes": 5,
+      "fails": 0,
+      "thresholds": {
+        "rate<0.1": true
+      },
+      "value": 1
+    },
+    "http_req_duration{expected_response:true}": {
+      "count": 2,
+      "avg": 990.3389,
+      "min": 701.2048,
+      "med": 990.3389,
+      "max": 1279.473,
+      "p(90)": 1221.64618,
+      "p(95)": 1250.5595899999998
+    },
+    "http_req_blocked": {
+      "avg": 40.29517142857143,
+      "min": 0,
+      "med": 19.3556,
+      "max": 140.1638,
+      "p(90)": 114.01400000000001,
+      "p(95)": 127.08889999999997,
+      "count": 7
+    },
+    "data_received": {
+      "count": 409732,
+      "rate": 9058.232742444143
+    },
+    "checks": {
+      "passes": 0,
+      "fails": 10,
+      "value": 0
+    },
+    "vus": {
+      "min": 0,
+      "max": 3,
+      "value": 1
+    },
+    "fletway_smoke_crear_solicitud_duration_ms": {
+      "p(90)": 10000.39884,
+      "p(95)": 10000.422120000001,
+      "count": 5,
+      "avg": 9991.332120000001,
+      "min": 9974.1182,
+      "med": 10000.1268,
+      "max": 10000.4454,
+      "thresholds": {
+        "p(95)<5000": true
+      }
+    },
+    "http_req_connecting": {
+      "max": 30.5256,
+      "p(90)": 16.054800000000007,
+      "p(95)": 23.290199999999984,
+      "count": 7,
+      "avg": 7.051200000000001,
+      "min": 0,
+      "med": 6.0541
+    },
+    "http_req_waiting": {
+      "count": 7,
+      "avg": 7415.644885714285,
+      "min": 701.2048,
+      "med": 9981.0967,
+      "max": 10000.329,
+      "p(90)": 10000.09584,
+      "p(95)": 10000.21242
+    },
+    "data_sent": {
+      "count": 15710,
+      "rate": 347.3119902370268
+    },
+    "http_req_duration": {
+      "med": 9981.6412,
+      "max": 10000.4454,
+      "p(90)": 10000.37556,
+      "p(95)": 10000.41048,
+      "count": 7,
+      "avg": 7419.619771428572,
+      "min": 701.2048
+    },
+    "http_req_tls_handshaking": {
+      "min": 0,
+      "med": 10.6984,
+      "max": 91.6521,
+      "p(90)": 48.41778000000003,
+      "p(95)": 70.03493999999995,
+      "count": 7,
+      "avg": 19.192700000000002
+    }
+  }
+}

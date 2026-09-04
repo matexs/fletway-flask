@@ -1,0 +1,341 @@
+{
+  "endpoint_id": "mis-pedidos",
+  "profile": "load",
+  "run_id": "20260904-final",
+  "result": "EJECUTADA",
+  "exit_code": 0,
+  "metrics": {
+    "fletway_load_mis_pedidos_success_rate": {
+      "passes": 582,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "http_req_receiving": {
+      "min": 0,
+      "med": 0.5519,
+      "max": 6.9923,
+      "p(90)": 1.2551000000000017,
+      "p(95)": 1.4600699999999995,
+      "count": 583,
+      "avg": 0.7218212692967408
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 583,
+      "value": 0
+    },
+    "data_sent": {
+      "count": 101623,
+      "rate": 1111.5639101197187
+    },
+    "http_req_duration": {
+      "p(95)": 494.82892999999996,
+      "count": 583,
+      "avg": 300.00437409948523,
+      "min": 189.622,
+      "med": 293.5708,
+      "max": 779.2046,
+      "p(90)": 403.36354
+    },
+    "http_req_blocked": {
+      "avg": 0.4746811320754717,
+      "min": 0,
+      "med": 0,
+      "max": 84.4334,
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 583
+    },
+    "fletway_load_mis_pedidos_duration_ms": {
+      "count": 582,
+      "avg": 299.19191529209604,
+      "min": 189.622,
+      "med": 293.56395,
+      "max": 779.2046,
+      "p(90)": 403.07394999999997,
+      "p(95)": 493.534205,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "max": 779.2046,
+      "p(90)": 403.36354,
+      "p(95)": 494.82892999999996,
+      "count": 583,
+      "avg": 300.00437409948523,
+      "min": 189.622,
+      "med": 293.5708
+    },
+    "iteration_duration": {
+      "max": 1779.567,
+      "p(90)": 1403.67037,
+      "p(95)": 1494.0146699999998,
+      "count": 582,
+      "avg": 1300.0371785223372,
+      "min": 1190.5214,
+      "med": 1294.01295
+    },
+    "checks": {
+      "passes": 1164,
+      "fails": 0,
+      "value": 1
+    },
+    "iterations": {
+      "count": 582,
+      "rate": 6.3659820679341905
+    },
+    "fletway_load_mis_pedidos_timeout_rate": {
+      "passes": 0,
+      "fails": 582,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "http_req_connecting": {
+      "p(95)": 0,
+      "count": 583,
+      "avg": 0.0876761578044597,
+      "min": 0,
+      "med": 0,
+      "max": 6.4229,
+      "p(90)": 0
+    },
+    "http_req_sending": {
+      "avg": 0.17202521440823348,
+      "min": 0,
+      "med": 0,
+      "max": 0.8061,
+      "p(90)": 0.39732000000000034,
+      "p(95)": 0.45310999999999996,
+      "count": 583
+    },
+    "vus_max": {
+      "value": 10,
+      "min": 10,
+      "max": 10
+    },
+    "fletway_load_mis_pedidos_error_rate": {
+      "passes": 0,
+      "fails": 582,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "http_reqs": {
+      "count": 583,
+      "rate": 6.376920181452978
+    },
+    "http_req_waiting": {
+      "med": 292.9859,
+      "max": 778.6996,
+      "p(90)": 402.82512,
+      "p(95)": 493.74183999999997,
+      "count": 583,
+      "avg": 299.1105276157806,
+      "min": 189.3193
+    },
+    "data_received": {
+      "count": 21256964,
+      "rate": 232511.0852967743
+    },
+    "vus": {
+      "value": 1,
+      "min": 0,
+      "max": 10
+    },
+    "http_req_tls_handshaking": {
+      "max": 63.3386,
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 583,
+      "avg": 0.35010823327615787,
+      "min": 0,
+      "med": 0
+    }
+  },
+  "k6": {
+    "metrics": {
+      "fletway_load_mis_pedidos_success_rate": {
+        "passes": 582,
+        "fails": 0,
+        "thresholds": {
+          "rate>0.8": false
+        },
+        "value": 1
+      },
+      "http_req_receiving": {
+        "min": 0,
+        "med": 0.5519,
+        "max": 6.9923,
+        "p(90)": 1.2551000000000017,
+        "p(95)": 1.4600699999999995,
+        "count": 583,
+        "avg": 0.7218212692967408
+      },
+      "http_req_failed": {
+        "passes": 0,
+        "fails": 583,
+        "value": 0
+      },
+      "data_sent": {
+        "count": 101623,
+        "rate": 1111.5639101197187
+      },
+      "http_req_duration": {
+        "p(95)": 494.82892999999996,
+        "count": 583,
+        "avg": 300.00437409948523,
+        "min": 189.622,
+        "med": 293.5708,
+        "max": 779.2046,
+        "p(90)": 403.36354
+      },
+      "http_req_blocked": {
+        "avg": 0.4746811320754717,
+        "min": 0,
+        "med": 0,
+        "max": 84.4334,
+        "p(90)": 0,
+        "p(95)": 0,
+        "count": 583
+      },
+      "fletway_load_mis_pedidos_duration_ms": {
+        "count": 582,
+        "avg": 299.19191529209604,
+        "min": 189.622,
+        "med": 293.56395,
+        "max": 779.2046,
+        "p(90)": 403.07394999999997,
+        "p(95)": 493.534205,
+        "thresholds": {
+          "p(95)<5000": false
+        }
+      },
+      "http_req_duration{expected_response:true}": {
+        "max": 779.2046,
+        "p(90)": 403.36354,
+        "p(95)": 494.82892999999996,
+        "count": 583,
+        "avg": 300.00437409948523,
+        "min": 189.622,
+        "med": 293.5708
+      },
+      "iteration_duration": {
+        "max": 1779.567,
+        "p(90)": 1403.67037,
+        "p(95)": 1494.0146699999998,
+        "count": 582,
+        "avg": 1300.0371785223372,
+        "min": 1190.5214,
+        "med": 1294.01295
+      },
+      "checks": {
+        "passes": 1164,
+        "fails": 0,
+        "value": 1
+      },
+      "iterations": {
+        "count": 582,
+        "rate": 6.3659820679341905
+      },
+      "fletway_load_mis_pedidos_timeout_rate": {
+        "passes": 0,
+        "fails": 582,
+        "thresholds": {
+          "rate<0.1": false
+        },
+        "value": 0
+      },
+      "http_req_connecting": {
+        "p(95)": 0,
+        "count": 583,
+        "avg": 0.0876761578044597,
+        "min": 0,
+        "med": 0,
+        "max": 6.4229,
+        "p(90)": 0
+      },
+      "http_req_sending": {
+        "avg": 0.17202521440823348,
+        "min": 0,
+        "med": 0,
+        "max": 0.8061,
+        "p(90)": 0.39732000000000034,
+        "p(95)": 0.45310999999999996,
+        "count": 583
+      },
+      "vus_max": {
+        "value": 10,
+        "min": 10,
+        "max": 10
+      },
+      "fletway_load_mis_pedidos_error_rate": {
+        "passes": 0,
+        "fails": 582,
+        "thresholds": {
+          "rate<0.2": false
+        },
+        "value": 0
+      },
+      "http_reqs": {
+        "count": 583,
+        "rate": 6.376920181452978
+      },
+      "http_req_waiting": {
+        "med": 292.9859,
+        "max": 778.6996,
+        "p(90)": 402.82512,
+        "p(95)": 493.74183999999997,
+        "count": 583,
+        "avg": 299.1105276157806,
+        "min": 189.3193
+      },
+      "data_received": {
+        "count": 21256964,
+        "rate": 232511.0852967743
+      },
+      "vus": {
+        "value": 1,
+        "min": 0,
+        "max": 10
+      },
+      "http_req_tls_handshaking": {
+        "max": 63.3386,
+        "p(90)": 0,
+        "p(95)": 0,
+        "count": 583,
+        "avg": 0.35010823327615787,
+        "min": 0,
+        "med": 0
+      }
+    },
+    "root_group": {
+      "path": "",
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "groups": {},
+      "checks": {
+        "mis-pedidos expected status": {
+          "path": "::mis-pedidos expected status",
+          "id": "d40ff2309b7b0f073780c0f5c7ac8df4",
+          "passes": 582,
+          "fails": 0,
+          "name": "mis-pedidos expected status"
+        },
+        "mis-pedidos no timeout": {
+          "path": "::mis-pedidos no timeout",
+          "id": "5742e7ab4c20642071183b2a1fea7263",
+          "passes": 582,
+          "fails": 0,
+          "name": "mis-pedidos no timeout"
+        }
+      },
+      "name": ""
+    }
+  }
+}

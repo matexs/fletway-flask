@@ -1,0 +1,341 @@
+{
+  "endpoint_id": "historial-transportista",
+  "profile": "load",
+  "run_id": "20260904-final",
+  "result": "EJECUTADA",
+  "exit_code": 0,
+  "metrics": {
+    "http_req_receiving": {
+      "p(95)": 1.35511,
+      "count": 434,
+      "avg": 0.528085714285714,
+      "min": 0,
+      "med": 0.5085,
+      "max": 3.7008,
+      "p(90)": 1.0406099999999998
+    },
+    "fletway_load_historial_transportista_timeout_rate": {
+      "passes": 0,
+      "fails": 432,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "vus": {
+      "value": 1,
+      "min": 0,
+      "max": 10
+    },
+    "vus_max": {
+      "value": 10,
+      "min": 10,
+      "max": 10
+    },
+    "http_reqs": {
+      "count": 434,
+      "rate": 4.6968531143656085
+    },
+    "checks": {
+      "passes": 864,
+      "fails": 0,
+      "value": 1
+    },
+    "http_req_duration{expected_response:true}": {
+      "p(90)": 1185.6849899999997,
+      "p(95)": 1291.07695,
+      "count": 434,
+      "avg": 746.7819806451615,
+      "min": 263.8252,
+      "med": 703.8197,
+      "max": 1690.7042
+    },
+    "data_sent": {
+      "count": 81521,
+      "rate": 882.2400063046055
+    },
+    "http_req_duration": {
+      "count": 434,
+      "avg": 746.7819806451615,
+      "min": 263.8252,
+      "med": 703.8197,
+      "max": 1690.7042,
+      "p(90)": 1185.6849899999997,
+      "p(95)": 1291.07695
+    },
+    "fletway_load_historial_transportista_duration_ms": {
+      "p(90)": 1189.1935300000005,
+      "p(95)": 1291.17505,
+      "count": 432,
+      "avg": 746.8332222222225,
+      "min": 263.8252,
+      "med": 703.8197,
+      "max": 1690.7042,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "fletway_load_historial_transportista_error_rate": {
+      "passes": 0,
+      "fails": 432,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "http_req_tls_handshaking": {
+      "p(95)": 0,
+      "count": 434,
+      "avg": 0.454497465437788,
+      "min": 0,
+      "med": 0,
+      "max": 64.2011,
+      "p(90)": 0
+    },
+    "http_req_waiting": {
+      "avg": 746.0500707373272,
+      "min": 262.5935,
+      "med": 703.36405,
+      "max": 1689.8069,
+      "p(90)": 1184.3412199999998,
+      "p(95)": 1290.2842349999999,
+      "count": 434
+    },
+    "fletway_load_historial_transportista_success_rate": {
+      "passes": 432,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "data_received": {
+      "count": 12521854,
+      "rate": 135514.53676850564
+    },
+    "iteration_duration": {
+      "med": 1704.45875,
+      "max": 2690.9009,
+      "p(90)": 2189.4287900000004,
+      "p(95)": 2291.674235,
+      "count": 432,
+      "avg": 1748.176119212963,
+      "min": 1264.5264
+    },
+    "iterations": {
+      "count": 432,
+      "rate": 4.67520862996761
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 434,
+      "value": 0
+    },
+    "http_req_blocked": {
+      "avg": 1.1299269585253457,
+      "min": 0,
+      "med": 0,
+      "max": 170.0377,
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 434
+    },
+    "http_req_sending": {
+      "med": 0.31695,
+      "max": 0.7457,
+      "p(90)": 0.43754,
+      "p(95)": 0.51019,
+      "count": 434,
+      "avg": 0.20382419354838693,
+      "min": 0
+    },
+    "http_req_connecting": {
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 434,
+      "avg": 0.14928755760368662,
+      "min": 0,
+      "med": 0,
+      "max": 7.1438
+    }
+  },
+  "k6": {
+    "metrics": {
+      "http_req_receiving": {
+        "p(95)": 1.35511,
+        "count": 434,
+        "avg": 0.528085714285714,
+        "min": 0,
+        "med": 0.5085,
+        "max": 3.7008,
+        "p(90)": 1.0406099999999998
+      },
+      "fletway_load_historial_transportista_timeout_rate": {
+        "passes": 0,
+        "fails": 432,
+        "thresholds": {
+          "rate<0.1": false
+        },
+        "value": 0
+      },
+      "vus": {
+        "value": 1,
+        "min": 0,
+        "max": 10
+      },
+      "vus_max": {
+        "value": 10,
+        "min": 10,
+        "max": 10
+      },
+      "http_reqs": {
+        "count": 434,
+        "rate": 4.6968531143656085
+      },
+      "checks": {
+        "passes": 864,
+        "fails": 0,
+        "value": 1
+      },
+      "http_req_duration{expected_response:true}": {
+        "p(90)": 1185.6849899999997,
+        "p(95)": 1291.07695,
+        "count": 434,
+        "avg": 746.7819806451615,
+        "min": 263.8252,
+        "med": 703.8197,
+        "max": 1690.7042
+      },
+      "data_sent": {
+        "count": 81521,
+        "rate": 882.2400063046055
+      },
+      "http_req_duration": {
+        "count": 434,
+        "avg": 746.7819806451615,
+        "min": 263.8252,
+        "med": 703.8197,
+        "max": 1690.7042,
+        "p(90)": 1185.6849899999997,
+        "p(95)": 1291.07695
+      },
+      "fletway_load_historial_transportista_duration_ms": {
+        "p(90)": 1189.1935300000005,
+        "p(95)": 1291.17505,
+        "count": 432,
+        "avg": 746.8332222222225,
+        "min": 263.8252,
+        "med": 703.8197,
+        "max": 1690.7042,
+        "thresholds": {
+          "p(95)<5000": false
+        }
+      },
+      "fletway_load_historial_transportista_error_rate": {
+        "passes": 0,
+        "fails": 432,
+        "thresholds": {
+          "rate<0.2": false
+        },
+        "value": 0
+      },
+      "http_req_tls_handshaking": {
+        "p(95)": 0,
+        "count": 434,
+        "avg": 0.454497465437788,
+        "min": 0,
+        "med": 0,
+        "max": 64.2011,
+        "p(90)": 0
+      },
+      "http_req_waiting": {
+        "avg": 746.0500707373272,
+        "min": 262.5935,
+        "med": 703.36405,
+        "max": 1689.8069,
+        "p(90)": 1184.3412199999998,
+        "p(95)": 1290.2842349999999,
+        "count": 434
+      },
+      "fletway_load_historial_transportista_success_rate": {
+        "passes": 432,
+        "fails": 0,
+        "thresholds": {
+          "rate>0.8": false
+        },
+        "value": 1
+      },
+      "data_received": {
+        "count": 12521854,
+        "rate": 135514.53676850564
+      },
+      "iteration_duration": {
+        "med": 1704.45875,
+        "max": 2690.9009,
+        "p(90)": 2189.4287900000004,
+        "p(95)": 2291.674235,
+        "count": 432,
+        "avg": 1748.176119212963,
+        "min": 1264.5264
+      },
+      "iterations": {
+        "count": 432,
+        "rate": 4.67520862996761
+      },
+      "http_req_failed": {
+        "passes": 0,
+        "fails": 434,
+        "value": 0
+      },
+      "http_req_blocked": {
+        "avg": 1.1299269585253457,
+        "min": 0,
+        "med": 0,
+        "max": 170.0377,
+        "p(90)": 0,
+        "p(95)": 0,
+        "count": 434
+      },
+      "http_req_sending": {
+        "med": 0.31695,
+        "max": 0.7457,
+        "p(90)": 0.43754,
+        "p(95)": 0.51019,
+        "count": 434,
+        "avg": 0.20382419354838693,
+        "min": 0
+      },
+      "http_req_connecting": {
+        "p(90)": 0,
+        "p(95)": 0,
+        "count": 434,
+        "avg": 0.14928755760368662,
+        "min": 0,
+        "med": 0,
+        "max": 7.1438
+      }
+    },
+    "root_group": {
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "groups": {},
+      "checks": {
+        "historial-transportista expected status": {
+          "fails": 0,
+          "name": "historial-transportista expected status",
+          "path": "::historial-transportista expected status",
+          "id": "b2fcdc2721f2bd21785a4f8c22223eef",
+          "passes": 432
+        },
+        "historial-transportista no timeout": {
+          "name": "historial-transportista no timeout",
+          "path": "::historial-transportista no timeout",
+          "id": "5c2e2546977492965a4ed2abd48b34ff",
+          "passes": 432,
+          "fails": 0
+        }
+      },
+      "name": "",
+      "path": ""
+    }
+  }
+}

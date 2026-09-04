@@ -1,0 +1,14 @@
+{
+  "endpoint_id": "crear-solicitud",
+  "profile": "spike",
+  "run_id": "20260904-final",
+  "result": "NO_EJECUTADA",
+  "reason": "mutation repair smoke gate failed",
+  "spike_recovery": {
+    "baseline_seconds": 10,
+    "peak_start_seconds": 10,
+    "peak_end_seconds": 40,
+    "recovery_seconds": 20,
+    "total_seconds": 60
+  }
+}

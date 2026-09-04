@@ -1,0 +1,7 @@
+{
+  "endpoint_id": "crear-solicitud",
+  "profile": "load",
+  "run_id": "20260904-final",
+  "result": "NO_EJECUTADA",
+  "reason": "mutation repair smoke gate failed"
+}

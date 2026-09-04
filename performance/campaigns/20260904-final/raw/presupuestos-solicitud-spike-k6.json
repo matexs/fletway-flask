@@ -1,0 +1,179 @@
+{
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": {},
+    "checks": {
+      "presupuestos-solicitud expected status": {
+        "path": "::presupuestos-solicitud expected status",
+        "id": "67e1dfdbaceb2d2074f3c6fa9a6b2908",
+        "passes": 559,
+        "fails": 0,
+        "name": "presupuestos-solicitud expected status"
+      },
+      "presupuestos-solicitud no timeout": {
+        "name": "presupuestos-solicitud no timeout",
+        "path": "::presupuestos-solicitud no timeout",
+        "id": "b0aa23809d2f866688f96aaa72f8bc5b",
+        "passes": 559,
+        "fails": 0
+      }
+    }
+  },
+  "metrics": {
+    "iteration_duration": {
+      "max": 3294.3192,
+      "p(90)": 2810.88458,
+      "p(95)": 2990.94475,
+      "count": 559,
+      "avg": 1773.335913953487,
+      "min": 1184.6534,
+      "med": 1595.6699
+    },
+    "http_req_receiving": {
+      "p(95)": 0.7555,
+      "count": 561,
+      "avg": 0.112102495543672,
+      "min": 0,
+      "med": 0,
+      "max": 2.2832,
+      "p(90)": 0.5185
+    },
+    "data_sent": {
+      "count": 101649,
+      "rate": 1643.5584866873912
+    },
+    "http_req_duration": {
+      "med": 593.9097,
+      "max": 2293.7915,
+      "p(90)": 1809.9153,
+      "p(95)": 1989.5703,
+      "count": 561,
+      "avg": 771.0221319073079,
+      "min": 184.2259
+    },
+    "iterations": {
+      "rate": 9.03844793414841,
+      "count": 559
+    },
+    "fletway_spike_presupuestos_solicitud_success_rate": {
+      "passes": 559,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "data_received": {
+      "count": 295940,
+      "rate": 4785.04164871535
+    },
+    "fletway_spike_presupuestos_solicitud_error_rate": {
+      "fails": 559,
+      "passes": 0,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "http_req_waiting": {
+      "p(95)": 1989.2519,
+      "count": 561,
+      "avg": 770.7385427807484,
+      "min": 183.7646,
+      "med": 593.9097,
+      "max": 2293.7915,
+      "p(90)": 1809.5716
+    },
+    "vus": {
+      "value": 3,
+      "min": 0,
+      "max": 30
+    },
+    "fletway_spike_presupuestos_solicitud_timeout_rate": {
+      "passes": 0,
+      "fails": 559,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "http_reqs": {
+      "count": 561,
+      "rate": 9.070785851623002
+    },
+    "http_req_tls_handshaking": {
+      "med": 0,
+      "max": 76.1649,
+      "p(90)": 0,
+      "p(95)": 8.5946,
+      "count": 561,
+      "avg": 0.7772898395721924,
+      "min": 0
+    },
+    "http_req_sending": {
+      "p(95)": 0.5259,
+      "count": 561,
+      "avg": 0.17148663101604292,
+      "min": 0,
+      "med": 0,
+      "max": 0.6705,
+      "p(90)": 0.4532
+    },
+    "vus_max": {
+      "value": 30,
+      "min": 30,
+      "max": 30
+    },
+    "http_req_blocked": {
+      "count": 561,
+      "avg": 1.094521568627451,
+      "min": 0,
+      "med": 0,
+      "max": 99.6634,
+      "p(90)": 0,
+      "p(95)": 14.1598
+    },
+    "http_req_connecting": {
+      "avg": 0.26435561497326204,
+      "min": 0,
+      "med": 0,
+      "max": 7.1241,
+      "p(90)": 0,
+      "p(95)": 3.4059,
+      "count": 561
+    },
+    "http_req_duration{expected_response:true}": {
+      "avg": 771.0221319073079,
+      "min": 184.2259,
+      "med": 593.9097,
+      "max": 2293.7915,
+      "p(90)": 1809.9153,
+      "p(95)": 1989.5703,
+      "count": 561
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 561,
+      "value": 0
+    },
+    "checks": {
+      "passes": 1118,
+      "fails": 0,
+      "value": 1
+    },
+    "fletway_spike_presupuestos_solicitud_duration_ms": {
+      "p(90)": 1809.95886,
+      "p(95)": 1990.0272900000002,
+      "count": 559,
+      "avg": 771.8964647584969,
+      "min": 184.2259,
+      "med": 593.9097,
+      "max": 2293.7915,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    }
+  }
+}

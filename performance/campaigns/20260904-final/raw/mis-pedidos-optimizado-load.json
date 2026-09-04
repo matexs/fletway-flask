@@ -1,0 +1,341 @@
+{
+  "endpoint_id": "mis-pedidos-optimizado",
+  "profile": "load",
+  "run_id": "20260904-final",
+  "result": "EJECUTADA",
+  "exit_code": 0,
+  "metrics": {
+    "http_req_sending": {
+      "avg": 0.1835147627416521,
+      "min": 0,
+      "med": 0.3012,
+      "max": 0.6647,
+      "p(90)": 0.38446,
+      "p(95)": 0.42330000000000007,
+      "count": 569
+    },
+    "http_req_receiving": {
+      "avg": 0.7117968365553599,
+      "min": 0,
+      "med": 0.5306,
+      "max": 9.7018,
+      "p(90)": 1.21844,
+      "p(95)": 1.42756,
+      "count": 569
+    },
+    "vus_max": {
+      "value": 10,
+      "min": 10,
+      "max": 10
+    },
+    "fletway_load_mis_pedidos_optimizado_success_rate": {
+      "passes": 568,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 569,
+      "value": 0
+    },
+    "http_reqs": {
+      "count": 569,
+      "rate": 6.234755891725705
+    },
+    "http_req_waiting": {
+      "avg": 329.93876414762735,
+      "min": 198.2134,
+      "med": 298.0861,
+      "max": 1204.4528,
+      "p(90)": 488.65688,
+      "p(95)": 511.43926,
+      "count": 569
+    },
+    "checks": {
+      "passes": 1136,
+      "fails": 0,
+      "value": 1
+    },
+    "data_sent": {
+      "count": 102019,
+      "rate": 1117.8621464287603
+    },
+    "fletway_load_mis_pedidos_optimizado_error_rate": {
+      "passes": 0,
+      "fails": 568,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "iterations": {
+      "count": 568,
+      "rate": 6.223798500000352
+    },
+    "fletway_load_mis_pedidos_optimizado_timeout_rate": {
+      "passes": 0,
+      "fails": 568,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "http_req_tls_handshaking": {
+      "p(95)": 0,
+      "count": 569,
+      "avg": 0.3382337434094903,
+      "min": 0,
+      "med": 0,
+      "max": 64.6225,
+      "p(90)": 0
+    },
+    "vus": {
+      "value": 1,
+      "min": 0,
+      "max": 10
+    },
+    "data_received": {
+      "count": 20274986,
+      "rate": 222160.96382804247
+    },
+    "fletway_load_mis_pedidos_optimizado_duration_ms": {
+      "p(95)": 511.77769,
+      "count": 568,
+      "avg": 330.4144246478873,
+      "min": 198.5413,
+      "med": 298.8025,
+      "max": 1205.2352,
+      "p(90)": 488.27125,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "http_req_duration": {
+      "p(90)": 489.41744,
+      "p(95)": 512.10494,
+      "count": 569,
+      "avg": 330.8340757469245,
+      "min": 198.5413,
+      "med": 298.8218,
+      "max": 1205.2352
+    },
+    "http_req_duration{expected_response:true}": {
+      "max": 1205.2352,
+      "p(90)": 489.41744,
+      "p(95)": 512.10494,
+      "count": 569,
+      "avg": 330.8340757469245,
+      "min": 198.5413,
+      "med": 298.8218
+    },
+    "http_req_connecting": {
+      "avg": 0.10608506151142354,
+      "min": 0,
+      "med": 0,
+      "max": 7.5495,
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 569
+    },
+    "http_req_blocked": {
+      "count": 569,
+      "avg": 0.4849052724077329,
+      "min": 0,
+      "med": 0,
+      "max": 89.3281,
+      "p(90)": 0,
+      "p(95)": 0
+    },
+    "iteration_duration": {
+      "count": 568,
+      "avg": 1331.2842169014082,
+      "min": 1199.1619,
+      "med": 1299.52705,
+      "max": 2206.274,
+      "p(90)": 1489.9196200000001,
+      "p(95)": 1512.43967
+    }
+  },
+  "k6": {
+    "metrics": {
+      "http_req_sending": {
+        "avg": 0.1835147627416521,
+        "min": 0,
+        "med": 0.3012,
+        "max": 0.6647,
+        "p(90)": 0.38446,
+        "p(95)": 0.42330000000000007,
+        "count": 569
+      },
+      "http_req_receiving": {
+        "avg": 0.7117968365553599,
+        "min": 0,
+        "med": 0.5306,
+        "max": 9.7018,
+        "p(90)": 1.21844,
+        "p(95)": 1.42756,
+        "count": 569
+      },
+      "vus_max": {
+        "value": 10,
+        "min": 10,
+        "max": 10
+      },
+      "fletway_load_mis_pedidos_optimizado_success_rate": {
+        "passes": 568,
+        "fails": 0,
+        "thresholds": {
+          "rate>0.8": false
+        },
+        "value": 1
+      },
+      "http_req_failed": {
+        "passes": 0,
+        "fails": 569,
+        "value": 0
+      },
+      "http_reqs": {
+        "count": 569,
+        "rate": 6.234755891725705
+      },
+      "http_req_waiting": {
+        "avg": 329.93876414762735,
+        "min": 198.2134,
+        "med": 298.0861,
+        "max": 1204.4528,
+        "p(90)": 488.65688,
+        "p(95)": 511.43926,
+        "count": 569
+      },
+      "checks": {
+        "passes": 1136,
+        "fails": 0,
+        "value": 1
+      },
+      "data_sent": {
+        "count": 102019,
+        "rate": 1117.8621464287603
+      },
+      "fletway_load_mis_pedidos_optimizado_error_rate": {
+        "passes": 0,
+        "fails": 568,
+        "thresholds": {
+          "rate<0.2": false
+        },
+        "value": 0
+      },
+      "iterations": {
+        "count": 568,
+        "rate": 6.223798500000352
+      },
+      "fletway_load_mis_pedidos_optimizado_timeout_rate": {
+        "passes": 0,
+        "fails": 568,
+        "thresholds": {
+          "rate<0.1": false
+        },
+        "value": 0
+      },
+      "http_req_tls_handshaking": {
+        "p(95)": 0,
+        "count": 569,
+        "avg": 0.3382337434094903,
+        "min": 0,
+        "med": 0,
+        "max": 64.6225,
+        "p(90)": 0
+      },
+      "vus": {
+        "value": 1,
+        "min": 0,
+        "max": 10
+      },
+      "data_received": {
+        "count": 20274986,
+        "rate": 222160.96382804247
+      },
+      "fletway_load_mis_pedidos_optimizado_duration_ms": {
+        "p(95)": 511.77769,
+        "count": 568,
+        "avg": 330.4144246478873,
+        "min": 198.5413,
+        "med": 298.8025,
+        "max": 1205.2352,
+        "p(90)": 488.27125,
+        "thresholds": {
+          "p(95)<5000": false
+        }
+      },
+      "http_req_duration": {
+        "p(90)": 489.41744,
+        "p(95)": 512.10494,
+        "count": 569,
+        "avg": 330.8340757469245,
+        "min": 198.5413,
+        "med": 298.8218,
+        "max": 1205.2352
+      },
+      "http_req_duration{expected_response:true}": {
+        "max": 1205.2352,
+        "p(90)": 489.41744,
+        "p(95)": 512.10494,
+        "count": 569,
+        "avg": 330.8340757469245,
+        "min": 198.5413,
+        "med": 298.8218
+      },
+      "http_req_connecting": {
+        "avg": 0.10608506151142354,
+        "min": 0,
+        "med": 0,
+        "max": 7.5495,
+        "p(90)": 0,
+        "p(95)": 0,
+        "count": 569
+      },
+      "http_req_blocked": {
+        "count": 569,
+        "avg": 0.4849052724077329,
+        "min": 0,
+        "med": 0,
+        "max": 89.3281,
+        "p(90)": 0,
+        "p(95)": 0
+      },
+      "iteration_duration": {
+        "count": 568,
+        "avg": 1331.2842169014082,
+        "min": 1199.1619,
+        "med": 1299.52705,
+        "max": 2206.274,
+        "p(90)": 1489.9196200000001,
+        "p(95)": 1512.43967
+      }
+    },
+    "root_group": {
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "groups": {},
+      "checks": {
+        "mis-pedidos-optimizado expected status": {
+          "name": "mis-pedidos-optimizado expected status",
+          "path": "::mis-pedidos-optimizado expected status",
+          "id": "42bc18ddfdeabc26bc60e85f9e540556",
+          "passes": 568,
+          "fails": 0
+        },
+        "mis-pedidos-optimizado no timeout": {
+          "passes": 568,
+          "fails": 0,
+          "name": "mis-pedidos-optimizado no timeout",
+          "path": "::mis-pedidos-optimizado no timeout",
+          "id": "e358b2d1a8548064e05b4415078716e6"
+        }
+      },
+      "name": "",
+      "path": ""
+    }
+  }
+}

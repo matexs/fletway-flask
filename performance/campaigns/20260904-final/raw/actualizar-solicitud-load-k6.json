@@ -1,0 +1,179 @@
+{
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": {},
+    "checks": {
+      "actualizar-solicitud expected status": {
+        "passes": 601,
+        "fails": 0,
+        "name": "actualizar-solicitud expected status",
+        "path": "::actualizar-solicitud expected status",
+        "id": "187763c23c78778ff776e3d6d8bd3ddf"
+      },
+      "actualizar-solicitud no timeout": {
+        "name": "actualizar-solicitud no timeout",
+        "path": "::actualizar-solicitud no timeout",
+        "id": "0da0779b5dcdaef6222941e9021f9433",
+        "passes": 601,
+        "fails": 0
+      }
+    }
+  },
+  "metrics": {
+    "http_reqs": {
+      "count": 603,
+      "rate": 6.600650427436339
+    },
+    "http_req_duration{expected_response:true}": {
+      "count": 603,
+      "avg": 257.192785737977,
+      "min": 196.9522,
+      "med": 247.317,
+      "max": 777.6569,
+      "p(90)": 312.17994,
+      "p(95)": 369.0120899999999
+    },
+    "fletway_load_actualizar_solicitud_error_rate": {
+      "passes": 0,
+      "fails": 601,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "http_req_waiting": {
+      "min": 196.4446,
+      "med": 246.546,
+      "max": 777.6569,
+      "p(90)": 310.92342,
+      "p(95)": 368.9767599999999,
+      "count": 603,
+      "avg": 256.8033509121062
+    },
+    "vus": {
+      "value": 1,
+      "min": 0,
+      "max": 10
+    },
+    "vus_max": {
+      "value": 10,
+      "min": 10,
+      "max": 10
+    },
+    "http_req_blocked": {
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 603,
+      "avg": 0.5161805970149255,
+      "min": 0,
+      "med": 0,
+      "max": 86.8769
+    },
+    "http_req_tls_handshaking": {
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 603,
+      "avg": 0.3751578772802654,
+      "min": 0,
+      "med": 0,
+      "max": 63.8225
+    },
+    "fletway_load_actualizar_solicitud_duration_ms": {
+      "med": 246.8517,
+      "max": 777.6569,
+      "p(90)": 312.1657,
+      "p(95)": 366.2526,
+      "count": 601,
+      "avg": 256.72332529118154,
+      "min": 196.9522,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 603,
+      "value": 0
+    },
+    "fletway_load_actualizar_solicitud_success_rate": {
+      "fails": 0,
+      "passes": 601,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "iteration_duration": {
+      "p(90)": 1312.9741,
+      "p(95)": 1367.2552,
+      "count": 601,
+      "avg": 1257.955004326124,
+      "min": 1198.3855,
+      "med": 1247.9838,
+      "max": 1778.5573
+    },
+    "http_req_sending": {
+      "min": 0,
+      "med": 0.3503,
+      "max": 0.8018,
+      "p(90)": 0.50732,
+      "p(95)": 0.52955,
+      "count": 603,
+      "avg": 0.259612271973466
+    },
+    "checks": {
+      "passes": 1202,
+      "fails": 0,
+      "value": 1
+    },
+    "iterations": {
+      "count": 601,
+      "rate": 6.578757722867727
+    },
+    "fletway_load_actualizar_solicitud_timeout_rate": {
+      "passes": 0,
+      "fails": 601,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "http_req_duration": {
+      "p(95)": 369.0120899999999,
+      "count": 603,
+      "avg": 257.192785737977,
+      "min": 196.9522,
+      "med": 247.317,
+      "max": 777.6569,
+      "p(90)": 312.17994
+    },
+    "data_sent": {
+      "count": 112532,
+      "rate": 1231.8149152574892
+    },
+    "data_received": {
+      "count": 865061,
+      "rate": 9469.262453413776
+    },
+    "http_req_connecting": {
+      "max": 7.041,
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 603,
+      "avg": 0.10228126036484245,
+      "min": 0,
+      "med": 0
+    },
+    "http_req_receiving": {
+      "max": 1.5056,
+      "p(90)": 0.5856200000000003,
+      "p(95)": 0.8337299999999997,
+      "count": 603,
+      "avg": 0.1298225538971807,
+      "min": 0,
+      "med": 0
+    }
+  }
+}

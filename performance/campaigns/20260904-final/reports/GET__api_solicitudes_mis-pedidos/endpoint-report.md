@@ -1,0 +1,7 @@
+# GET /api/solicitudes/mis-pedidos
+
+| test | p95_ms | error_pct | capacidad_rps | resultado |
+|---|---:|---:|---:|---|
+| load | 493.534 | 0 | 6.467 | APROBADA |
+| stress | 3830.067 | 0 | 9.4 | ADVERTENCIA |
+| spike | 3775.263 | 0 | 5.4 | APROBADA |

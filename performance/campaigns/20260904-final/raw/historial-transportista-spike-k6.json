@@ -1,0 +1,179 @@
+{
+  "root_group": {
+    "checks": {
+      "historial-transportista expected status": {
+        "name": "historial-transportista expected status",
+        "path": "::historial-transportista expected status",
+        "id": "b2fcdc2721f2bd21785a4f8c22223eef",
+        "passes": 240,
+        "fails": 0
+      },
+      "historial-transportista no timeout": {
+        "path": "::historial-transportista no timeout",
+        "id": "5c2e2546977492965a4ed2abd48b34ff",
+        "passes": 240,
+        "fails": 0,
+        "name": "historial-transportista no timeout"
+      }
+    },
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": {}
+  },
+  "metrics": {
+    "iterations": {
+      "count": 240,
+      "rate": 3.8402731079345624
+    },
+    "http_reqs": {
+      "rate": 3.872275383834017,
+      "count": 242
+    },
+    "http_req_waiting": {
+      "avg": 3163.815082231407,
+      "min": 235.3925,
+      "med": 3995.50725,
+      "max": 6499.156,
+      "p(90)": 4598.16798,
+      "p(95)": 4930.060565,
+      "count": 242
+    },
+    "vus": {
+      "value": 2,
+      "min": 0,
+      "max": 30
+    },
+    "http_req_tls_handshaking": {
+      "min": 0,
+      "med": 0,
+      "max": 89.0622,
+      "p(90)": 10.73792,
+      "p(95)": 11.574119999999999,
+      "count": 242,
+      "avg": 1.8280074380165288
+    },
+    "http_req_duration{expected_response:true}": {
+      "count": 242,
+      "avg": 3164.5651371900826,
+      "min": 235.9609,
+      "med": 3996.4285,
+      "max": 6499.156,
+      "p(90)": 4598.92925,
+      "p(95)": 4930.564455
+    },
+    "http_req_blocked": {
+      "med": 0,
+      "max": 140.1103,
+      "p(90)": 15.29373,
+      "p(95)": 17.780969999999996,
+      "count": 242,
+      "avg": 2.751709917355372,
+      "min": 0
+    },
+    "http_req_connecting": {
+      "max": 30.6902,
+      "p(90)": 3.9637400000000005,
+      "p(95)": 6.145719999999999,
+      "count": 242,
+      "avg": 0.815218181818182,
+      "min": 0,
+      "med": 0
+    },
+    "iteration_duration": {
+      "med": 5001.66905,
+      "max": 7499.8247,
+      "p(90)": 5611.1332299999995,
+      "p(95)": 5956.9621799999995,
+      "count": 240,
+      "avg": 4189.090449166664,
+      "min": 1236.3335
+    },
+    "vus_max": {
+      "max": 30,
+      "value": 30,
+      "min": 30
+    },
+    "http_req_receiving": {
+      "avg": 0.5686462809917353,
+      "min": 0,
+      "med": 0.51,
+      "max": 5.4014,
+      "p(90)": 1.1311200000000001,
+      "p(95)": 1.395565,
+      "count": 242
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 242,
+      "value": 0
+    },
+    "fletway_spike_historial_transportista_success_rate": {
+      "passes": 240,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "fletway_spike_historial_transportista_duration_ms": {
+      "p(90)": 4610.657259999999,
+      "p(95)": 4934.546479999999,
+      "count": 240,
+      "avg": 3186.3208479166674,
+      "min": 235.9609,
+      "med": 3998.1855,
+      "max": 6499.156,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "fletway_spike_historial_transportista_timeout_rate": {
+      "passes": 0,
+      "fails": 240,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "data_received": {
+      "count": 7088911,
+      "rate": 113430.64282433961
+    },
+    "checks": {
+      "passes": 480,
+      "fails": 0,
+      "value": 1
+    },
+    "http_req_sending": {
+      "count": 242,
+      "avg": 0.18140867768595043,
+      "min": 0,
+      "med": 0,
+      "max": 0.569,
+      "p(90)": 0.47385,
+      "p(95)": 0.5314049999999999
+    },
+    "http_req_duration": {
+      "med": 3996.4285,
+      "max": 6499.156,
+      "p(90)": 4598.92925,
+      "p(95)": 4930.564455,
+      "count": 242,
+      "avg": 3164.5651371900826,
+      "min": 235.9609
+    },
+    "fletway_spike_historial_transportista_error_rate": {
+      "passes": 0,
+      "fails": 240,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "data_sent": {
+      "count": 111462,
+      "rate": 1783.5188381525093
+    }
+  }
+}

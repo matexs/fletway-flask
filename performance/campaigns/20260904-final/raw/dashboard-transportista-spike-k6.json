@@ -1,0 +1,179 @@
+{
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": {},
+    "checks": {
+      "dashboard-transportista expected status": {
+        "id": "30d663a8a91d4b9c85ec07a38d01a17f",
+        "passes": 474,
+        "fails": 0,
+        "name": "dashboard-transportista expected status",
+        "path": "::dashboard-transportista expected status"
+      },
+      "dashboard-transportista no timeout": {
+        "name": "dashboard-transportista no timeout",
+        "path": "::dashboard-transportista no timeout",
+        "id": "6f9058798f1815f7ecf33d2657d1ab0d",
+        "passes": 474,
+        "fails": 0
+      }
+    }
+  },
+  "metrics": {
+    "http_req_tls_handshaking": {
+      "p(95)": 10.14985,
+      "count": 476,
+      "avg": 0.9636848739495797,
+      "min": 0,
+      "med": 0,
+      "max": 86.8413,
+      "p(90)": 0
+    },
+    "http_req_waiting": {
+      "med": 1196.52665,
+      "max": 3161.9653,
+      "p(90)": 1692.7836499999999,
+      "p(95)": 1899.486575,
+      "count": 476,
+      "avg": 1100.4572920168068,
+      "min": 195.2675
+    },
+    "fletway_spike_dashboard_transportista_error_rate": {
+      "passes": 0,
+      "fails": 474,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "fletway_spike_dashboard_transportista_success_rate": {
+      "passes": 474,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "http_req_receiving": {
+      "p(90)": 0.76725,
+      "p(95)": 1.000125,
+      "count": 476,
+      "avg": 0.23483508403361353,
+      "min": 0,
+      "med": 0,
+      "max": 3.0834
+    },
+    "data_received": {
+      "count": 4982307,
+      "rate": 79911.31833737953
+    },
+    "http_req_duration": {
+      "min": 195.6242,
+      "med": 1196.7827,
+      "max": 3162.5809,
+      "p(90)": 1692.9501500000001,
+      "p(95)": 1899.722975,
+      "count": 476,
+      "avg": 1100.835176260504
+    },
+    "iterations": {
+      "count": 474,
+      "rate": 7.602495167784301
+    },
+    "http_reqs": {
+      "count": 476,
+      "rate": 7.634573206466936
+    },
+    "http_req_duration{expected_response:true}": {
+      "p(90)": 1692.9501500000001,
+      "p(95)": 1899.722975,
+      "count": 476,
+      "avg": 1100.835176260504,
+      "min": 195.6242,
+      "med": 1196.7827,
+      "max": 3162.5809
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 476,
+      "value": 0
+    },
+    "iteration_duration": {
+      "count": 474,
+      "avg": 2105.6743924050634,
+      "min": 1196.1897,
+      "med": 2197.8230000000003,
+      "max": 4163.4682,
+      "p(90)": 2694.35388,
+      "p(95)": 2901.1931250000002
+    },
+    "data_sent": {
+      "count": 119314,
+      "rate": 1913.6795536899076
+    },
+    "http_req_blocked": {
+      "med": 0,
+      "max": 220.4087,
+      "p(90)": 0,
+      "p(95)": 15.8853,
+      "count": 476,
+      "avg": 1.7827710084033612,
+      "min": 0
+    },
+    "http_req_sending": {
+      "p(90)": 0.41025,
+      "p(95)": 0.514275,
+      "count": 476,
+      "avg": 0.14304915966386558,
+      "min": 0,
+      "med": 0,
+      "max": 0.6222
+    },
+    "fletway_spike_dashboard_transportista_duration_ms": {
+      "min": 195.6242,
+      "med": 1196.8858500000001,
+      "max": 3162.5809,
+      "p(90)": 1693.46001,
+      "p(95)": 1900.1077649999997,
+      "count": 474,
+      "avg": 1103.5352852320675,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "fletway_spike_dashboard_transportista_timeout_rate": {
+      "passes": 0,
+      "fails": 474,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "http_req_connecting": {
+      "avg": 0.4239670168067226,
+      "min": 0,
+      "med": 0,
+      "max": 31.3875,
+      "p(90)": 0,
+      "p(95)": 4.036625,
+      "count": 476
+    },
+    "checks": {
+      "passes": 948,
+      "fails": 0,
+      "value": 1
+    },
+    "vus": {
+      "value": 1,
+      "min": 0,
+      "max": 30
+    },
+    "vus_max": {
+      "value": 30,
+      "min": 30,
+      "max": 30
+    }
+  }
+}

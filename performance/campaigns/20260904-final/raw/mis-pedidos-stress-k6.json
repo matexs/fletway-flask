@@ -1,0 +1,251 @@
+{
+  "root_group": {
+    "groups": {},
+    "checks": {
+      "mis-pedidos expected status": {
+        "passes": 755,
+        "fails": 0,
+        "name": "mis-pedidos expected status",
+        "path": "::mis-pedidos expected status",
+        "id": "d40ff2309b7b0f073780c0f5c7ac8df4"
+      },
+      "mis-pedidos no timeout": {
+        "name": "mis-pedidos no timeout",
+        "path": "::mis-pedidos no timeout",
+        "id": "5742e7ab4c20642071183b2a1fea7263",
+        "passes": 755,
+        "fails": 0
+      }
+    },
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "metrics": {
+    "http_req_tls_handshaking": {
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 756,
+      "avg": 0.9984183862433863,
+      "min": 0,
+      "med": 0,
+      "max": 67.1167
+    },
+    "http_req_receiving": {
+      "avg": 0.7560133597883597,
+      "min": 0,
+      "med": 0.58185,
+      "max": 11.0935,
+      "p(90)": 1.3292,
+      "p(95)": 1.5054500000000002,
+      "count": 756
+    },
+    "checks": {
+      "passes": 1510,
+      "fails": 0,
+      "value": 1
+    },
+    "fletway_stress_30_mis_pedidos_success_rate": {
+      "passes": 282,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "http_req_duration": {
+      "med": 1396.3542000000002,
+      "max": 5434.1478,
+      "p(90)": 2611.7714,
+      "p(95)": 3009.4684500000003,
+      "count": 756,
+      "avg": 1468.3024277777781,
+      "min": 194.8752
+    },
+    "http_req_blocked": {
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 756,
+      "avg": 1.2823866402116402,
+      "min": 0,
+      "med": 0,
+      "max": 92.9807
+    },
+    "fletway_stress_20_mis_pedidos_duration_ms": {
+      "avg": 1516.3083449392725,
+      "min": 698.8804,
+      "med": 1296.197,
+      "max": 3695.7721,
+      "p(90)": 2626.9790600000006,
+      "p(95)": 3000.0047999999997,
+      "count": 247,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "fletway_stress_10_mis_pedidos_success_rate": {
+      "passes": 226,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "fletway_stress_10_mis_pedidos_error_rate": {
+      "passes": 0,
+      "fails": 226,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "fletway_stress_10_mis_pedidos_duration_ms": {
+      "count": 226,
+      "avg": 352.9437252212387,
+      "min": 194.8752,
+      "med": 294.5906,
+      "max": 1484.8909,
+      "p(90)": 506.06895,
+      "p(95)": 806.1718999999999,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "fletway_stress_30_mis_pedidos_timeout_rate": {
+      "passes": 0,
+      "fails": 282,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "http_req_connecting": {
+      "p(90)": 0,
+      "p(95)": 0,
+      "count": 756,
+      "avg": 0.22881335978835987,
+      "min": 0,
+      "med": 0,
+      "max": 8.1814
+    },
+    "data_received": {
+      "count": 27663539,
+      "rate": 268332.60653211403
+    },
+    "fletway_stress_30_mis_pedidos_error_rate": {
+      "passes": 0,
+      "fails": 282,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "iterations": {
+      "count": 755,
+      "rate": 7.3233984246103185
+    },
+    "fletway_stress_20_mis_pedidos_timeout_rate": {
+      "passes": 0,
+      "fails": 247,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    },
+    "http_reqs": {
+      "rate": 7.333098290073378,
+      "count": 756
+    },
+    "fletway_stress_20_mis_pedidos_error_rate": {
+      "passes": 0,
+      "fails": 247,
+      "thresholds": {
+        "rate<0.2": false
+      },
+      "value": 0
+    },
+    "vus": {
+      "value": 6,
+      "min": 0,
+      "max": 30
+    },
+    "data_sent": {
+      "count": 183860,
+      "rate": 1783.4172640382162
+    },
+    "http_req_duration{expected_response:true}": {
+      "avg": 1468.3024277777781,
+      "min": 194.8752,
+      "med": 1396.3542000000002,
+      "max": 5434.1478,
+      "p(90)": 2611.7714,
+      "p(95)": 3009.4684500000003,
+      "count": 756
+    },
+    "vus_max": {
+      "value": 30,
+      "min": 30,
+      "max": 30
+    },
+    "http_req_failed": {
+      "passes": 0,
+      "fails": 756,
+      "value": 0
+    },
+    "http_req_waiting": {
+      "avg": 1467.4117646825398,
+      "min": 193.653,
+      "med": 1395.8974,
+      "max": 5433.6376,
+      "p(90)": 2611.25375,
+      "p(95)": 3008.8152,
+      "count": 756
+    },
+    "fletway_stress_30_mis_pedidos_duration_ms": {
+      "max": 5434.1478,
+      "p(90)": 2990.3264800000006,
+      "p(95)": 3830.067295,
+      "count": 282,
+      "avg": 2322.5930234042567,
+      "min": 913.2431,
+      "med": 2204.6562999999996,
+      "thresholds": {
+        "p(95)<5000": false
+      }
+    },
+    "fletway_stress_20_mis_pedidos_success_rate": {
+      "passes": 247,
+      "fails": 0,
+      "thresholds": {
+        "rate>0.8": false
+      },
+      "value": 1
+    },
+    "http_req_sending": {
+      "max": 1.0082,
+      "p(90)": 0.3719,
+      "p(95)": 0.450825,
+      "count": 756,
+      "avg": 0.13464973544973538,
+      "min": 0,
+      "med": 0
+    },
+    "iteration_duration": {
+      "avg": 2470.9171536423833,
+      "min": 1195.1633,
+      "med": 2397.9726,
+      "max": 6435.1737,
+      "p(90)": 3616.58644,
+      "p(95)": 4017.5654799999998,
+      "count": 755
+    },
+    "fletway_stress_10_mis_pedidos_timeout_rate": {
+      "fails": 226,
+      "passes": 0,
+      "thresholds": {
+        "rate<0.1": false
+      },
+      "value": 0
+    }
+  }
+}
