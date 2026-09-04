@@ -33,12 +33,28 @@ function Number($Value, [string]$Name, [string]$Context) {
     return $parsed
 }
 function Format-Number([double]$Value) { return $Value.ToString('0.###', [Globalization.CultureInfo]::InvariantCulture) }
-function Get-ObservedOutcome([string]$Profile, [double]$P95, [double]$ErrorPct) {
-    if ($P95 -ge 5000 -or $ErrorPct -ge 20) { return 'FALLIDA' }
+function Get-Thresholds([string]$Path) {
+    $config = Read-Json $Path
+    if (-not (Has-Property $config 'profiles') -or -not (Has-Property $config 'hard')) { Fail 'threshold config requires profiles and hard' }
+    foreach ($profile in $Profiles) {
+        if (-not (Has-Property $config.profiles $profile)) { Fail "threshold config missing $profile" }
+        foreach ($field in @('p95_ms','error_pct','timeout_pct')) {
+            if (-not (Has-Property $config.profiles.$profile $field)) { Fail "threshold config $profile requires $field" }
+            [void](Number $config.profiles.$profile.$field $field "threshold config $profile")
+        }
+    }
+    foreach ($field in @('p95_ms','error_pct','timeout_pct')) {
+        if (-not (Has-Property $config.hard $field)) { Fail "threshold config hard requires $field" }
+        [void](Number $config.hard.$field $field 'threshold config hard')
+    }
+    return $config
+}
+function Get-ObservedOutcome([string]$Profile, [double]$P95, [double]$ErrorPct, [double]$TimeoutPct) {
+    if ($P95 -ge $Thresholds.hard.p95_ms -or $ErrorPct -ge $Thresholds.hard.error_pct -or $TimeoutPct -ge $Thresholds.hard.timeout_pct) { return 'FALLIDA' }
     $softProfile = if ($Profile -like 'stress_*') { 'stress' } else { $Profile }
-    $p95Limit = if ($softProfile -eq 'smoke') { 1000 } elseif ($softProfile -eq 'load') { 2000 } elseif ($softProfile -eq 'stress') { 3000 } else { 5000 }
-    $errorLimit = if ($softProfile -eq 'smoke') { 1 } elseif ($softProfile -eq 'load') { 5 } elseif ($softProfile -eq 'stress') { 10 } else { 20 }
-    if ($P95 -ge $p95Limit -or $ErrorPct -ge $errorLimit) { return 'ADVERTENCIA' }
+    $soft = $Thresholds.profiles.$softProfile
+    $softTimeoutFail = if ($soft.timeout_pct -eq 0) { $TimeoutPct -gt 0 } else { $TimeoutPct -ge $soft.timeout_pct }
+    if ($P95 -ge $soft.p95_ms -or $ErrorPct -ge $soft.error_pct -or $softTimeoutFail) { return 'ADVERTENCIA' }
     return 'APROBADA'
 }
 function Escape-Md([string]$Value) {
@@ -63,7 +79,18 @@ function Assert-SafeOutput([string]$Path) {
     return $full
 }
 function Assert-NoSecrets([string]$Text) {
-    if ($Text -match '(?i)(password|passwd|secret|authorization\s*:\s*bearer|\bbearer\s+eyJ|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})' -or $Text -match '(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b') { Fail 'generated report contains a secret-like value' }
+    $patterns = @(
+        '(?i)\b(?:password|passwd|secret)\s*[:=]\s*[^\s,;]+',
+        '(?i)\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|secret[_-]?key|private[_-]?key|provider[_-]?(?:api[_-]?)?credential)s?\s*[:=]\s*[^\s,;]+',
+        '(?i)\b(?:authorization|x-api-key|x-auth-token)\s*[:=]\s*(?:bearer\s+)?[^\s,;]+',
+        '(?i)\b(?:AKIA|ASIA)[A-Z0-9]{16}\b',
+        '(?i)\bAIza[0-9A-Za-z_-]{20,}\b',
+        '(?i)\b(?:sk|pk)_[A-Za-z0-9]{20,}\b',
+        '(?i)\b(?:ghp_|github_pat_|xox[baprs]-|glpat-|npm_)[A-Za-z0-9_-]{12,}\b',
+        '(?i)\bbearer\s+eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}',
+        '(?i)\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'
+    )
+    foreach ($pattern in $patterns) { if ($Text -match $pattern) { Fail 'generated report contains a secret-like value' } }
 }
 function Get-ManifestEntry([string]$Path, [string]$Id) {
     $manifest = Read-Json $Path
@@ -71,6 +98,8 @@ function Get-ManifestEntry([string]$Path, [string]$Id) {
     $entry = @($items | Where-Object { [string]$_.id -eq $Id })
     if ($entry.Count -ne 1) { Fail "manifest must contain exactly one endpoint: $Id" }
     foreach ($field in @('id','method','path','objective')) { [void](Require-Text $entry[0] $field "manifest endpoint $Id") }
+    Assert-NoSecrets ([string]$entry[0].path)
+    Assert-NoSecrets ([string]$entry[0].objective)
     return [pscustomobject]@{ id=$Id; endpoint="$($entry[0].method.ToUpperInvariant()) $($entry[0].path)"; objective=[string]$entry[0].objective }
 }
 function Get-RawFiles([string]$Path) {
@@ -107,13 +136,54 @@ function Get-MetricValues($Raw, [string]$Path, [bool]$RequireStressDetail = $fal
     $p50 = if (Has-Property $duration 'p(50)') { Number $duration.'p(50)' 'p(50)' $Path } else { $null }
     $p90 = if (Has-Property $duration 'p(90)') { Number $duration.'p(90)' 'p(90)' $Path } else { $null }
     $max = if (Has-Property $duration 'max') { Number $duration.max 'max' $Path } else { $null }
-    return [pscustomobject]@{ p50=$p50; p90=$p90; p95=(Number $duration.'p(95)' 'p(95)' $Path); max=$max; count=(Number $requestValues.count 'count' $Path); error_pct=(Number $failed.rate 'error rate' $Path) * 100 }
+    $timeoutMetrics = @($metrics.PSObject.Properties | Where-Object { $_.Name -eq 'http_req_timeout' -or $_.Name -match '(^|_)timeout_rate$' })
+    if ($timeoutMetrics.Count -gt 1) { Fail "$Path has ambiguous timeout metrics" }
+    $timeoutPct = 0.0
+    if ($timeoutMetrics.Count -eq 1) {
+        $timeoutMetric = $timeoutMetrics[0].Value
+        if (-not (Has-Property $timeoutMetric 'values') -or -not (Has-Property $timeoutMetric.values 'rate')) { Fail "$Path timeout metric requires rate" }
+        $timeoutRate = Number $timeoutMetric.values.rate 'timeout rate' $Path
+        if ($timeoutRate -gt 1) { Fail "$Path timeout rate must be a ratio from 0 to 1" }
+        $timeoutPct = $timeoutRate * 100
+    }
+    if (Has-Property $Raw 'timeout_pct') {
+        if ($timeoutMetrics.Count -gt 0) { Fail "$Path has ambiguous timeout sources" }
+        $timeoutPct = Number $Raw.timeout_pct 'timeout_pct' $Path
+        if ($timeoutPct -gt 100) { Fail "$Path timeout_pct must be between 0 and 100" }
+    }
+    return [pscustomobject]@{ p50=$p50; p90=$p90; p95=(Number $duration.'p(95)' 'p(95)' $Path); max=$max; count=(Number $requestValues.count 'count' $Path); error_pct=(Number $failed.rate 'error rate' $Path) * 100; timeout_pct=$timeoutPct }
 }
 function Get-Vu([object]$Raw, [string]$Name, [string]$Path) {
     if (-not (Has-Property $Raw $Name)) { Fail "$Path requires $Name" }
     $value = Number $Raw.$Name $Name $Path
     if ([math]::Floor($value) -ne $value) { Fail "$Path requires integer $Name" }
     return [int]$value
+}
+function Get-SpikeParts($Raw, [string]$Path, [double]$SummaryP95, [double]$SummaryErrorPct, [double]$SummaryRps) {
+    $parts = @{}
+    foreach ($name in @('baseline','peak','recovery')) {
+        if (-not (Has-Property $Raw $name)) { Fail "spike requires $name data" }
+        $part = $Raw.$name
+        foreach ($field in @('vus','p95_ms','error_pct','rps')) { if (-not (Has-Property $part $field)) { Fail "spike $name requires $field" } }
+        $errorPct = Number $part.error_pct 'error_pct' "spike $name"
+        if ($errorPct -gt 100) { Fail "spike $name error_pct must be between 0 and 100" }
+        $parts[$name] = [pscustomobject]@{ vus=(Get-Vu $part 'vus' "spike $name"); p95_ms=(Number $part.p95_ms 'p95_ms' "spike $name"); error_pct=$errorPct; rps=(Number $part.rps 'rps' "spike $name") }
+    }
+    $recoverySeconds = if (Has-Property $Raw.recovery 'seconds') { Number $Raw.recovery.seconds 'recovery seconds' 'spike' } elseif (Has-Property $Raw 'recovery_seconds') { Number $Raw.recovery_seconds 'recovery seconds' 'spike' } else { Fail 'spike requires recovery seconds' }
+    if (Has-Property $Raw.recovery 'seconds' -and Has-Property $Raw 'recovery_seconds') { Assert-NumericMatch $Raw.recovery.seconds $Raw.recovery_seconds 'recovery seconds' 'spike' }
+    if ((Has-Property $Raw 'vu_min')) {
+        $rawMinVu = Get-Vu $Raw 'vu_min' $Path
+        Assert-NumericMatch $parts.baseline.vus $rawMinVu 'baseline vus' 'spike'
+        Assert-NumericMatch $parts.recovery.vus $rawMinVu 'recovery vus' 'spike'
+    }
+    if ((Has-Property $Raw 'vu_max')) {
+        $rawMaxVu = Get-Vu $Raw 'vu_max' $Path
+        Assert-NumericMatch $parts.peak.vus $rawMaxVu 'peak vus' 'spike'
+    }
+    Assert-NumericMatch $parts.peak.p95_ms $SummaryP95 'p95_ms' 'spike peak'
+    Assert-NumericMatch $parts.peak.error_pct $SummaryErrorPct 'error_pct' 'spike peak'
+    Assert-NumericMatch $parts.peak.rps $SummaryRps 'rps' 'spike peak'
+    return [pscustomobject]@{ baseline=$parts.baseline; peak=$parts.peak; recovery=$parts.recovery; recovery_seconds=$recoverySeconds }
 }
 function New-ProfileModel($Raw, [string]$Profile, [string]$Path) {
     $values = Get-MetricValues $Raw $Path ($Profile -like 'stress_*')
@@ -124,9 +194,11 @@ function New-ProfileModel($Raw, [string]$Profile, [string]$Path) {
     $durationSeconds = Number $Raw.measured_duration_seconds 'measured_duration_seconds' $Path
     if ($durationSeconds -le 0) { Fail "$Path measured_duration_seconds must be greater than zero" }
     $rps = $values.count / $durationSeconds
-    $outcome = Get-ObservedOutcome $Profile $values.p95 $values.error_pct
+    if (Has-Property $Raw 'users') { Assert-NoSecrets ([string]$Raw.users) }
+    $outcome = Get-ObservedOutcome $Profile $values.p95 $values.error_pct $values.timeout_pct
     if ($result -in @('APROBADA','ADVERTENCIA','FALLIDA','NO_EJECUTADA') -and $result -cne $outcome) { Fail "$Path result contradicts raw metrics outcome" }
-    return [pscustomobject]@{ profile=$Profile; vu_min=$vuMin; vu_max=$vuMax; p95=$values.p95; error_pct=$values.error_pct; rps=$rps; duration_seconds=$durationSeconds; outcome=$outcome; result=$result; values=$values; raw=$Raw }
+    $spikeParts = if ($Profile -eq 'spike') { Get-SpikeParts $Raw $Path $values.p95 $values.error_pct $rps } else { $null }
+    return [pscustomobject]@{ profile=$Profile; vu_min=$vuMin; vu_max=$vuMax; p95=$values.p95; error_pct=$values.error_pct; timeout_pct=$values.timeout_pct; rps=$rps; duration_seconds=$durationSeconds; outcome=$outcome; result=$result; values=$values; spike_parts=$spikeParts; raw=$Raw }
 }
 function Read-Models($Entry) {
     $models = @{}; $stress = @{}
@@ -159,19 +231,24 @@ function Read-Matrix([string]$Path, $Entry) {
         foreach ($field in @('endpoint','test','objetivo','resultado','usuarios')) {
             if (-not (Has-Property $row $field) -or [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix row requires non-empty $field" }
         }
+        foreach ($field in @('endpoint','objetivo','resultado','usuarios')) { Assert-NoSecrets ([string]$row.$field) }
         if ($row.test -notin $Profiles) { Fail "matrix row has unsupported test: $($row.test)" }
         if ([string]$row.resultado -notin @('APROBADA','ADVERTENCIA','FALLIDA','NO_EJECUTADA')) { Fail "matrix row has invalid resultado: $($row.resultado)" }
         if ([string]$row.objetivo -cne [string]$Entry.objective) { Fail "matrix row objetivo does not match manifest objective" }
         $notExecuted = [string]$row.resultado -eq 'NO_EJECUTADA'
         foreach ($field in @('carga_vu_min','carga_vu_max')) {
-            if (-not $notExecuted -or -not [string]::IsNullOrWhiteSpace([string]$row.$field)) {
+            if ($notExecuted) {
+                if (-not [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix NO_EJECUTADA row requires blank $field" }
+            } else {
                 if (-not (Has-Property $row $field) -or [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix row requires numeric $field" }
                 $vu = Number $row.$field $field 'matrix row'
                 if ([math]::Floor($vu) -ne $vu) { Fail "matrix row requires integer $field" }
             }
         }
         foreach ($field in @('p95_ms','error_pct','capacidad_rps')) {
-            if (-not $notExecuted -or -not [string]::IsNullOrWhiteSpace([string]$row.$field)) {
+            if ($notExecuted) {
+                if (-not [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix NO_EJECUTADA row requires blank $field" }
+            } else {
                 if (-not (Has-Property $row $field) -or [string]::IsNullOrWhiteSpace([string]$row.$field)) { Fail "matrix row requires numeric $field" }
                 $errorPct = Number $row.$field $field 'matrix row'
                 if ($field -eq 'error_pct' -and ($errorPct -lt 0 -or $errorPct -gt 100)) { Fail 'matrix row error_pct must be between 0 and 100' }
@@ -234,7 +311,7 @@ function Get-WorstResult($Rows) {
 function Report-Text($Model, [string]$Name) {
     $p = $Model.profiles[$Name]
     if ($null -eq $p) { return "**Configuración:** no ejecutada o sin raw JSON.  `n**Resultado:** NO_EJECUTADA" }
-    $resultText = if ($p.result) { Escape-Md $p.result } else { 'observado' }
+    $resultText = if ($p.result) { Escape-Md $p.result } else { $p.outcome }
     return "**Configuración:** $($p.vu_min)→$($p.vu_max) VUs  `n**p95:** $(Value-Or-NA $p.p95) ms  `n**Error:** $(Value-Or-NA $p.error_pct)%  `n**RPS:** $(Value-Or-NA $p.rps)  `n**Resultado:** $resultText"
 }
 function Render-Stress($Model) {
@@ -243,23 +320,15 @@ function Render-Stress($Model) {
     foreach ($vu in ($Model.stress.Keys | Sort-Object)) { $x=$Model.stress[$vu]; $lines += "| $vu | $(Value-Or-NA $x.values.p50) | $(Value-Or-NA $x.values.p90) | $(Value-Or-NA $x.values.p95) | $(Value-Or-NA $x.values.max) | $(Value-Or-NA $x.values.error_pct) | $(Value-Or-NA ($x.rps)) |" }
     $degraded = @($Model.stress.Keys | Sort-Object | Where-Object { $x=$Model.stress[$_]; $x.values.p95 -ge 3000 -or $x.values.error_pct -ge 10 })
     $first = if ($degraded.Count) { "$($degraded[0]) VU" } else { 'No observado en los escalones disponibles' }
-    return ($lines -join "`n") + "`n`n**Primer punto de degradación:** $first (p95 ≥ 3000 ms o error ≥ 10%)."
+    $outcome = Get-WorstResult (@($Model.stress.Keys | ForEach-Object { [pscustomobject]@{ resultado=$Model.stress[$_].outcome } }))
+    return ($lines -join "`n") + "`n`n**Resultado:** $outcome`n`n**Primer punto de degradación:** $first (p95 ≥ 3000 ms o error ≥ 10%)."
 }
 function Render-Spike($Model) {
     $p = $Model.profiles['spike']
     if ($null -eq $p) { return '**Resultado:** NO_EJECUTADA; no hay datos spike.' }
-    $raw=$p.raw
-    $spikeParts = @{}
-    foreach ($name in @('baseline','peak','recovery')) {
-        if (-not (Has-Property $raw $name)) { Fail "spike requires $name data" }
-        $part = $raw.$name
-        foreach ($field in @('vus','p95_ms','error_pct','rps')) { if (-not (Has-Property $part $field)) { Fail "spike $name requires $field" } }
-        $vus = Get-Vu $part 'vus' "spike $name"
-        $spikeParts[$name] = [pscustomobject]@{ vus=$vus; p95_ms=(Number $part.p95_ms 'p95_ms' "spike $name"); error_pct=(Number $part.error_pct 'error_pct' "spike $name"); rps=(Number $part.rps 'rps' "spike $name") }
-    }
-    $recoverySeconds = if (Has-Property $raw.recovery 'seconds') { Number $raw.recovery.seconds 'recovery seconds' 'spike' } elseif (Has-Property $raw 'recovery_seconds') { Number $raw.recovery_seconds 'recovery seconds' 'spike' } else { Fail 'spike requires recovery seconds' }
-    $resultText = if ($p.result) { Escape-Md $p.result } else { 'observado' }
-    return "**Baseline:** $($spikeParts.baseline.vus) VU, p95 $(Value-Or-NA $spikeParts.baseline.p95_ms) ms, error $(Value-Or-NA $spikeParts.baseline.error_pct)%, RPS $(Value-Or-NA $spikeParts.baseline.rps)`n`n**Peak:** $($spikeParts.peak.vus) VU, p95 $(Value-Or-NA $spikeParts.peak.p95_ms) ms, error $(Value-Or-NA $spikeParts.peak.error_pct)%, RPS $(Value-Or-NA $spikeParts.peak.rps)`n`n**Recovery:** $($spikeParts.recovery.vus) VU, p95 $(Value-Or-NA $spikeParts.recovery.p95_ms) ms, error $(Value-Or-NA $spikeParts.recovery.error_pct)%, RPS $(Value-Or-NA $spikeParts.recovery.rps), $recoverySeconds s.`n`n**Resultado:** $resultText"
+    $spikeParts=$p.spike_parts
+    $resultText = if ($p.result) { Escape-Md $p.result } else { $p.outcome }
+    return "**Baseline:** $($spikeParts.baseline.vus) VU, p95 $(Value-Or-NA $spikeParts.baseline.p95_ms) ms, error $(Value-Or-NA $spikeParts.baseline.error_pct)%, RPS $(Value-Or-NA $spikeParts.baseline.rps)`n`n**Peak:** $($spikeParts.peak.vus) VU, p95 $(Value-Or-NA $spikeParts.peak.p95_ms) ms, error $(Value-Or-NA $spikeParts.peak.error_pct)%, RPS $(Value-Or-NA $spikeParts.peak.rps)`n`n**Recovery:** $($spikeParts.recovery.vus) VU, p95 $(Value-Or-NA $spikeParts.recovery.p95_ms) ms, error $(Value-Or-NA $spikeParts.recovery.error_pct)%, RPS $(Value-Or-NA $spikeParts.recovery.rps), $($spikeParts.recovery_seconds) s.`n`n**Resultado:** $resultText"
 }
 function Render-Matrix($Rows) {
     $lines=@('| endpoint | test | objetivo | carga_vu_min | carga_vu_max | p95_ms | error_pct | capacidad_rps | resultado | usuarios |','|---|---|---|---:|---:|---:|---:|---:|---|---|')
@@ -290,6 +359,7 @@ function Render-Html($Model, $Rows) {
 
 if ([string]::IsNullOrWhiteSpace($TemplatePath)) { $TemplatePath = Join-Path -Path $PSScriptRoot -ChildPath '..\templates\endpoint-report.md' }
 if (-not (Test-Path -LiteralPath $TemplatePath -PathType Leaf)) { Fail "template file not found: $TemplatePath" }
+$Thresholds = Get-Thresholds (Join-Path $PSScriptRoot '..\config\thresholds.json')
 $safeOutput = Assert-SafeOutput $OutputDirectory
 $entry = Get-ManifestEntry $ManifestPath $EndpointId
 $rows = Read-Matrix $MatrixPath $entry

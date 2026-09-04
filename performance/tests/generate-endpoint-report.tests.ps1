@@ -112,6 +112,18 @@ try {
     Assert-True ($md -match 'Score endpoint:\*\*\s*N/D.*Task 10' -and $html -match 'N/D.*Task 10') 'score must be present but explicitly not calculated until Task 10'
     Assert-True ($md -match '\| 10 \|' -and $md -match '\| 20 \|' -and $md -match '\| 30 \|' -and $md -match '400.*1000.*1900.*2800.*1.*11' -and $md -match 'Primer punto.*20 VU') 'stress must include per-VU metrics and first degradation'
     Assert-True ($md -match '(?i)Baseline:' -and $md -match '3 VU' -and $md -match '(?i)Peak:' -and $md -match '30 VU' -and $md -match '18 s' -and $md -match '(?i)Recovery:') 'spike must include baseline, peak, recovery and result'
+    Assert-True ($md -match '\*\*Resultado:\*\* APROBADA' -and $md -notmatch '\*\*Resultado:\*\* observado') 'profiles without raw result must emit metric-derived outcomes'
+    $timeoutRaw = $raw.Clone(); $timeoutRaw['smoke'] = Clone-Value $raw['smoke']; [void]$timeoutRaw['smoke'].metrics.PSObject.Properties.Add([PSNoteProperty]::new('http_req_timeout',@{ type='rate'; values=@{ rate=0.11 } }))
+    $timeoutMatrix = $matrix.Replace('GET /api/orders,smoke,Validate orders under representative traffic,1,3,900,0.5,10,APROBADA','GET /api/orders,smoke,Validate orders under representative traffic,1,3,900,0.5,10,FALLIDA')
+    $timeoutReport = Invoke-Report $timeoutMatrix $timeoutRaw $manifest 'timeout-outcome'
+    Assert-True ($timeoutReport.ExitCode -eq 0) "timeout outcome fixture should generate: $($timeoutReport.Stdout)"
+    $timeoutMd = Read-Utf8NoBom (Join-Path $timeoutReport.Output 'endpoint-report.md')
+    Assert-True ($timeoutMd -match '## Smoke[\s\S]*\*\*Resultado:\*\* FALLIDA') 'hard timeout rate must influence the metric-derived outcome'
+    $invalidTimeoutRaw = $raw.Clone(); $invalidTimeoutRaw['smoke'] = Clone-Value $raw['smoke']; [void]$invalidTimeoutRaw['smoke'].metrics.PSObject.Properties.Add([PSNoteProperty]::new('http_req_timeout',@{ type='rate'; values=@{ rate=1.1 } }))
+    Assert-ReportRejected $matrix $invalidTimeoutRaw $manifest 'invalid-timeout-rate' 'timeout|rate|ratio|invalid'
+    $ordinaryWordsRaw = $raw.Clone(); $ordinaryWordsRaw['smoke'] = Clone-Value $raw['smoke']; [void]$ordinaryWordsRaw['smoke'].PSObject.Properties.Add([PSNoteProperty]::new('result','token budget and provider status observed'))
+    $ordinaryWordsReport = Invoke-Report $matrix $ordinaryWordsRaw $manifest 'ordinary-secret-words'
+    Assert-True ($ordinaryWordsReport.ExitCode -eq 0) 'ordinary token/provider words must not be treated as credentials'
     $freeFormResultRaw = $raw.Clone(); $freeFormResultRaw['smoke'] = Clone-Value $raw['smoke']; [void]$freeFormResultRaw['smoke'].PSObject.Properties.Add([PSNoteProperty]::new('result','[FAILED](https://evil.example) <b>*boom*</b> | `code`')); $freeFormResultRaw['spike'] = Clone-Value $raw['spike']; [void]$freeFormResultRaw['spike'].PSObject.Properties.Add([PSNoteProperty]::new('result',$freeFormResultRaw['smoke'].result))
     $freeFormResult = Invoke-Report $matrix $freeFormResultRaw $manifest 'free-form-result'
     Assert-True ($freeFormResult.ExitCode -eq 0) "free-form result fixture should generate: $($freeFormResult.Stdout)"
@@ -164,16 +176,27 @@ try {
     Assert-ReportRejected $matrix $durationMismatchRaw $manifest 'cross-source-duration-mismatch' 'cross-source|duration|rps|mismatch'
     $matrixOutcomeMismatch = $matrix.Replace('GET /api/orders,smoke,Validate orders under representative traffic,1,3,900,0.5,10,APROBADA','GET /api/orders,smoke,Validate orders under representative traffic,1,3,900,0.5,10,ADVERTENCIA')
     Assert-ReportRejected $matrixOutcomeMismatch $raw $manifest 'cross-source-outcome-mismatch' 'cross-source|outcome|resultado|mismatch'
+    $noExecutedNumericMatrix = $matrix.Replace('GET /api/orders,smoke,Validate orders under representative traffic,1,3,900,0.5,10,APROBADA','GET /api/orders,smoke,Validate orders under representative traffic,1,3,900,0.5,10,NO_EJECUTADA')
+    $noExecutedRaw = $raw.Clone(); $noExecutedRaw.Remove('smoke')
+    Assert-ReportRejected $noExecutedNumericMatrix $noExecutedRaw $manifest 'no-executed-fabricated-numerics' 'NO_EJECUTADA|blank|numeric|carga'
     $stressRangeMismatch = $matrix.Replace('GET /api/orders,stress,Validate orders under representative traffic,10,30,3200','GET /api/orders,stress,Validate orders under representative traffic,10,31,3200')
     Assert-ReportRejected $stressRangeMismatch $raw $manifest 'cross-source-stress-vu-range-mismatch' 'cross-source|stress|vu|mismatch'
     $stressMetricMismatch = $matrix.Replace('GET /api/orders,stress,Validate orders under representative traffic,10,30,3200,11,14','GET /api/orders,stress,Validate orders under representative traffic,10,30,3900,11,14')
     Assert-ReportRejected $stressMetricMismatch $raw $manifest 'cross-source-stress-metric-mismatch' 'cross-source|stress|p95|mismatch'
+    $spikePeakMismatch = $raw.Clone(); $spikePeakMismatch['spike'] = Clone-Value $raw['spike']; $spikePeakMismatch['spike'].peak.p95_ms = 4200
+    Assert-ReportRejected $matrix $spikePeakMismatch $manifest 'cross-source-spike-peak-mismatch' 'cross-source|spike|peak|p95|mismatch'
+    $spikeRecoveryMismatch = $raw.Clone(); $spikeRecoveryMismatch['spike'] = Clone-Value $raw['spike']; $spikeRecoveryMismatch['spike'].recovery.seconds = 19
+    Assert-ReportRejected $matrix $spikeRecoveryMismatch $manifest 'cross-source-spike-recovery-mismatch' 'cross-source|spike|recovery|seconds|mismatch'
+    $spikeVuMismatch = $raw.Clone(); $spikeVuMismatch['spike'] = Clone-Value $raw['spike']; $spikeVuMismatch['spike'].baseline.vus = 4
+    Assert-ReportRejected $matrix $spikeVuMismatch $manifest 'cross-source-spike-vu-mismatch' 'cross-source|spike|baseline|vus|mismatch'
     $backtickManifest = @{ endpoints = @(@{ id='orders'; method='GET'; path='/api/orders`detail'; objective='Validate orders under representative traffic'; priority='P0'; enabled_profiles=@('smoke','load','stress','spike') }) }
     $backtickMatrix = $matrix.Replace('GET /api/orders','GET /api/orders`detail')
     $backtickReport = Invoke-Report $backtickMatrix $raw $backtickManifest 'backtick-endpoint'
     Assert-True ($backtickReport.ExitCode -eq 0) "backtick endpoint fixture should generate: $($backtickReport.Stdout)"
     $backtickMd = Read-Utf8NoBom (Join-Path $backtickReport.Output 'endpoint-report.md')
     Assert-True ($backtickMd.Contains('GET /api/orders\`detail') -and $backtickMd -notmatch '\*\*Método/ruta:\*\* `[^`]*`') 'endpoint backticks must not break Markdown code spans'
+    $secretRaw = $raw.Clone(); $secretRaw['smoke'] = Clone-Value $raw['smoke']; [void]$secretRaw['smoke'].PSObject.Properties.Add([PSNoteProperty]::new('result','provider_api_key=AKIA1234567890ABCDEF'))
+    Assert-ReportRejected $matrix $secretRaw $manifest 'provider-credential-result' 'secret|credential|api|key|token'
     Assert-True ($md -match '\| GET /api/orders \| smoke \|' -and $md -match '\| GET /api/orders \| load \|' -and $md -match '\| GET /api/orders \| stress \|' -and $md -match '\| GET /api/orders \| spike \|') 'matrix must include all four canonical rows'
     Assert-True ($md -match 'Hecho:' -and $md -match 'Hip.*tesis:' -and $md -match 'no hay telemetr') 'conclusion must distinguish evidence from hypothesis'
     Assert-True ($md -notmatch '(?i)(causad[oa]|debido|provocad[oa]).{0,30}(sql|memoria)|(sql|memoria).{0,30}(causad[oa]|debido|provocad[oa])|password|bearer|eyJ[A-Za-z0-9_-]+') 'report must not claim unsupported causes or leak secrets'
