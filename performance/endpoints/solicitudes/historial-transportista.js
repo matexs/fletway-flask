@@ -41,6 +41,7 @@ export function runFlow(data) {
   current.success.add(successful, tags);
   current.errors.add(!successful, tags);
   current.timeouts.add(timedOut, tags);
+  if (!successful) console.log(`FLETWAY_RESULT ${JSON.stringify({ run_id: __ENV.RUN_ID || 'run', endpoint_id: endpoint.id, profile: PROFILE, status: response.status, error: response.error || null, timed_out: timedOut })}`);
   check(response, { [endpoint.id + ' expected status']: () => successful, [endpoint.id + ' no timeout']: () => !timedOut }, tags);
   if (endpoint.mutation) emitLedgerEvent({ endpoint_id: endpoint.id, method: adapter.method, path: resolvePath(adapter.path, context), status: response.status, response_ids: captureResponseIds(response), resource_action: 'create', created_by_test: true });
   pause();
