@@ -57,6 +57,7 @@ test('endpoint scripts retain response bodies for auth and mutation IDs', () => 
   assert.doesNotMatch(source, /discardResponseBodies:\s*true/);
   assert.match(source, /setupTimeout:\s*__ENV\.K6_SETUP_TIMEOUT/);
   assert.match(template, /requiredPoolSize = !requiresSolicitation \? 0/);
+  assert.match(template, /seedFromScratch = requiresSolicitation && pool\.length === 0/);
   assert.match(source, /FLETWAY_RESULT/);
 });
 

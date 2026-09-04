@@ -120,7 +120,8 @@ export function setupEndpoint(endpoint) {
   const requiredPoolSize = !requiresSolicitation ? 0 : (endpoint.id === 'actualizar-solicitud' ? Math.max(30, Number(__ENV.MAX_SETUP_VUS || 30)) : 1);
   const pool = requiresSolicitation ? discoverSolicitations(auth.clientToken, endpoint.id === 'actualizar-solicitud') : [];
   if (__ENV.SOLICITUD_ID) pool.unshift({ solicitudId: Number(__ENV.SOLICITUD_ID) });
-  for (let index = pool.length; index < requiredPoolSize; index += 1) {
+  const seedFromScratch = requiresSolicitation && pool.length === 0;
+  for (let index = pool.length; seedFromScratch && index < requiredPoolSize; index += 1) {
     pool.push(createSolicitation(auth, { runId: __ENV.RUN_ID, seed: `${endpoint.id}-${index}` }, endpoint.id));
   }
   return { auth, pool };
