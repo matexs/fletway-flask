@@ -1,6 +1,8 @@
 export const softLimits = {
   smoke: { p95Ms: 1000, successRate: 0.99, errorRate: 0.01, timeoutRate: 0 },
-  default: { p95Ms: 2000, successRate: 0.95, errorRate: 0.05, timeoutRate: 0.01 },
+  load: { p95Ms: 2000, successRate: 0.95, errorRate: 0.05, timeoutRate: 0.01 },
+  stress: { p95Ms: 3000, successRate: 0.90, errorRate: 0.10, timeoutRate: 0.10 },
+  spike: { p95Ms: 5000, successRate: 0.80, errorRate: 0.20, timeoutRate: 0.10 },
 };
 
 export const hardLimits = {
@@ -10,64 +12,28 @@ export const hardLimits = {
   timeoutRate: 0.10,
 };
 
-export const endpoints = [
-  { key: 'health', label: 'Health check', role: 'public', path: '/', weight: 5 },
-  { key: 'localidades', label: 'Localidades', role: 'client', path: '/api/localidades', weight: 10 },
-  { key: 'buscar_localidades', label: 'Buscar localidades', role: 'client', path: '/api/localidades/buscar', weight: 10 },
-  { key: 'mis_pedidos', label: 'Pedidos del cliente', role: 'client', path: '/api/solicitudes/mis-pedidos', weight: 20 },
-  { key: 'mis_pedidos_optimizado', label: 'Pedidos optimizados', role: 'client', path: '/solicitudes/mis-pedidos-optimizado', weight: 15 },
-  { key: 'dashboard_transportista', label: 'Dashboard del fletero', role: 'driver', path: '/api/transportista/dashboard', weight: 15 },
-  { key: 'historial_transportista', label: 'Historial del fletero', role: 'driver', path: '/api/transportista/historial', weight: 10 },
-  { key: 'mis_presupuestos', label: 'Presupuestos del fletero', role: 'driver', path: '/api/presupuestos/mis-presupuestos', weight: 10 },
-  { key: 'presupuestos_batch', label: 'Presupuestos batch del cliente', role: 'client', path: '/api/presupuestos/completo-batch', weight: 5 },
-];
-
-export const profileLabels = {
-  smoke: 'Smoke',
-  load: 'Carga',
-  stress_10: 'Estrés 10 VU',
-  stress_20: 'Estrés 20 VU',
-  stress_30: 'Estrés 30 VU',
+export const profiles = {
+  smoke: { minVus: 1, maxVus: 3, durationSeconds: 40 },
+  load: { minVus: 0, maxVus: 10, durationSeconds: 90 },
+  stress: { minVus: 10, maxVus: 30, durationSeconds: 105 },
+  spike: { minVus: 3, maxVus: 30, durationSeconds: 60 },
 };
 
 export function profileIdsFor(profile) {
-  if (profile === 'stress') return ['stress_10', 'stress_20', 'stress_30'];
-  return [profile];
+  return profile === 'stress' ? ['stress_10', 'stress_20', 'stress_30'] : [profile];
 }
 
 export function buildScenarios(profile) {
   if (profile === 'smoke') {
-    return {
-      smoke: {
-        executor: 'ramping-vus',
-        exec: 'runFlow',
-        startVUs: 0,
-        stages: [
-          { duration: '10s', target: 1 },
-          { duration: '20s', target: 3 },
-          { duration: '10s', target: 0 },
-        ],
-        gracefulRampDown: '5s',
-      },
-    };
+    return { smoke: { executor: 'ramping-vus', exec: 'runFlow', startVUs: 0, stages: [
+      { duration: '10s', target: 1 }, { duration: '20s', target: 3 }, { duration: '10s', target: 0 },
+    ], gracefulRampDown: '5s' } };
   }
-
   if (profile === 'load') {
-    return {
-      load: {
-        executor: 'ramping-vus',
-        exec: 'runFlow',
-        startVUs: 0,
-        stages: [
-          { duration: '15s', target: 10 },
-          { duration: '60s', target: 10 },
-          { duration: '15s', target: 0 },
-        ],
-        gracefulRampDown: '5s',
-      },
-    };
+    return { load: { executor: 'ramping-vus', exec: 'runFlow', startVUs: 0, stages: [
+      { duration: '15s', target: 10 }, { duration: '60s', target: 10 }, { duration: '15s', target: 0 },
+    ], gracefulRampDown: '5s' } };
   }
-
   if (profile === 'stress') {
     return {
       stress_10: { executor: 'constant-vus', exec: 'runFlow', vus: 10, duration: '30s', startTime: '0s', gracefulStop: '5s' },
@@ -75,11 +41,32 @@ export function buildScenarios(profile) {
       stress_30: { executor: 'constant-vus', exec: 'runFlow', vus: 30, duration: '30s', startTime: '70s', gracefulStop: '5s' },
     };
   }
-
-  throw new Error(`PROFILE inválido: ${profile}. Valores permitidos: smoke, load, stress.`);
+  if (profile === 'spike') {
+    return { spike: { executor: 'ramping-vus', exec: 'runFlow', startVUs: 0, stages: [
+      { duration: '10s', target: 3 }, { duration: '5s', target: 30 }, { duration: '25s', target: 30 },
+      { duration: '5s', target: 3 }, { duration: '15s', target: 3 },
+    ], gracefulRampDown: '5s' } };
+  }
+  throw new Error(`PROFILE inválido: ${profile}. Valores permitidos: smoke, load, stress, spike.`);
 }
 
 export function metricName(profileId, kind, endpointKey = '') {
-  const suffix = endpointKey ? `_${endpointKey}` : '';
-  return `fletway_${profileId}${suffix}_${kind}`;
+  return `fletway_${profileId}${endpointKey ? `_${endpointKey}` : ''}_${kind}`;
+}
+
+export function buildThresholds(profileIds, endpointEntries = []) {
+  const thresholds = {};
+  for (const profileId of profileIds) {
+    thresholds[metricName(profileId, 'duration_ms')] = ['p(95)<5000'];
+    thresholds[metricName(profileId, 'success_rate')] = ['rate>0.8'];
+    thresholds[metricName(profileId, 'error_rate')] = ['rate<0.2'];
+    thresholds[metricName(profileId, 'timeout_rate')] = ['rate<0.1'];
+    for (const entry of endpointEntries) {
+      thresholds[metricName(profileId, 'duration_ms', entry.key)] = ['p(95)<5000'];
+      thresholds[metricName(profileId, 'success_rate', entry.key)] = ['rate>0.8'];
+      thresholds[metricName(profileId, 'error_rate', entry.key)] = ['rate<0.2'];
+      thresholds[metricName(profileId, 'timeout_rate', entry.key)] = ['rate<0.1'];
+    }
+  }
+  return thresholds;
 }

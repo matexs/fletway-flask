@@ -7,7 +7,7 @@ import { buildScenarios, buildThresholds, metricName, profileIdsFor } from '../.
 import { captureResponseIds, emitLedgerEvent, isTimeout, pause, requestOptions, requestTags, setupEndpoint, solicitationFor, tokenForRole } from '../../templates/endpoint.template.js';
 
 const endpoint = {
-  "id": "mis-presupuestos",
+  "id": "dashboard-transportista",
   "role": "driver",
   "mutation": false
 };

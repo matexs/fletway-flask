@@ -7,9 +7,9 @@ import { buildScenarios, buildThresholds, metricName, profileIdsFor } from '../.
 import { captureResponseIds, emitLedgerEvent, isTimeout, pause, requestOptions, requestTags, setupEndpoint, solicitationFor, tokenForRole } from '../../templates/endpoint.template.js';
 
 const endpoint = {
-  "id": "mis-presupuestos",
-  "role": "driver",
-  "mutation": false
+  "id": "crear-solicitud",
+  "role": "client",
+  "mutation": true
 };
 const adapter = adapterFor(endpoint);
 // Contract marker: resolvePath(adapter.path) remains the single path boundary.

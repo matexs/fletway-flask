@@ -1,4 +1,10 @@
-import http from 'k6/http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export function renderEndpointTest(endpoint) {
+  const serialized = JSON.stringify({ id: endpoint.id, role: endpoint.auth_role, mutation: endpoint.mutates_data }, null, 2);
+  return `import http from 'k6/http';
 import execution from 'k6/execution';
 import { check } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
@@ -6,14 +12,10 @@ import { adapterFor, buildRequestBody, resolvePath } from '../../k6/adapters/end
 import { buildScenarios, buildThresholds, metricName, profileIdsFor } from '../../k6/config/performance.config.js';
 import { captureResponseIds, emitLedgerEvent, isTimeout, pause, requestOptions, requestTags, setupEndpoint, solicitationFor, tokenForRole } from '../../templates/endpoint.template.js';
 
-const endpoint = {
-  "id": "mis-presupuestos",
-  "role": "driver",
-  "mutation": false
-};
+const endpoint = ${serialized};
 const adapter = adapterFor(endpoint);
 // Contract marker: resolvePath(adapter.path) remains the single path boundary.
-const BASE_URL = String(__ENV.BASE_URL || '').replace(/[\\/,]+$/, '');
+const BASE_URL = String(__ENV.BASE_URL || '').replace(/[\\\\/,]+$/, '');
 const PROFILE = __ENV.PROFILE || 'smoke';
 
 export const options = { scenarios: buildScenarios(PROFILE), thresholds: buildThresholds(profileIdsFor(PROFILE), [{ key: endpoint.id }]), discardResponseBodies: true, summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'count'] };
@@ -47,3 +49,21 @@ export function runFlow(data) {
 }
 
 export default function (data) { runFlow(data); }
+`;
+}
+
+function loadManifest(manifestPath) {
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  if (!Array.isArray(manifest.endpoints)) throw new Error('manifest.endpoints must be an array');
+  return manifest.endpoints;
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const manifestPath = process.argv[2] || path.join(root, 'config', 'endpoints.manifest.json');
+  for (const endpoint of loadManifest(manifestPath)) {
+    const directory = endpoint.module.includes('presupuesto') ? path.join(root, 'endpoints', 'presupuestos') : path.join(root, 'endpoints', 'solicitudes');
+    fs.mkdirSync(directory, { recursive: true });
+    fs.writeFileSync(path.join(directory, `${endpoint.id}.js`), renderEndpointTest(endpoint));
+  }
+}

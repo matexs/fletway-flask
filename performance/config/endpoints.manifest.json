@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "campaign": "requested-solicitudes-presupuestos",
+  "endpoints": [
+    {
+      "id": "presupuestos-completo-batch",
+      "module": "routes/presupuesto_routes.py",
+      "method": "GET",
+      "path": "/api/presupuestos/completo-batch",
+      "objective": "Validar presupuestos agrupados del cliente bajo carga concurrente",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "client",
+      "mutates_data": false,
+      "enabled_profiles": ["load", "stress", "spike"]
+    },
+    {
+      "id": "mis-presupuestos",
+      "module": "routes/presupuesto_routes.py",
+      "method": "GET",
+      "path": "/api/presupuestos/mis-presupuestos",
+      "objective": "Validar listado de presupuestos del transportista bajo carga concurrente",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "driver",
+      "mutates_data": false,
+      "enabled_profiles": ["load", "stress", "spike"]
+    },
+    {
+      "id": "presupuestos-solicitud",
+      "module": "routes/presupuesto_routes.py",
+      "method": "GET",
+      "path": "/api/presupuestos/solicitud/<solicitud_id>",
+      "objective": "Validar consulta de presupuestos por solicitud",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "client",
+      "mutates_data": false,
+      "enabled_profiles": ["smoke", "load", "stress", "spike"]
+    },
+    {
+      "id": "detalle-solicitud",
+      "module": "routes/solicitud_routes.py",
+      "method": "GET",
+      "path": "/api/solicitudes/<id>",
+      "objective": "Validar detalle de solicitud autenticado",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "client",
+      "mutates_data": false,
+      "enabled_profiles": ["smoke", "load", "stress", "spike"]
+    },
+    {
+      "id": "mis-pedidos",
+      "module": "routes/solicitud_routes.py",
+      "method": "GET",
+      "path": "/api/solicitudes/mis-pedidos",
+      "objective": "Validar listado de solicitudes del cliente",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "client",
+      "mutates_data": false,
+      "enabled_profiles": ["load", "stress", "spike"]
+    },
+    {
+      "id": "dashboard-transportista",
+      "module": "routes/solicitud_routes.py",
+      "method": "GET",
+      "path": "/api/transportista/dashboard",
+      "objective": "Validar dashboard del transportista bajo carga concurrente",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "driver",
+      "mutates_data": false,
+      "enabled_profiles": ["load", "stress", "spike"]
+    },
+    {
+      "id": "historial-transportista",
+      "module": "routes/solicitud_routes.py",
+      "method": "GET",
+      "path": "/api/transportista/historial",
+      "objective": "Validar historial del transportista bajo carga concurrente",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "driver",
+      "mutates_data": false,
+      "enabled_profiles": ["load", "stress", "spike"]
+    },
+    {
+      "id": "mis-pedidos-optimizado",
+      "module": "routes/solicitud_routes.py",
+      "method": "GET",
+      "path": "/solicitudes/mis-pedidos-optimizado",
+      "objective": "Comparar el listado optimizado de solicitudes del cliente",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "client",
+      "mutates_data": false,
+      "enabled_profiles": ["load", "stress", "spike"]
+    },
+    {
+      "id": "actualizar-solicitud",
+      "module": "routes/solicitud_routes.py",
+      "method": "PATCH",
+      "path": "/api/solicitudes/<id>",
+      "objective": "Validar actualización concurrente de solicitudes editables",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "client",
+      "mutates_data": true,
+      "enabled_profiles": ["smoke", "load", "stress", "spike"]
+    },
+    {
+      "id": "crear-solicitud",
+      "module": "routes/solicitud_routes.py",
+      "method": "POST",
+      "path": "/api/solicitudes",
+      "objective": "Validar creación concurrente de solicitudes de prueba",
+      "priority": "P0",
+      "traffic_weight": 10,
+      "auth_role": "client",
+      "mutates_data": true,
+      "enabled_profiles": ["smoke", "load", "stress", "spike"]
+    }
+  ]
+}

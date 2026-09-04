@@ -36,8 +36,8 @@ test('contains every Presupuestos P0 endpoint declared in the canonical manifest
     assert.ok(metadataMatch, `missing generated endpoint metadata: ${endpoint.id}`);
     assert.deepEqual(JSON.parse(metadataMatch[1]), {
       id: endpoint.id,
-      role: endpoint.role,
-      mutation: endpoint.mutation,
+      role: endpoint.auth_role,
+      mutation: endpoint.mutates_data,
     }, `generated metadata drift: ${endpoint.id}`);
     assert.match(source, /adapterFor\(endpoint\)/);
     assert.match(source, /resolvePath\(adapter\.path\)/);

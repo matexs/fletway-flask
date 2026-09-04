@@ -7,8 +7,8 @@ import { buildScenarios, buildThresholds, metricName, profileIdsFor } from '../.
 import { captureResponseIds, emitLedgerEvent, isTimeout, pause, requestOptions, requestTags, setupEndpoint, solicitationFor, tokenForRole } from '../../templates/endpoint.template.js';
 
 const endpoint = {
-  "id": "mis-presupuestos",
-  "role": "driver",
+  "id": "detalle-solicitud",
+  "role": "client",
   "mutation": false
 };
 const adapter = adapterFor(endpoint);
