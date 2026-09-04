@@ -15,6 +15,7 @@ instance/
 
 # Local k6 credentials and generated performance artifacts
 /performance/.env.performance
+/performance/env.performance
 !/performance/.env.performance.example
 /performance/results/*
 !/performance/results/.gitkeep
