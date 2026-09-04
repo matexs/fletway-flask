@@ -12,7 +12,7 @@ $ManifestPath = [IO.Path]::GetFullPath($ManifestPath)
 $envFile = Join-Path $PerformanceRoot 'env.performance'
 if (-not (Test-Path -LiteralPath $envFile)) { $envFile = Join-Path $PerformanceRoot '.env.performance' }
 if (-not (Test-Path -LiteralPath $envFile)) { throw 'Missing performance environment file' }
-$allowed = @('BASE_URL','SUPABASE_URL','SUPABASE_ANON_KEY','CLIENT_EMAIL','CLIENT_PASSWORD','DRIVER_EMAIL','DRIVER_PASSWORD','LOCALIDAD_ORIGEN_ID','LOCALIDAD_DESTINO_ID','SOLICITUD_ID','MAX_SETUP_VUS','REQUEST_TIMEOUT','SETUP_REQUEST_TIMEOUT','THINK_TIME_SECONDS')
+$allowed = @('BASE_URL','SUPABASE_URL','SUPABASE_ANON_KEY','CLIENT_EMAIL','CLIENT_PASSWORD','DRIVER_EMAIL','DRIVER_PASSWORD','LOCALIDAD_ORIGEN_ID','LOCALIDAD_DESTINO_ID','SOLICITUD_ID','MAX_SETUP_VUS','REQUEST_TIMEOUT','SETUP_REQUEST_TIMEOUT','K6_SETUP_TIMEOUT','THINK_TIME_SECONDS')
 foreach ($line in Get-Content -LiteralPath $envFile) {
     $trimmed = $line.Trim()
     if (-not $trimmed -or $trimmed.StartsWith('#') -or -not $trimmed.Contains('=')) { continue }

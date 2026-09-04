@@ -54,6 +54,7 @@ test('thresholds reference only metrics registered by endpoint scripts', () => {
 test('endpoint scripts retain response bodies for auth and mutation IDs', () => {
   const source = fs.readFileSync(path.join(performanceRoot, 'endpoints', 'solicitudes', 'crear-solicitud.js'), 'utf8');
   assert.doesNotMatch(source, /discardResponseBodies:\s*true/);
+  assert.match(source, /setupTimeout:\s*__ENV\.K6_SETUP_TIMEOUT/);
 });
 
 test('runner removes k6 setup data before saving raw summaries', () => {
