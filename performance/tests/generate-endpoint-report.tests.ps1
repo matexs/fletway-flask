@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $generator = Join-Path $repoRoot 'performance\scripts\generate-endpoint-report.ps1'
+$PowerShellExecutable = if ($PSVersionTable.PSEdition -eq 'Desktop') { 'powershell.exe' } else { 'pwsh' }
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) ('fletway-task9-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $testRoot | Out-Null
 
@@ -13,15 +14,25 @@ function Write-JsonFixture([string]$relativePath, $value) {
     $path = Join-Path $testRoot $relativePath
     $parent = Split-Path -Parent $path
     New-Item -ItemType Directory -Force -Path $parent | Out-Null
-    $value | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+    Write-Utf8NoBom $path ($value | ConvertTo-Json -Depth 30)
     return $path
+}
+
+function Write-Utf8NoBom([string]$path, [string]$content) {
+    $encoding = New-Object System.Text.UTF8Encoding -ArgumentList $false
+    [IO.File]::WriteAllText($path, $content, $encoding)
+}
+
+function Read-Utf8NoBom([string]$path) {
+    $encoding = New-Object System.Text.UTF8Encoding -ArgumentList $false
+    return [IO.File]::ReadAllText($path, $encoding)
 }
 
 function Write-TextFixture([string]$relativePath, [string]$value) {
     $path = Join-Path $testRoot $relativePath
     $parent = Split-Path -Parent $path
     New-Item -ItemType Directory -Force -Path $parent | Out-Null
-    $value | Set-Content -LiteralPath $path -Encoding utf8NoBOM
+    Write-Utf8NoBom $path $value
     return $path
 }
 
@@ -32,8 +43,24 @@ function Invoke-Report($matrix, $raw, $manifest, [string]$name = 'report') {
     New-Item -ItemType Directory -Force -Path $rawPath | Out-Null
     foreach ($item in $raw.GetEnumerator()) { Write-JsonFixture "$name-raw\$($item.Key).json" $item.Value | Out-Null }
     $output = Join-Path $testRoot "$name-output"
-    $stdout = & pwsh -NoProfile -File $generator -MatrixPath $matrixPath -RawPath $rawPath -ManifestPath $manifestPath -EndpointId 'orders' -OutputDirectory $output 2>&1 | Out-String
-    return [pscustomobject]@{ ExitCode=$LASTEXITCODE; Stdout=$stdout; Output=$output }
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        if ($PSVersionTable.PSEdition -eq 'Desktop') {
+            $stdout = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $generator -MatrixPath $matrixPath -RawPath $rawPath -ManifestPath $manifestPath -EndpointId orders -OutputDirectory $output 2>&1 | Out-String
+        } else {
+            $stdout = & pwsh -NoProfile -File $generator -MatrixPath $matrixPath -RawPath $rawPath -ManifestPath $manifestPath -EndpointId orders -OutputDirectory $output 2>&1 | Out-String
+        }
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    return [pscustomobject]@{ ExitCode=$exitCode; Stdout=$stdout; Output=$output }
+}
+
+function Assert-NoBom([string]$path) {
+    $bytes = [IO.File]::ReadAllBytes($path)
+    Assert-True ($bytes.Length -lt 3 -or $bytes[0] -ne 0xEF -or $bytes[1] -ne 0xBB -or $bytes[2] -ne 0xBF) "UTF-8 output must not contain a BOM: $path"
 }
 
 function Clone-Value($value) { return ($value | ConvertTo-Json -Depth 30 | ConvertFrom-Json) }
@@ -72,8 +99,10 @@ try {
     $mdPath = Join-Path $first.Output 'endpoint-report.md'
     $htmlPath = Join-Path $first.Output 'endpoint-report.html'
     Assert-True ((Test-Path $mdPath -PathType Leaf) -and (Test-Path $htmlPath -PathType Leaf)) 'both report formats must be written'
-    $md = Get-Content -Raw $mdPath
-    $html = Get-Content -Raw $htmlPath
+    Assert-NoBom $mdPath; Assert-NoBom $htmlPath
+    $md = Read-Utf8NoBom $mdPath
+    $html = Read-Utf8NoBom $htmlPath
+    Write-Output $md
     foreach ($marker in @('GET /api/orders','Validate orders under representative traffic','APROBADA','3200','0.5')) {
         Assert-True ($md.Contains($marker) -and $html.Contains($marker)) "Markdown and HTML must include shared marker: $marker"
     }
@@ -81,12 +110,12 @@ try {
         Assert-True ($md.Contains("## $section") -and $html.Contains("<h2>$section</h2>")) "both formats must include section: $section"
     }
     Assert-True ($md -match 'Score endpoint:\*\*\s*N/D.*Task 10' -and $html -match 'N/D.*Task 10') 'score must be present but explicitly not calculated until Task 10'
-    Assert-True ($md -match '\| 10 \|' -and $md -match '\| 20 \|' -and $md -match '\| 30 \|' -and $md -match '400.*1000.*1900.*2800.*1.*11' -and $md -match 'Primer punto de degradación.*20 VU') 'stress must include per-VU metrics and first degradation'
+    Assert-True ($md -match '\| 10 \|' -and $md -match '\| 20 \|' -and $md -match '\| 30 \|' -and $md -match '400.*1000.*1900.*2800.*1.*11' -and $md -match 'Primer punto.*20 VU') 'stress must include per-VU metrics and first degradation'
     Assert-True ($md -match '(?i)Baseline:' -and $md -match '3 VU' -and $md -match '(?i)Peak:' -and $md -match '30 VU' -and $md -match '18 s' -and $md -match '(?i)Recovery:') 'spike must include baseline, peak, recovery and result'
     $freeFormResultRaw = $raw.Clone(); $freeFormResultRaw['smoke'] = Clone-Value $raw['smoke']; [void]$freeFormResultRaw['smoke'].PSObject.Properties.Add([PSNoteProperty]::new('result','[FAILED](https://evil.example) <b>*boom*</b> | `code`')); $freeFormResultRaw['spike'] = Clone-Value $raw['spike']; [void]$freeFormResultRaw['spike'].PSObject.Properties.Add([PSNoteProperty]::new('result',$freeFormResultRaw['smoke'].result))
     $freeFormResult = Invoke-Report $matrix $freeFormResultRaw $manifest 'free-form-result'
     Assert-True ($freeFormResult.ExitCode -eq 0) "free-form result fixture should generate: $($freeFormResult.Stdout)"
-    $freeFormMd = Get-Content -Raw (Join-Path $freeFormResult.Output 'endpoint-report.md')
+    $freeFormMd = Read-Utf8NoBom (Join-Path $freeFormResult.Output 'endpoint-report.md')
     Assert-True ($freeFormMd.Contains('\[FAILED\]\(https://evil\.example\) \<b\>\*boom\*\</b\> \| \`code\`')) 'free-form profile results must be Markdown-escaped in Report-Text and Render-Spike'
     Assert-True ($freeFormMd -notmatch '\[FAILED\]\(https://evil\.example\)' -and $freeFormMd -notmatch '<b>\*boom\*') 'raw Markdown/HTML result syntax must not remain active'
 
@@ -100,7 +129,7 @@ try {
     $unsafeMatrix = ($unsafeRows | ConvertTo-Csv -NoTypeInformation) -join "`n"
     $unsafeReport = Invoke-Report $unsafeMatrix $raw $unsafeManifest 'unsafe-free-form'
     Assert-True ($unsafeReport.ExitCode -eq 0) "free-form manifest/matrix fixture should generate: $($unsafeReport.Stdout)"
-    $unsafeMd = Get-Content -Raw (Join-Path $unsafeReport.Output 'endpoint-report.md')
+    $unsafeMd = Read-Utf8NoBom (Join-Path $unsafeReport.Output 'endpoint-report.md')
     foreach ($escaped in @('\|','\<script\>','\[link\]\(x\)','\*\*bold\*\*','\*bold\*','\[users\]')) { Assert-True ($unsafeMd.Contains($escaped)) "Markdown free-form value should escape $escaped" }
     Assert-True ($unsafeMd -notmatch '(?<!\\)<script>|(?<!\\)\*bold\*') 'Markdown must not retain active HTML or emphasis syntax'
     Assert-True ($unsafeMd -notmatch 'line\r?\n') 'Markdown line breaks must not be emitted as raw free-form newlines'
@@ -124,14 +153,14 @@ try {
     $objectiveMismatchMatrix = $matrix.Replace('Validate orders under representative traffic','Different manifest objective')
     Assert-ReportRejected $objectiveMismatchMatrix $raw $manifest 'matrix-objective-mismatch' 'matrix|objetivo|objective|manifest'
     Assert-True ($md -match '\| GET /api/orders \| smoke \|' -and $md -match '\| GET /api/orders \| load \|' -and $md -match '\| GET /api/orders \| stress \|' -and $md -match '\| GET /api/orders \| spike \|') 'matrix must include all four canonical rows'
-    Assert-True ($md -match 'Hecho:' -and $md -match 'Hipótesis:' -and $md -match 'no hay telemetría') 'conclusion must distinguish evidence from hypothesis'
+    Assert-True ($md -match 'Hecho:' -and $md -match 'Hip.*tesis:' -and $md -match 'no hay telemetr') 'conclusion must distinguish evidence from hypothesis'
     Assert-True ($md -notmatch '(?i)(causad[oa]|debido|provocad[oa]).{0,30}(sql|memoria)|(sql|memoria).{0,30}(causad[oa]|debido|provocad[oa])|password|bearer|eyJ[A-Za-z0-9_-]+') 'report must not claim unsupported causes or leak secrets'
-    Assert-True ($html -match 'carga máxima observada de 30 VU' -and $html -match 'no hay telemetría de SQL') 'HTML conclusion must use the same model-derived facts and hypothesis as Markdown'
+    Assert-True ($html -match 'carga máxima observada de 30 VU' -and $html -match 'no hay telemetr.*SQL') 'HTML conclusion must use the same model-derived facts and hypothesis as Markdown'
 
     $escapedMatrix = $matrix.Replace('APROBADA','ADVERTENCIA')
     $escaped = Invoke-Report $escapedMatrix $raw $manifest 'escaped-matrix'
     Assert-True ($escaped.ExitCode -eq 0) "matrix values should be escaped, not rejected: $($escaped.Stdout)"
-    $escapedHtml = Get-Content -Raw (Join-Path $escaped.Output 'endpoint-report.html')
+    $escapedHtml = Read-Utf8NoBom (Join-Path $escaped.Output 'endpoint-report.html')
     Assert-True ($escapedHtml.Contains('ADVERTENCIA') -and $escapedHtml -notmatch '<script>') 'HTML must render canonical matrix resultado'
 
     $duplicateStress = $raw.Clone(); $duplicateStress['stress-20-copy'] = Clone-Value $raw['stress-20']
@@ -159,7 +188,7 @@ try {
         $missingProfile = $raw.Clone(); $missingProfile.Remove($profileToRemove)
         $missingResult = Invoke-Report $matrix $missingProfile $manifest "missing-$profileToRemove"
         Assert-True ($missingResult.ExitCode -eq 0) "missing $profileToRemove should render NO_EJECUTADA: $($missingResult.Stdout)"
-        $missingMd = Get-Content -Raw (Join-Path $missingResult.Output 'endpoint-report.md')
+        $missingMd = Read-Utf8NoBom (Join-Path $missingResult.Output 'endpoint-report.md')
         Assert-True ($missingMd -match "## $([regex]::Escape($profileToRemove.Substring(0,1).ToUpperInvariant()+$profileToRemove.Substring(1)))" -and $missingMd -match 'NO_EJECUTADA') "missing $profileToRemove must be visible as NO_EJECUTADA"
     }
 

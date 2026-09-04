@@ -5,7 +5,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ManifestPath,
     [Parameter(Mandatory = $true)][string]$EndpointId,
     [Parameter(Mandatory = $true)][string]$OutputDirectory,
-    [string]$TemplatePath = (Join-Path $PSScriptRoot '..\templates\endpoint-report.md')
+    [string]$TemplatePath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,9 +14,13 @@ $CanonicalColumns = @('endpoint','test','objetivo','carga_vu_min','carga_vu_max'
 
 function Fail([string]$Message) { throw "Malformed endpoint report input: $Message" }
 function Has-Property($Object, [string]$Name) { return $null -ne $Object -and $null -ne $Object.PSObject.Properties[$Name] }
+function Read-Utf8NoBom([string]$Path) {
+    $encoding = New-Object System.Text.UTF8Encoding -ArgumentList $false
+    return [IO.File]::ReadAllText($Path, $encoding)
+}
 function Read-Json([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { Fail "file not found: $Path" }
-    try { return Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json }
+    try { return (Read-Utf8NoBom $Path | ConvertFrom-Json) }
     catch { Fail "invalid JSON in $Path" }
 }
 function Require-Text($Object, [string]$Name, [string]$Context) {
@@ -32,7 +36,7 @@ function Format-Number([double]$Value) { return $Value.ToString('0.###', [Global
 function Escape-Md([string]$Value) {
     $punctuation = @('\','`','*','_','{','}','[',']','<','>','(',')','#','+','-','.','!','|','~','&')
     $text = ([string]$Value).Replace("`r",' ').Replace("`n",' ')
-    $builder = [Text.StringBuilder]::new()
+    $builder = New-Object System.Text.StringBuilder
     foreach ($character in $text.ToCharArray()) {
         if ($punctuation -contains ([string]$character)) { [void]$builder.Append('\') }
         [void]$builder.Append($character)
@@ -40,6 +44,10 @@ function Escape-Md([string]$Value) {
     return $builder.ToString()
 }
 function Escape-Html([string]$Value) { return ([string]$Value).Replace('&','&amp;').Replace('<','&lt;').Replace('>','&gt;').Replace('"','&quot;') }
+function Write-Utf8NoBom([string]$Path, [string]$Content) {
+    $encoding = New-Object System.Text.UTF8Encoding -ArgumentList $false
+    [IO.File]::WriteAllText($Path, $Content, $encoding)
+}
 function Assert-SafeOutput([string]$Path) {
     if ([string]::IsNullOrWhiteSpace($Path) -or $Path -match '[*?<>|]' -or $Path -match '(^|[\\/])\.\.([\\/]|$)') { Fail 'output path is not safe' }
     $full = [IO.Path]::GetFullPath($Path)
@@ -131,7 +139,7 @@ function Read-Models($Entry) {
 }
 function Read-Matrix([string]$Path, $Entry) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { Fail "matrix file not found: $Path" }
-    $rows = @(Import-Csv -LiteralPath $Path)
+    $rows = @(Read-Utf8NoBom $Path | ConvertFrom-Csv)
     if ($rows.Count -eq 0) { Fail 'matrix cannot be empty' }
     if ((@($rows[0].PSObject.Properties.Name) -join ',') -ne ($CanonicalColumns -join ',')) { Fail 'matrix schema does not match canonical columns' }
     $selected = @($rows | Where-Object { $_.endpoint -eq $Entry.endpoint })
@@ -231,6 +239,7 @@ function Render-Html($Model, $Rows) {
     return "<!doctype html><html lang='es'><head><meta charset='utf-8'><title>$(Escape-Html $entry.endpoint)</title><style>body{font:16px Segoe UI, sans-serif;max-width:1200px;margin:2rem auto;padding:0 1rem;color:#172033}section{border:1px solid #dfe6f0;border-radius:10px;padding:1rem;margin:1rem 0}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #dfe6f0;padding:.4rem;text-align:left}th{background:#f3f6fb}.hypothesis{background:#fff7db;padding:1rem}</style></head><body><h1>$(Escape-Html $entry.endpoint)</h1><p><strong>Método/ruta:</strong> $(Escape-Html $entry.endpoint)<br><strong>Objetivo:</strong> $(Escape-Html $entry.objective)</p><h2>Resumen</h2>$summary$($sections -join '')<section><h2>Stress</h2><p>$stress</p></section><section><h2>Spike</h2><p>$spike</p></section><section><h2>Matriz</h2><table><thead><tr><th>endpoint</th><th>test</th><th>objetivo</th><th>carga_vu_min</th><th>carga_vu_max</th><th>p95_ms</th><th>error_pct</th><th>capacidad_rps</th><th>resultado</th><th>usuarios</th></tr></thead><tbody>$matrixRows</tbody></table></section><section class='hypothesis'><h2>Conclusión</h2>$factHtml<p><strong>Hipótesis:</strong> $(Escape-Html $conclusion.hypothesis)</p></section></body></html>"
 }
 
+if ([string]::IsNullOrWhiteSpace($TemplatePath)) { $TemplatePath = Join-Path -Path $PSScriptRoot -ChildPath '..\templates\endpoint-report.md' }
 if (-not (Test-Path -LiteralPath $TemplatePath -PathType Leaf)) { Fail "template file not found: $TemplatePath" }
 $safeOutput = Assert-SafeOutput $OutputDirectory
 $entry = Get-ManifestEntry $ManifestPath $EndpointId
@@ -242,13 +251,13 @@ $stressMaxVu = [int]$stressMatrixRow.carga_vu_max
 if (-not $rawModels.stress.ContainsKey($stressMaxVu)) { Fail "stress raw profiles are missing the matrix maximum VU: $stressMaxVu" }
 $model = [pscustomobject]@{ entry=$entry; profiles=$rawModels.profiles; stress=$rawModels.stress; rows=$rows }
 $summary = "- **Score endpoint:** N/D (no calculado hasta Task 10)`n- **Resultado:** $(Get-WorstResult $rows)`n- **Carga máxima:** $((@($rows | ForEach-Object {[int]$_.carga_vu_max} | Measure-Object -Maximum).Maximum)) VU`n- **Capacidad máxima:** $((@($rows | ForEach-Object {[double]$_.capacidad_rps} | Measure-Object -Maximum).Maximum)) RPS"
-$template = Get-Content -Raw -LiteralPath $TemplatePath
+$template = Read-Utf8NoBom $TemplatePath
 foreach ($token in @('{{ENDPOINT}}','{{OBJECTIVE}}','{{SUMMARY}}','{{SMOKE}}','{{LOAD}}','{{STRESS}}','{{SPIKE}}','{{MATRIX}}','{{CONCLUSION}}')) { if (-not $template.Contains($token)) { Fail "template missing token: $token" } }
 $markdown = $template.Replace('{{ENDPOINT}}',(Escape-Md $entry.endpoint)).Replace('{{OBJECTIVE}}',(Escape-Md $entry.objective)).Replace('{{SUMMARY}}',$summary).Replace('{{SMOKE}}',(Report-Text $model 'smoke')).Replace('{{LOAD}}',(Report-Text $model 'load')).Replace('{{STRESS}}',(Render-Stress $model)).Replace('{{SPIKE}}',(Render-Spike $model)).Replace('{{MATRIX}}',(Render-Matrix $rows)).Replace('{{CONCLUSION}}',(Render-Conclusion $model $rows))
 $html = Render-Html $model $rows
 Assert-NoSecrets $markdown; Assert-NoSecrets $html
 New-Item -ItemType Directory -Force -Path $safeOutput | Out-Null
 $markdownPath=Join-Path $safeOutput 'endpoint-report.md'; $htmlPath=Join-Path $safeOutput 'endpoint-report.html'
-$markdown | Set-Content -LiteralPath $markdownPath -Encoding utf8NoBOM
-$html | Set-Content -LiteralPath $htmlPath -Encoding utf8NoBOM
+Write-Utf8NoBom $markdownPath $markdown
+Write-Utf8NoBom $htmlPath $html
 Write-Output "Generated endpoint report: $markdownPath and $htmlPath"
