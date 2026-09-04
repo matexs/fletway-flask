@@ -18,7 +18,7 @@ const adapter = adapterFor(endpoint);
 const BASE_URL = String(__ENV.BASE_URL || '').replace(/[\\\\/,]+$/, '');
 const PROFILE = __ENV.PROFILE || 'smoke';
 
-export const options = { scenarios: buildScenarios(PROFILE), thresholds: buildThresholds(profileIdsFor(PROFILE), [{ key: endpoint.id }]), discardResponseBodies: true, summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'count'] };
+export const options = { scenarios: buildScenarios(PROFILE), thresholds: buildThresholds(profileIdsFor(PROFILE), [{ key: endpoint.id }]), summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'count'] };
 const metrics = Object.fromEntries(profileIdsFor(PROFILE).map((profileId) => [profileId, {
   duration: new Trend(metricName(profileId, 'duration_ms', endpoint.id), true),
   success: new Rate(metricName(profileId, 'success_rate', endpoint.id)),

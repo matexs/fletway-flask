@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { metricName } from '../k6/config/performance.config.js';
+import { buildThresholds, metricName } from '../k6/config/performance.config.js';
 
 const performanceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const manifestPath = path.join(performanceRoot, 'config', 'endpoints.manifest.json');
@@ -43,4 +43,15 @@ test('metric names normalize endpoint ids for k6', () => {
 test('preflight does not probe mutating routes with GET', () => {
   const source = fs.readFileSync(path.join(performanceRoot, 'runners', 'preflight.ps1'), 'utf8');
   assert.match(source, /endpoint\.method\s+-eq\s*['"]GET['"]/i);
+});
+
+test('thresholds reference only metrics registered by endpoint scripts', () => {
+  const thresholds = buildThresholds(['smoke'], [{ key: 'crear-solicitud' }]);
+  assert.equal(Object.hasOwn(thresholds, 'fletway_smoke_duration_ms'), false);
+  assert.equal(Object.hasOwn(thresholds, 'fletway_smoke_crear_solicitud_duration_ms'), true);
+});
+
+test('endpoint scripts retain response bodies for auth and mutation IDs', () => {
+  const source = fs.readFileSync(path.join(performanceRoot, 'endpoints', 'solicitudes', 'crear-solicitud.js'), 'utf8');
+  assert.doesNotMatch(source, /discardResponseBodies:\s*true/);
 });
